@@ -133,7 +133,7 @@ def main(argv):
         js = pilot_jobs(cfg) if exp == "pilot" else jobs(exp, cfg)
         for s in js:
             s["expected_min"] = round(expected_minutes(s, cfg, cost), 3)
-        js.sort(key=lambda s: -s["expected_min"])  # longest first: better packing
+        js.sort(key=lambda s: (s["seed"], -s["expected_min"]))  # seed by seed (PREREGISTRATION 4), longest first
         path = os.path.join(ROOT, "results2", f"jobs_{exp}.jsonl")
         with open(path, "w") as f:
             for s in js:
