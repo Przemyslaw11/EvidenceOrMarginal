@@ -221,9 +221,9 @@ def COP():
     det.append(f"positive-stable frailty Laplace transform max |z| {max(zs):.2f}")
     # analytic conditional vs finite-difference derivative of the closed-form conditional CDF (Clayton)
     cl = C.Clayton(1.5, 3, DEV)
-    y = torch.tensor([[0.3, 0.7]], dtype=DT)
+    y = torch.tensor([[0.3, 0.7]], dtype=DT, device=DEV)
     T = 1 + (y ** (-1.5) - 1).sum()
-    xs = torch.tensor([0.05, 0.3, 0.8], dtype=DT)
+    xs = torch.tensor([0.05, 0.3, 0.8], dtype=DT, device=DEV)
     cdf = lambda x: ((T + x ** (-1.5) - 1) / T) ** (-(1 / 1.5 + 2))
     hx = 1e-6
     fd = (cdf(xs + hx) - cdf(xs - hx)) / (2 * hx)
@@ -426,7 +426,7 @@ def M8():
         cof = lambda a, b: (legendre(xg, 6) * torch.as_tensor(bd.pdf(_np(xg), a, b), device=DEV)[:, None] * wg[:, None]).sum(0)
         c1, c2 = cof(a1, b1), cof(a2, b2)
         xs = np.linspace(0, 1, 200001)  # reference in x: |polynomial difference| on a very fine grid
-        diff = _np(legendre(torch.as_tensor(xs), 6) @ (c1 - c2))
+        diff = _np(legendre(torch.as_tensor(xs, device=DEV), 6) @ (c1 - c2))
         exact = 0.5 * np.trapezoid(np.abs(diff), xs) if hasattr(np, "trapezoid") else 0.5 * np.trapz(np.abs(diff), xs)
         tvs = float(grid.tv(grid.poly_s(c1), grid.poly_s(c2)))
         worst = max(worst, abs(tvs - exact))
