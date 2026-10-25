@@ -221,3 +221,11 @@ __marimo__/
 
 # Local copy of the paper (third-party copyright; see arXiv:2405.05097)
 /duda.pdf
+
+# Scaled-up study: bulky per-job outputs and scheduler state (merged summaries are tracked)
+results2/jobs/
+results2/claims/
+results2/failures/
+results2/merged/*.parquet
+results2/pilot/
+slurm_logs/
