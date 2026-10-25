@@ -18,7 +18,7 @@ import yaml
 
 from . import copulas as C
 from .core import Estimator, chunk_for, population_model
-from .propagate import Grid, beta_logq, evaluate_case, sample_beliefs
+from .propagate import Grid, beta_logq, case_rows, mc_pass, sample_beliefs, solve_mind
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STREAM = {"est": 0, "mc": 1, "mind": 2, "lkj": 3, "train": 4, "val": 5, "test": 6}
@@ -138,16 +138,25 @@ def run_job(spec, cfg, device="cpu"):
         beliefs[nm] = b
     base_S4 = C.base_variates(rngs["S4"], M, k + 1, kinds_for(spec, cases)) if "S4" in names else None
     rng_md = rng_for(cfg, spec["key"], "mind")
-    rows = []
-    for ci, ((cop, info), (model, se)) in enumerate(zip(cases, models)):
+    # MC pass per case, then the min-D searches of all cases as one stacked problem, then the metrics
+    passes, t_case = [], []
+    for (cop, _), (model, _) in zip(cases, models):
         t1 = time.time()
         if base_S4 is not None:
             beliefs["S4"] = dict(Y=cop.uniforms(base_S4)[:, 1:].contiguous())
-        r = evaluate_case(model, cop, beliefs, grid, cfg, rng_md, cfg["degrees"], device)
-        print(f"case {ci + 1}/{len(cases)} {info.get('rho_S', info.get('lkj_idx'))}: {time.time() - t1:.1f}s "
-              f"(estimation {t_est:.0f}s total)", flush=True)
+        passes.append(mc_pass(model, cop, beliefs, grid, cfg, cfg["degrees"], device))
+        t_case.append(time.time() - t1)
+    beliefs.pop("S4", None)
+    t1 = time.time()
+    solve_mind(passes, cfg, rng_md, device)
+    t_mind = (time.time() - t1) / len(cases)
+    print(f"MC passes {sum(t_case):.0f}s, min D {t_mind * len(cases):.0f}s (estimation {t_est:.0f}s)", flush=True)
+    rows = []
+    for ci, ((cop, info), (model, se)) in enumerate(zip(cases, models)):
+        t1 = time.time()
+        r = case_rows(passes[ci], grid, cfg)
         extra = dict(case=ci, **info, rhoS_emp_yy=_emp_yy(model), rhoS_emp_xy=_emp_xy(model),
-                     se_a011=_se_yy(se), runtime_case_s=time.time() - t1)
+                     se_a011=_se_yy(se), runtime_case_s=t_case[ci] + t_mind + time.time() - t1)
         for x in r:
             x.update(extra)
         rows += r

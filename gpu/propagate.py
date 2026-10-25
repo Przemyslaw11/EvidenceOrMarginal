@@ -74,21 +74,31 @@ def beta_params(name, k, cfg_b):
     return np.array([ps[i % len(ps)] for i in range(k)], float)  # (k, 2)
 
 
+def _beta_terms(ab, device):
+    """(a - 1, b - 1, -sum log B(a, b)) of a Beta product as tensors; ab: (k, 2)."""
+    a, b = ab[:, 0], ab[:, 1]
+    t = lambda v: torch.tensor(v, dtype=DT, device=device)
+    return t(a - 1), t(b - 1), t(-betaln(a, b).sum())
+
+
+def _beta_eval(Y, am, bm, c):
+    Yc = torch.clamp(Y, 1e-300, 1.0)
+    Zc = torch.clamp(1 - Y, 1e-300, 1.0)
+    return (am * torch.log(Yc) + bm * torch.log(Zc)).sum(-1) + c
+
+
 def beta_logq(ab):
+    """log q of a Beta product (callable on (..., k), parameters kept as `logq.ab`) and its maximum."""
     a, b = ab[:, 0], ab[:, 1]
     mode = (a - 1) / (a + b - 2)
-    const = torch.tensor(-betaln(a, b).sum())
-    a_t, b_t = torch.tensor(a), torch.tensor(b)
     on = {}  # parameters per device, copied once
 
     def logq(Y):
         if Y.device not in on:
-            on[Y.device] = (a_t.to(Y.device) - 1, b_t.to(Y.device) - 1, const.to(Y.device))
-        am, bm, c = on[Y.device]
-        Yc = torch.clamp(Y, 1e-300, 1.0)
-        Zc = torch.clamp(1 - Y, 1e-300, 1.0)
-        return (am * torch.log(Yc) + bm * torch.log(Zc)).sum(-1) + c
+            on[Y.device] = _beta_terms(ab, Y.device)
+        return _beta_eval(Y, *on[Y.device])
 
+    logq.ab = ab
     lmax = float(((a - 1) * np.log(mode) + (b - 1) * np.log(1 - mode)).sum() - betaln(a, b).sum())
     return logq, lmax
 
@@ -131,8 +141,8 @@ def _starts(k, n, rng, extra):
 
 
 def _restore(Y, logq, thr, lo, hi, iters=60):
-    """Project infeasible rows onto {log q >= thr} by Newton steps along grad log q (the set is convex for
-    log-concave q, e.g. Beta products with parameters >= 1)."""
+    """Project infeasible rows (any leading shape) onto {log q >= thr} by Newton steps along grad log q (the set is
+    convex for log-concave q, e.g. Beta products with parameters >= 1). Feasible rows are never moved."""
     for _ in range(iters):
         Yd = Y.detach().requires_grad_(True)
         g = logq(Yd) - thr
@@ -140,7 +150,7 @@ def _restore(Y, logq, thr, lo, hi, iters=60):
         if not bool(bad.any()):
             break
         (gr,) = torch.autograd.grad(g.sum(), Yd)
-        step = (-(g - 1e-9) / (gr * gr).sum(1).clamp(min=1e-300))[:, None] * gr
+        step = (-(g - 1e-9) / (gr * gr).sum(-1).clamp(min=1e-300))[..., None] * gr
         with torch.no_grad():
             Y[bad] = torch.clamp(Y[bad] + step[bad], lo, hi)
 
@@ -182,18 +192,21 @@ class DStack:
         return D
 
 
-def min_D_cube(models, rng, cfg_md, extras=None, device="cpu", group=None):
-    """Multi-start projected Adam on D(y) over [0,1]^k for several neurons at once (one stacked problem per group of
-    `group` models; Adam acts elementwise, so this equals separate runs). Starts are drawn from `rng` model by model.
+def min_D_batch(models, rng, cfg_md, extras=None, device="cpu", supp=None, group=None):
+    """Multi-start projected Adam on D(y) for several neurons at once: over [0,1]^k, or (supp = [(ab, thr)] per model)
+    over supp q = {log q >= thr} of a Beta product q, by projection (`_restore`) after every step. One stacked
+    problem per group of `group` models; Adam and the projection act row by row, so this equals separate runs.
+    Starts are drawn from `rng` model by model.
 
-    Returns per model (best value, number of starts within 1e-6 of it, number of starts); the value is an upper
-    bound on the true minimum."""
+    Returns per model (best feasible value, number of starts within 1e-6 of it, number of feasible end points);
+    the value is an upper bound on the true minimum (NaN if no end point is feasible)."""
     extras = extras if extras is not None else [None] * len(models)
     starts = [_starts(md.k, cfg_md["starts"], rng, ex) for md, ex in zip(models, extras)]
     if group is None:  # keep the stacked pair-feature matrix of one group below ~3e8 elements (2.4 GB)
         P = models[0].k * (models[0].k - 1) // 2
         nf = max(P, 1) * max(md.m for md in models) ** 2
         group = max(1, int(3e8 // (max(len(s) for s in starts) * nf)))
+    lo, hi = (0.0, 1.0) if supp is None else (1e-12, 1 - 1e-12)
     out = []
     for g0 in range(0, len(models), group):
         ms, ss = models[g0: g0 + group], starts[g0: g0 + group]
@@ -203,8 +216,17 @@ def min_D_cube(models, rng, cfg_md, extras=None, device="cpu", group=None):
                          dtype=DT, device=device)
         valid = torch.tensor(np.stack([np.arange(n) < len(s) for s in ss]), device=device)
         f = DStack(ms)
+        logq = thr = None
+        if supp is not None:
+            terms = [_beta_terms(ab, device) for ab, _ in supp[g0: g0 + group]]
+            am, bm = (torch.stack([t[i] for t in terms])[:, None] for i in (0, 1))
+            c = torch.stack([t[2] for t in terms])[:, None]
+            thr = torch.tensor([th for _, th in supp[g0: g0 + group]], dtype=DT, device=device)[:, None]
+            logq = lambda Z: _beta_eval(Z, am, bm, c)  # noqa: E731
         with torch.no_grad():
-            Y.clamp_(0.0, 1.0)
+            Y.clamp_(lo, hi)
+        if logq is not None:
+            _restore(Y, logq, thr, lo, hi)
         Y.requires_grad_(True)
         opt = torch.optim.Adam([Y], lr=cfg_md["lr"][0])
         steps = cfg_md["steps"]
@@ -217,50 +239,24 @@ def min_D_cube(models, rng, cfg_md, extras=None, device="cpu", group=None):
             loss.backward()
             opt.step()
             with torch.no_grad():
-                Y.clamp_(0.0, 1.0)
+                Y.clamp_(lo, hi)
+            if logq is not None:
+                _restore(Y.data, logq, thr, lo, hi)
         with torch.no_grad():
-            D = torch.where(valid, f(Y), math.inf)
+            feas = valid if logq is None else valid & (logq(Y) >= thr)
+            D = torch.where(feas, f(Y), math.inf)
             best = D.min(1).values
             natt = (D <= best[:, None] + 1e-6).sum(1)
-        out += [(float(b), int(a), int(v)) for b, a, v in zip(best.cpu(), natt.cpu(), valid.sum(1).cpu())]
+        for b, a, v in zip(best.cpu(), natt.cpu(), feas.sum(1).cpu()):
+            out.append((float(b), int(a), int(v)) if int(v) else (NAN, 0, 0))
     return out
 
 
 def min_D(model, rng, cfg_md, extra=None, logq=None, thr=None, device="cpu"):
-    """Multi-start projected Adam on D(y) over [0,1]^k (by `min_D_cube`), or over supp q = {log q >= thr}
-    (projection by `_restore`).
-
-    Returns (best feasible value, number of starts within 1e-6 of it, number of feasible end points).
-    The value is an upper bound on the true minimum."""
-    if logq is None:
-        return min_D_cube([model], rng, cfg_md, [extra], device)[0]
-    k = model.k
-    Y0 = _starts(k, cfg_md["starts"], rng, extra)
-    Y = torch.tensor(Y0, dtype=DT, device=device).requires_grad_(True)
-    lo, hi = 1e-12, 1 - 1e-12
-    with torch.no_grad():
-        Y.clamp_(lo, hi)
-    _restore(Y.data, logq, thr, lo, hi)
-    opt = torch.optim.Adam([Y], lr=cfg_md["lr"][0])
-    steps = cfg_md["steps"]
-    l0, l1 = cfg_md["lr"]
-    for t in range(steps):
-        for g in opt.param_groups:
-            g["lr"] = l1 + 0.5 * (l0 - l1) * (1 + math.cos(math.pi * t / steps))
-        loss = model.D(Y).sum()
-        opt.zero_grad(set_to_none=True)
-        loss.backward()
-        opt.step()
-        with torch.no_grad():
-            Y.clamp_(lo, hi)
-        _restore(Y.data, logq, thr, lo, hi)
-    with torch.no_grad():
-        D = model.D(Y)
-        feas = logq(Y) >= thr
-        if not bool(feas.any()):
-            return NAN, 0, 0
-        best = D[feas].min()
-        return float(best), int((D[feas] <= best + 1e-6).sum()), int(feas.sum())
+    """`min_D_batch` for one neuron: over [0,1]^k, or over supp q = {log q >= thr} for a Beta product q
+    (`logq` from `beta_logq`)."""
+    supp = None if logq is None else [(logq.ab, thr)]
+    return min_D_batch([model], rng, cfg_md, [extra], device, supp)[0]
 
 
 # ---------------------------------------------------------------- one case
@@ -289,12 +285,19 @@ def evaluate_case(model6, cop, beliefs, grid, cfg, rng_md, degrees, device, dens
     """All rows (degree x belief x eps) for one neuron (model6 of degree m_max) and one ground-truth copula.
 
     beliefs: {name: dict(Y=tensor (M, k), X=tensor (M,) for S2, logq, thr)}; 'S1' uses the S2 samples
-    with weights D. If `dens` is a dict, pooled densities and coefficients are stored in it per (belief, m)."""
+    with weights D. If `dens` is a dict, pooled densities and coefficients are stored in it per (belief, m).
+    A job with several cases runs `mc_pass` per case, one `solve_mind` for all and `case_rows` per case."""
+    p = mc_pass(model6, cop, beliefs, grid, cfg, degrees, device)
+    solve_mind([p], cfg, rng_md, device)
+    return case_rows(p, grid, cfg, dens)
+
+
+def mc_pass(model6, cop, beliefs, grid, cfg, degrees, device):
+    """Monte Carlo pass of one case: per-replicate sums for every (belief, degree); see `evaluate_case`."""
     num = cfg["numerics"]
     R, eps_list, floor = num["R"], cfg["eps"], cfg["D_floor"]
     models = {m: model6.sliced(m) for m in degrees}
     G = grid.s.shape[0]
-    rows = []
     stats = {}
     names = [n for n in cfg["order"] if n in beliefs or (n == "S1" and "S2" in beliefs)]
     for name in names:
@@ -354,30 +357,54 @@ def evaluate_case(model6, cop, beliefs, grid, cfg, rng_md, degrees, device, dens
             a.host()
         stats[name] = acc
 
-    # ---- min D: over the cube (S1, S2, S4, negativity) and over supp q for the Beta beliefs
-    mind = {}
-    extras = []
-    for m in degrees:
-        extra = [stats[n][m].low_Y[torch.isfinite(stats[n][m].low_D)] for n in names if n in ("S2", "S4")]
-        extras.append(torch.cat(extra).cpu().numpy() if extra else None)
-    cubes = dict(zip(degrees, min_D_cube([models[m] for m in degrees], rng_md, num["mind"], extras, device)))
-    for m in degrees:
-        cube = cubes[m]
-        mc_cube = min([stats[n][m].min_mc for n in names if n in ("S2", "S4")], default=math.inf)
-        mind[(m, "cube")] = (min(cube[0], mc_cube), cube[0], mc_cube, cube[1], cube[2])
-        for n in names:
-            if n.startswith("S3"):
-                a = stats[n][m]
-                # the constrained search can only change the decision if the cube minimum is below the floor and
-                # no sample in supp(q) is; otherwise the MC value is reported (method 'mc')
-                if mind[(m, "cube")][0] >= floor or a.min_mc < floor:
-                    mind[(m, n)] = (a.min_mc, NAN, a.min_mc, 0, 0, "mc")
-                    continue
-                ex = a.low_Y[torch.isfinite(a.low_D)].cpu().numpy()
-                res = min_D(models[m], rng_md, num["mind"], ex, beliefs[n]["logq"], beliefs[n]["thr"], device)
-                best = min(res[0], a.min_mc) if not math.isnan(res[0]) else a.min_mc
-                mind[(m, n)] = (best, res[0], a.min_mc, res[1], res[2], "opt")
+    return dict(models=models, names=names, stats=stats, degrees=degrees, mind={},
+                M={n: int(beliefs["S2" if n == "S1" else n]["Y"].shape[0]) for n in names},
+                supp={n: (beliefs[n]["logq"].ab, beliefs[n]["thr"]) for n in names if n.startswith("S3")})
 
+
+def solve_mind(passes, cfg, rng_md, device):
+    """min D of every case in `passes` (from `mc_pass`): over the cube (S1, S2, S4, negativity) and over supp q for
+    the Beta beliefs; all cube searches of all cases and degrees as one stacked problem, then all constrained ones."""
+    md, floor = cfg["numerics"]["mind"], cfg["D_floor"]
+    finite = lambda a: a.low_Y[torch.isfinite(a.low_D)]  # noqa: E731
+    cube_models, extras = [], []
+    for p in passes:
+        for m in p["degrees"]:
+            ex = [finite(p["stats"][n][m]) for n in p["names"] if n in ("S2", "S4")]
+            cube_models.append(p["models"][m])
+            extras.append(torch.cat(ex).cpu().numpy() if ex else None)
+    cubes = iter(min_D_batch(cube_models, rng_md, md, extras, device))
+    tasks = []
+    for p in passes:
+        stats, mind = p["stats"], p["mind"]
+        for m in p["degrees"]:
+            cube = next(cubes)
+            mc_cube = min([stats[n][m].min_mc for n in p["names"] if n in ("S2", "S4")], default=math.inf)
+            mind[(m, "cube")] = (min(cube[0], mc_cube), cube[0], mc_cube, cube[1], cube[2])
+            for n in p["names"]:
+                if n.startswith("S3"):
+                    a = stats[n][m]
+                    # the constrained search can only change the decision if the cube minimum is below the floor and
+                    # no sample in supp(q) is; otherwise the MC value is reported (method 'mc')
+                    if mind[(m, "cube")][0] >= floor or a.min_mc < floor:
+                        mind[(m, n)] = (a.min_mc, NAN, a.min_mc, 0, 0, "mc")
+                    else:
+                        tasks.append((p, m, n))
+    if tasks:
+        res_all = min_D_batch([p["models"][m] for p, m, _ in tasks], rng_md, md,
+                              [finite(p["stats"][n][m]).cpu().numpy() for p, m, n in tasks], device,
+                              [p["supp"][n] for p, _, n in tasks])
+        for (p, m, n), res in zip(tasks, res_all):
+            a = p["stats"][n][m]
+            best = min(res[0], a.min_mc) if not math.isnan(res[0]) else a.min_mc
+            p["mind"][(m, n)] = (best, res[0], a.min_mc, res[1], res[2], "opt")
+
+
+def case_rows(p, grid, cfg, dens=None):
+    """Densities and metrics of one case from its `mc_pass` and `solve_mind` results; see `evaluate_case`."""
+    R, eps_list, floor = cfg["numerics"]["R"], cfg["eps"], cfg["D_floor"]
+    models, names, stats, degrees, mind = p["models"], p["names"], p["stats"], p["degrees"], p["mind"]
+    rows = []
     # ---- densities and metrics
     for name in names:
         for m in degrees:
@@ -405,10 +432,10 @@ def evaluate_case(model6, cop, beliefs, grid, cfg, rng_md, degrees, device, dens
                         minD=mc[0], minD_opt=mc[1], minD_mc=mc[2], minD_natt=mc[3], minD_nfeas=mc[4],
                         minD_supp=ms[0], minD_supp_opt=ms[1], minD_supp_mc=ms[2],
                         minD_supp_method=ms[5] if len(ms) > 5 else "cube",
-                        P_Dneg_u=stats["S2"][m].n_Dneg / beliefs["S2"]["Y"].shape[0] if "S2" in stats else NAN,
-                        frac_Nneg=stats["S2"][m].n_Nneg / beliefs["S2"]["Y"].shape[0] if "S2" in stats else NAN,
+                        P_Dneg_u=stats["S2"][m].n_Dneg / p["M"]["S2"] if "S2" in stats else NAN,
+                        frac_Nneg=stats["S2"][m].n_Nneg / p["M"]["S2"] if "S2" in stats else NAN,
                         q_valid=int(q_valid), defined=int(defined), n_bad=a.n_bad, n_drop=a.n_drop,
-                        M=int(beliefs["S2" if name == "S1" else name]["Y"].shape[0]),
+                        M=p["M"][name],
                         ess=ess, E_q_D=EqD, sd_q_D=sdD)
             base["mc_limited"] = int(ess / base["M"] < cfg["mc_limited_ess"])
             if dens is not None:

@@ -43,7 +43,7 @@ def sel(c, **kw):
     return c
 
 
-def curve(ax, c, metric, color, marker, label, logy=True, band=True):
+def curve(ax, c, metric, color, marker, label, logy=True, band=True, ls="-"):
     """Seed-median curve with seed band; gaps where >= 50 % undefined; hollow markers where below noise."""
     c = c.sort_values("rho_S")
     x = c.rho_S.to_numpy()
@@ -52,7 +52,7 @@ def curve(ax, c, metric, color, marker, label, logy=True, band=True):
         y = np.where(c.share_undefined.to_numpy() >= 0.5, np.nan, y)
     if logy:
         y = np.where(y > 0, y, np.nan)
-    ax.plot(x, y, color=color, label=label, marker=None)
+    ax.plot(x, y, color=color, label=label, marker=None, ls=ls)
     below = c[metric + "_below_share"].to_numpy(float) >= 0.5 if metric + "_below_share" in c else np.zeros(len(c), bool)
     ok = np.isfinite(y)
     ax.plot(x[ok & ~below], y[ok & ~below], ls="none", marker=marker, color=color)
@@ -313,8 +313,8 @@ def onepager(cg, tg, tp, net):
             for ti, typ in enumerate(("SUM", "CONTRAST")):
                 c = sel(cg, type=typ, belief="S2", basis="pair", m=4, eps=0.01, k=k)
                 if len(c):
-                    curve(ax, c, "d_denom", OI[KCOL[k]], MK[KCOL[k]], f"k={k} {typ}", band=False)
-                    ax.lines[-3].set_linestyle("-" if typ == "SUM" else "--")
+                    curve(ax, c, "d_denom", OI[KCOL[k]], MK[KCOL[k]], f"k={k} {typ}", band=False,
+                          ls="-" if typ == "SUM" else "--")
         ax.axhline(0.01, color="0.4", ls=":", lw=1)
         ax.legend(fontsize=11, ncol=2)
     ax.set_title("(a) constant-denominator error, flat belief")

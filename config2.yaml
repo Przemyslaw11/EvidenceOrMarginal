@@ -28,7 +28,7 @@ numerics:
   R: 16                # replicate blocks per belief
   M: 1048576           # MC samples per belief (2^20)
   chunk_est: 65536     # samples per estimation chunk (reduced automatically for large models)
-  chunk_mc: 16384
+  chunk_mc: 65536       # MC chunk (upper limit; reduced so that one pair-feature matrix stays below 4e8 elements)
   gh_nodes: 160        # Gauss-Hermite nodes per axis for population coefficients (M3: converged to 1e-9 at m=6, rho_S=0.9)
   mind:
     starts: 2000
