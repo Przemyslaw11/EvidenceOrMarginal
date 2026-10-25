@@ -218,3 +218,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local copy of the paper (third-party copyright; see arXiv:2405.05097)
+/duda.pdf

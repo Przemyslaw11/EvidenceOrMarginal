@@ -1,0 +1,37 @@
+type,m,scenario,denom_1pct,denom_1pct_note,denom_5pct,denom_5pct_note,relvar_5pct,relvar_5pct_note,relvar_20pct,relvar_20pct_note,rho_minD_lt0,rho_minD_lt_floor
+CONTRAST,2,S1,0.06800944831150907,,0.33725795616359994,,0.15392757020133083,,,not reached before undefined (from rho_S=0.6),0.5444510345179816,0.5404232854135967
+CONTRAST,2,S2,0.06156192700282684,,0.24103831189678393,,0.14027240279534764,,0.43424092091828387,,0.5444510345179816,0.5404232854135967
+CONTRAST,2,S3a,0.236719244118125,,,not reached before undefined (from rho_S=0.6),0.37877058404240277,,,not reached before undefined (from rho_S=0.6),0.5444510345179816,0.5404232854135967
+CONTRAST,2,S3b,0.2674728629257219,,,not reached before undefined (from rho_S=0.6),0.4172721540567443,,,not reached before undefined (from rho_S=0.6),0.5444510345179816,0.5404232854135967
+CONTRAST,2,S3c,0.07184069549487253,,0.2620464952734314,,0.24668180288728525,,0.4204394377709571,,0.5444510345179816,0.5404232854135967
+CONTRAST,2,S3d,,not reached before undefined (from rho_S=0.6),,not reached before undefined (from rho_S=0.6),,not reached before undefined (from rho_S=0.6),,not reached before undefined (from rho_S=0.6),0.5444510345179816,0.5404232854135967
+CONTRAST,4,S1,0.07025634286302683,,0.3662329237744196,,0.15787087300068087,,,not reached before undefined (from rho_S=0.5),0.4309630293830343,0.4255043212091482
+CONTRAST,4,S2,0.06062032329647698,,0.23350488454430285,,0.13655930529638335,,,not reached before undefined (from rho_S=0.5),0.4309630293830343,0.4255043212091482
+CONTRAST,4,S3a,0.2633004744893035,,,not reached before undefined (from rho_S=0.5),0.3864180259429943,,,not reached before undefined (from rho_S=0.5),0.4309630293830343,0.4255043212091482
+CONTRAST,4,S3b,0.2604541006953432,,,not reached before undefined (from rho_S=0.5),0.3780575769207939,,,not reached before undefined (from rho_S=0.5),0.4309630293830343,0.4255043212091482
+CONTRAST,4,S3c,0.09316065079135928,,0.3050696783319374,,0.37705068785253104,,,not reached before undefined (from rho_S=0.5),0.4309630293830343,0.4255043212091482
+CONTRAST,4,S3d,,not reached before undefined (from rho_S=0.5),,not reached before undefined (from rho_S=0.5),,not reached before undefined (from rho_S=0.5),,not reached before undefined (from rho_S=0.5),0.4309630293830343,0.4255043212091482
+CONTRAST,6,S1,0.07600627642311257,,,not reached before undefined (from rho_S=0.4),0.15925489514768315,,,not reached before undefined (from rho_S=0.4),0.3916352419215934,0.3846316745713456
+CONTRAST,6,S2,0.0654436047385404,,0.24833146585081134,,0.1360551757373578,,,not reached before undefined (from rho_S=0.4),0.3916352419215934,0.3846316745713456
+CONTRAST,6,S3a,0.25910274367407204,,,not reached before undefined (from rho_S=0.4),,not reached before undefined (from rho_S=0.4),,not reached before undefined (from rho_S=0.4),0.3916352419215934,0.3846316745713456
+CONTRAST,6,S3b,0.2525684728448109,,,not reached before undefined (from rho_S=0.4),,not reached before undefined (from rho_S=0.4),,not reached before undefined (from rho_S=0.4),0.3916352419215934,0.3846316745713456
+CONTRAST,6,S3c,0.10059543064634116,,,not reached before undefined (from rho_S=0.4),,not reached before undefined (from rho_S=0.4),,not reached before undefined (from rho_S=0.4),0.3916352419215934,0.3846316745713456
+CONTRAST,6,S3d,0.4798408722155606,,,not reached before undefined (from rho_S=0.6),,not reached before undefined (from rho_S=0.6),,not reached before undefined (from rho_S=0.6),0.3916352419215934,0.3846316745713456
+SUM,2,S1,0.07629219643983229,,0.4934916160629386,,0.19732079659370633,,,not reached before undefined (from rho_S=0.6),0.5444332303997835,0.54039283973368
+SUM,2,S2,0.08438549608116411,,,not reached before undefined (from rho_S=0.6),0.24332360768183517,,,not reached before undefined (from rho_S=0.6),0.5444332303997835,0.54039283973368
+SUM,2,S3a,0.45616362498493024,,,not reached before undefined (from rho_S=0.6),,not reached before undefined (from rho_S=0.6),,not reached before undefined (from rho_S=0.6),0.5444332303997835,0.54039283973368
+SUM,2,S3b,0.09956005581003866,,,not reached before undefined (from rho_S=0.6),,not reached before undefined (from rho_S=0.6),,not reached before undefined (from rho_S=0.6),0.5444332303997835,0.54039283973368
+SUM,2,S3c,0.418240308524107,,,not reached before undefined (from rho_S=0.6),,not reached before undefined (from rho_S=0.6),,not reached before undefined (from rho_S=0.6),0.5444332303997835,0.54039283973368
+SUM,2,S3d,,not reached before undefined (from rho_S=0.6),,not reached before undefined (from rho_S=0.6),,not reached before undefined (from rho_S=0.6),,not reached before undefined (from rho_S=0.6),0.5444332303997835,0.54039283973368
+SUM,4,S1,0.07393536772765415,,0.38869394001392693,,0.1797812684671583,,,not reached before undefined (from rho_S=0.5),0.4376309876209311,0.4322409375110109
+SUM,4,S2,0.0860191361626342,,,not reached before undefined (from rho_S=0.5),0.24580336902872302,,,not reached before undefined (from rho_S=0.5),0.4376309876209311,0.4322409375110109
+SUM,4,S3a,,not reached before undefined (from rho_S=0.5),,not reached before undefined (from rho_S=0.5),,not reached before undefined (from rho_S=0.5),,not reached before undefined (from rho_S=0.5),0.4376309876209311,0.4322409375110109
+SUM,4,S3b,0.16127376408092747,,,not reached before undefined (from rho_S=0.5),,not reached before undefined (from rho_S=0.5),,not reached before undefined (from rho_S=0.5),0.4376309876209311,0.4322409375110109
+SUM,4,S3c,,not reached before undefined (from rho_S=0.5),,not reached before undefined (from rho_S=0.5),,not reached before undefined (from rho_S=0.5),,not reached before undefined (from rho_S=0.5),0.4376309876209311,0.4322409375110109
+SUM,4,S3d,,not reached before undefined (from rho_S=0.6),,not reached before undefined (from rho_S=0.6),,not reached before undefined (from rho_S=0.6),,not reached before undefined (from rho_S=0.6),0.4376309876209311,0.4322409375110109
+SUM,6,S1,0.07942223252852397,,,not reached before undefined (from rho_S=0.4),0.17591268050963593,,,not reached before undefined (from rho_S=0.4),0.39602870912393656,0.3896393081133852
+SUM,6,S2,0.09307298214326529,,,not reached before undefined (from rho_S=0.4),0.24876517159274256,,,not reached before undefined (from rho_S=0.4),0.39602870912393656,0.3896393081133852
+SUM,6,S3a,,not reached before undefined (from rho_S=0.4),,not reached before undefined (from rho_S=0.4),,not reached before undefined (from rho_S=0.4),,not reached before undefined (from rho_S=0.4),0.39602870912393656,0.3896393081133852
+SUM,6,S3b,0.16956476372103763,,,not reached before undefined (from rho_S=0.4),,not reached before undefined (from rho_S=0.4),,not reached before undefined (from rho_S=0.4),0.39602870912393656,0.3896393081133852
+SUM,6,S3c,,not reached before undefined (from rho_S=0.4),,not reached before undefined (from rho_S=0.4),,not reached before undefined (from rho_S=0.4),,not reached before undefined (from rho_S=0.4),0.39602870912393656,0.3896393081133852
+SUM,6,S3d,,not reached before undefined (from rho_S=0.6),,not reached before undefined (from rho_S=0.6),,not reached before undefined (from rho_S=0.6),,not reached before undefined (from rho_S=0.6),0.39602870912393656,0.3896393081133852
