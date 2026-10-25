@@ -13,7 +13,7 @@ import pandas as pd
 import pyarrow.parquet as pq
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RES = os.path.join(ROOT, "results2")
+RES = os.environ.get("HCR_RESULTS2", os.path.join(ROOT, "results2"))
 sys.path.insert(0, ROOT)
 from scheduler.launcher import MAX_ATTEMPTS, n_failures  # noqa: E402
 

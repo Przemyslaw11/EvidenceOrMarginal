@@ -21,7 +21,7 @@ from .core import Estimator, chunk_for, population_model
 from .propagate import Grid, beta_logq, evaluate_case, sample_beliefs
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-STREAM = {"est": 0, "mc": 1, "mind": 2, "lkj": 3}
+STREAM = {"est": 0, "mc": 1, "mind": 2, "lkj": 3, "train": 4, "val": 5, "test": 6}
 
 
 def load_cfg(path=None):
@@ -97,7 +97,11 @@ def estimate(spec, cfg, cases, device, n_est):
 def run_job(spec, cfg, device="cpu"):
     t0 = time.time()
     setup_torch(device)
-    cfg = json.loads(json.dumps(cfg))
+    cfg = _merged(json.loads(json.dumps(cfg)), spec.get("override", {}))
+    if spec["exp"] == "network":
+        from network.job import run_network_job
+        df = run_network_job(spec, cfg, device, rng_for)
+        return _tag(df, spec, int(cfg["network"]["n_est"])), _meta(spec, t0, 0.0, device)
     num = cfg["numerics"]
     v = spec.get("variant", "base")
     n_est = int(spec["n_est"])
@@ -109,9 +113,6 @@ def run_job(spec, cfg, device="cpu"):
         num["s_nodes"] = 2 * num["s_nodes"] - 1
     elif v == "x2":
         num["x_gl"] *= 2
-    for key in ("M", "R", "degrees", "beliefs_used"):
-        if key in spec.get("override", {}):
-            (num if key in num else cfg)[key] = spec["override"][key]
     k = spec["k"]
     cases = build_cases(spec, cfg, device)
     t_est = time.time()
@@ -143,22 +144,37 @@ def run_job(spec, cfg, device="cpu"):
         if base_S4 is not None:
             beliefs["S4"] = dict(Y=cop.uniforms(base_S4)[:, 1:].contiguous())
         r = evaluate_case(model, cop, beliefs, grid, cfg, rng_md, cfg["degrees"], device)
+        print(f"case {ci + 1}/{len(cases)} {info.get('rho_S', info.get('lkj_idx'))}: {time.time() - t1:.1f}s "
+              f"(estimation {t_est:.0f}s total)", flush=True)
         extra = dict(case=ci, **info, rhoS_emp_yy=_emp_yy(model), rhoS_emp_xy=_emp_xy(model),
                      se_a011=_se_yy(se), runtime_case_s=time.time() - t1)
         for x in r:
             x.update(extra)
         rows += r
-    df = pd.DataFrame(rows)
+    return _tag(pd.DataFrame(rows), spec, n_est), _meta(spec, t0, t_est, device)
+
+
+def _tag(df, spec, n_est):
     for key in ("exp", "k", "family", "type", "basis", "seed", "variant", "eta"):
         if key in spec:
             df[key] = spec[key]
     df["n_est"] = n_est
     df["job_id"] = spec["id"]
-    meta = dict(spec=spec, wall_s=time.time() - t0, est_s=t_est, device=device, host=socket.gethostname(),
+    return df
+
+
+def _meta(spec, t0, t_est, device):
+    return dict(spec=spec, wall_s=time.time() - t0, est_s=t_est, device=device, host=socket.gethostname(),
                 gpu=torch.cuda.get_device_name(0) if device.startswith("cuda") else platform.processor(),
                 torch=torch.__version__, numpy=np.__version__, pandas=pd.__version__, git=_git(),
                 python=platform.python_version(), nvidia_smi=_smi() if device.startswith("cuda") else "")
-    return df, meta
+
+
+def _merged(cfg, over):
+    """Recursive update of the configuration with a job's `override` (used by tests and small runs)."""
+    for key, v in over.items():
+        cfg[key] = _merged(cfg.get(key, {}), v) if isinstance(v, dict) else v
+    return cfg
 
 
 def _emp_yy(model):

@@ -33,6 +33,8 @@ def feat(k, basis, m=6):
 
 
 def expected_minutes(spec, cfg, cost):
+    if spec["exp"] == "network":
+        return cost.get("network", {}).get(f"{spec['k']}_{spec['basis']}", 10.0)
     k, basis, n = spec["k"], spec["basis"], len(spec["cases"])
     M = cfg["numerics"]["M"] * (2 if spec.get("variant") == "M2" else 1)
     n_est = spec["n_est"] * (2 if spec.get("variant") == "n2" else 1)
@@ -40,7 +42,7 @@ def expected_minutes(spec, cfg, cost):
     md = cfg["numerics"]["mind"]
     work_est = n * n_est * f * 2
     work_prop = n * len(cfg["order"]) * M * f * len(cfg["degrees"])
-    work_mind = n * len(cfg["degrees"]) * 5 * md["starts"] * md["steps"] * f * 3
+    work_mind = n * len(cfg["degrees"]) * 1.5 * md["starts"] * md["steps"] * f * 3  # cube run + occasional supp runs
     return cost["case"] * n + cost["est"] * work_est + cost["prop"] * work_prop + cost["mind"] * work_mind
 
 
@@ -55,7 +57,7 @@ def types_for(k, types):
 
 
 def jobs(exp, cfg):
-    e = cfg["experiments"][exp]
+    e = cfg["experiments"].get(exp, {})
     rho_cases = [{"rho_S": r} for r in cfg["rho_S"]]
     out = []
     if exp in ("gauss", "population", "convergence"):
@@ -87,6 +89,14 @@ def jobs(exp, cfg):
                         out.append(dict(exp=exp, k=k, family="gauss", type="LKJ", basis=basis, seed=b, eta=eta,
                                         n_est=e["n_est"], variant="base", key=[CODE["lkj"], k, eta, b],
                                         key_lkj=[CODE["lkj"], k, eta], cases=[{"lkj_idx": i} for i in idx]))
+    elif exp == "network":
+        nc = cfg["network"]
+        for k in nc["k"]:
+            for rho in nc["rho_S"]:
+                for basis in nc["basis"]:
+                    for seed in range(nc["seeds"]):
+                        out.append(dict(exp=exp, k=k, family="gauss", type="SUM", basis=basis, seed=seed, rho_S=rho,
+                                        variant="base", key=[CODE["network"], k, seed]))
     else:
         raise ValueError(exp)
     return [with_id(s) for s in out]

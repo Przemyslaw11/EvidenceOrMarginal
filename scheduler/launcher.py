@@ -18,7 +18,7 @@ import sys
 import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RES = os.path.join(ROOT, "results2")
+RES = os.environ.get("HCR_RESULTS2", os.path.join(ROOT, "results2"))
 MAX_ATTEMPTS = 3
 
 
@@ -60,20 +60,25 @@ def run_one(spec, claim, device, timeout_min):
     out = out_path(spec)
     cmd = [sys.executable, "-m", "gpu.job", "--spec", json.dumps(spec), "--out", out, "--device", device]
     t0 = time.time()
-    p = subprocess.Popen(cmd, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    lines = []
-    while True:
-        try:
-            o, _ = p.communicate(timeout=60)
-            lines.append(o)
-            break
-        except subprocess.TimeoutExpired:
-            os.utime(claim)  # heartbeat
-            if time.time() - t0 > timeout_min * 60:
-                p.kill()
-                o, _ = p.communicate()
-                lines.append(o + f"\nKILLED after {timeout_min} min")
+    os.makedirs(os.path.join(RES, "logs"), exist_ok=True)
+    logf = os.path.join(RES, "logs", spec["id"] + ".log")
+    with open(logf, "a") as lf:
+        lf.write(f"--- {time.ctime()} {socket.gethostname()} slurm={os.environ.get('SLURM_JOB_ID', '')}\n")
+        lf.flush()
+        p = subprocess.Popen(cmd, cwd=ROOT, stdout=lf, stderr=subprocess.STDOUT, text=True)
+        killed = False
+        while True:
+            try:
+                p.wait(timeout=60)
                 break
+            except subprocess.TimeoutExpired:
+                os.utime(claim)  # heartbeat
+                if time.time() - t0 > timeout_min * 60:
+                    p.kill()
+                    p.wait()
+                    killed = True
+                    break
+    lines = [open(logf).read()[-6000:] + (f"\nKILLED after {timeout_min} min" if killed else "")]
     ok = p.returncode == 0 and os.path.exists(out)
     if not ok:
         os.makedirs(os.path.join(RES, "failures"), exist_ok=True)

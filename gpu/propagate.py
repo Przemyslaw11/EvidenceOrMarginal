@@ -25,9 +25,12 @@ class Grid:
 
     def __init__(self, s_nodes, s_max, x_gl, m_max, device):
         self.s = torch.linspace(-s_max, s_max, s_nodes, dtype=DT, device=device)
-        h = float(self.s[1] - self.s[0])
+        self.h = h = float(self.s[1] - self.s[0])
         self.w = torch.full_like(self.s, h)
         self.w[0] = self.w[-1] = h / 2
+        t = torch.linspace(0, 1, 17, dtype=DT, device=device)[:, None]  # cubic Lagrange weights on nodes -1, 0, 1, 2
+        self._L = torch.cat([-t * (t - 1) * (t - 2) / 6, (t + 1) * (t - 1) * (t - 2) / 2,
+                             -(t + 1) * t * (t - 2) / 2, (t + 1) * t * (t - 1) / 6], 1)
         self.x = torch.special.ndtr(self.s)
         self.phi = torch.exp(-0.5 * self.s ** 2) / math.sqrt(2 * math.pi)
         self.F = legendre(self.x, m_max)
@@ -39,7 +42,13 @@ class Grid:
         return (coef @ self.F[:, : coef.shape[-1]].T) * self.phi
 
     def tv(self, p, r):
-        return 0.5 * (torch.abs(p - r) * self.w).sum(-1)
+        """0.5 int |p - r| ds. |.| of the 4-point cubic interpolant of p - r is integrated on each interval with
+        16 sub-intervals, so crossings (kinks of |p - r|) cost O((h/16)^2) instead of O(h^2)."""
+        d = p - r
+        dp = torch.cat([d[..., :1], d, d[..., -1:]], -1)  # edge intervals: replicate the end values
+        stack = torch.stack([dp[..., :-3], dp[..., 1:-2], dp[..., 2:-1], dp[..., 3:]], -1)  # (..., G-1, 4)
+        v = (stack @ self._L.T).abs()  # (..., G-1, 17)
+        return 0.5 * self.h * ((v[..., 1:] + v[..., :-1]).sum(-1) / 32).sum(-1)
 
     def moments(self, p):
         """Integral, mean and variance in x of (possibly signed, never renormalised) s-densities (..., G)."""
@@ -117,32 +126,48 @@ def _starts(k, n, rng, extra):
     return np.concatenate(pts)
 
 
+def _restore(Y, logq, thr, lo, hi, iters=60):
+    """Project infeasible rows onto {log q >= thr} by Newton steps along grad log q (the set is convex for
+    log-concave q, e.g. Beta products with parameters >= 1)."""
+    for _ in range(iters):
+        Yd = Y.detach().requires_grad_(True)
+        g = logq(Yd) - thr
+        bad = g < 0
+        if not bool(bad.any()):
+            break
+        (gr,) = torch.autograd.grad(g.sum(), Yd)
+        step = (-(g - 1e-9) / (gr * gr).sum(1).clamp(min=1e-300))[:, None] * gr
+        with torch.no_grad():
+            Y[bad] = torch.clamp(Y[bad] + step[bad], lo, hi)
+
+
 def min_D(model, rng, cfg_md, extra=None, logq=None, thr=None, device="cpu"):
-    """Multi-start projected Adam on D(y) over [0,1]^k (or over supp q = {log q >= thr}, penalty method).
+    """Multi-start projected Adam on D(y) over [0,1]^k, or over supp q = {log q >= thr} (projection by `_restore`).
 
     Returns (best feasible value, number of starts within 1e-6 of it, number of feasible end points).
     The value is an upper bound on the true minimum."""
     k = model.k
     Y0 = _starts(k, cfg_md["starts"], rng, extra)
     Y = torch.tensor(Y0, dtype=DT, device=device).requires_grad_(True)
-    lo, hi = (1e-9, 1 - 1e-9) if logq is not None else (0.0, 1.0)
+    lo, hi = (1e-12, 1 - 1e-12) if logq is not None else (0.0, 1.0)
     with torch.no_grad():
         Y.clamp_(lo, hi)
+    if logq is not None:
+        _restore(Y.data, logq, thr, lo, hi)
     opt = torch.optim.Adam([Y], lr=cfg_md["lr"][0])
     steps = cfg_md["steps"]
-    (l0, l1), (p0, p1) = cfg_md["lr"], cfg_md["penalty"]
+    l0, l1 = cfg_md["lr"]
     for t in range(steps):
         for g in opt.param_groups:
             g["lr"] = l1 + 0.5 * (l0 - l1) * (1 + math.cos(math.pi * t / steps))
         loss = model.D(Y).sum()
-        if logq is not None:
-            lam = p0 * (p1 / p0) ** (t / max(steps - 1, 1))
-            loss = loss + lam * (torch.relu(thr - logq(Y)) ** 2).sum()
         opt.zero_grad(set_to_none=True)
         loss.backward()
         opt.step()
         with torch.no_grad():
             Y.clamp_(lo, hi)
+        if logq is not None:
+            _restore(Y.data, logq, thr, lo, hi)
     with torch.no_grad():
         D = model.D(Y)
         feas = torch.ones_like(D, dtype=torch.bool) if logq is None else logq(Y) >= thr
@@ -247,10 +272,15 @@ def evaluate_case(model6, cop, beliefs, grid, cfg, rng_md, degrees, device, dens
         for n in names:
             if n.startswith("S3"):
                 a = stats[n][m]
+                # the constrained search can only change the decision if the cube minimum is below the floor and
+                # no sample in supp(q) is; otherwise the MC value is reported (method 'mc')
+                if mind[(m, "cube")][0] >= floor or a.min_mc < floor:
+                    mind[(m, n)] = (a.min_mc, NAN, a.min_mc, 0, 0, "mc")
+                    continue
                 ex = a.low_Y[torch.isfinite(a.low_D)].cpu().numpy()
                 res = min_D(models[m], rng_md, num["mind"], ex, beliefs[n]["logq"], beliefs[n]["thr"], device)
                 best = min(res[0], a.min_mc) if not math.isnan(res[0]) else a.min_mc
-                mind[(m, n)] = (best, res[0], a.min_mc, res[1], res[2])
+                mind[(m, n)] = (best, res[0], a.min_mc, res[1], res[2], "opt")
 
     # ---- densities and metrics
     for name in names:
@@ -278,6 +308,7 @@ def evaluate_case(model6, cop, beliefs, grid, cfg, rng_md, degrees, device, dens
             base = dict(m=m, belief=name, n_coef=models[m].n_coef, chi_D=models[m].chi_D(),
                         minD=mc[0], minD_opt=mc[1], minD_mc=mc[2], minD_natt=mc[3], minD_nfeas=mc[4],
                         minD_supp=ms[0], minD_supp_opt=ms[1], minD_supp_mc=ms[2],
+                        minD_supp_method=ms[5] if len(ms) > 5 else "cube",
                         P_Dneg_u=stats["S2"][m].n_Dneg / beliefs["S2"]["Y"].shape[0] if "S2" in stats else NAN,
                         frac_Nneg=stats["S2"][m].n_Nneg / beliefs["S2"]["Y"].shape[0] if "S2" in stats else NAN,
                         q_valid=int(q_valid), defined=int(defined), n_bad=a.n_bad, n_drop=a.n_drop,
@@ -285,8 +316,10 @@ def evaluate_case(model6, cop, beliefs, grid, cfg, rng_md, degrees, device, dens
                         ess=ess, E_q_D=EqD, sd_q_D=sdD)
             base["mc_limited"] = int(ess / base["M"] < cfg["mc_limited_ess"])
             if dens is not None:
+                CALg = torch.cat([a.CALg, a.CALg.sum(0)[None]]) / SW[:, None, None]
                 dens[(name, m)] = dict(cd_c=cd_c[-1], eu_c=eu_c[-1], CD=CD[-1], EU=EU[-1], CAL=CAL[-1], GOLD=GOLD[-1],
-                                       CALg=a.CALg.sum(0) / SW[-1], defined=defined, q_valid=q_valid)
+                                       CALg=CALg[-1], defined=defined, q_valid=q_valid, n_drop=a.n_drop,
+                                       all=dict(cd_c=cd_c, eu_c=eu_c, CAL=CAL, CALg=CALg, GOLD=GOLD))  # rows: R replicates, pooled
             if not q_valid:
                 for eps in eps_list:
                     rows.append({**base, "eps": eps})

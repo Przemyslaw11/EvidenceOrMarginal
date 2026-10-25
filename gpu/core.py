@@ -144,6 +144,10 @@ class Model:
             nb["W3"] = b["W3"][: min(n3, m + 1), :, :m, :m, :, :m]
         return Model(self.k, m, self.basis, nb, self.cap)
 
+    def detached(self):
+        return Model(self.k, self.m, self.basis, {k: (None if v is None else v.detach()) for k, v in self.blocks.items()},
+                     self.cap)
+
     def with_flat_D(self):
         """Control model: a_(0, j) = 0 for every j != 0, so D(y) = 1."""
         nb = {k: (None if v is None else v.clone()) for k, v in self.blocks.items()}

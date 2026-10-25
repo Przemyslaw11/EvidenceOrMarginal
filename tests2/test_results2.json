@@ -1,0 +1,79 @@
+{
+ "M1": {
+  "pass": true,
+  "detail": "Gram max err 9.66e-15; explicit f1..f4 max err 5.40e-14",
+  "device": "cpu",
+  "seconds": 0.0
+ },
+ "M2": {
+  "pass": true,
+  "detail": "full m=2: k=2 27, k=3 81; full m=4: k=2 125, k=3 625; full m=6: k=2 343, k=3 2401; pair/triple counts match the formula for (k,m) in (2,2),(4,3),(8,4),(16,2),(32,2),(5,6); degree-cap masks match brute-force enumeration (k=3, m=2, cap=3); block estimator vs dense d=3 estimator: max diff 5.55e-17",
+  "device": "cpu",
+  "seconds": 0.0
+ },
+ "M10": {
+  "pass": true,
+  "detail": "all sweep matrices PD (min eigenvalue 3.123e-02), c reductions needed: 0; forced case: c 1.000 -> 0.488 in 14 logged steps; non-PD matrix rejected; LKJ(eta=1, d=5): Var(r) 0.1645 vs 0.1667; LKJ(eta=4, d=9): Var(r) 0.0609 vs 0.0625",
+  "device": "cpu",
+  "seconds": 0.3
+ },
+ "M12": {
+  "pass": true,
+  "detail": "a_(0,1,1): across-seed variance / mean SE^2 = 1.002 (99% band [0.56, 1.60], 50 seeds); a_(1,1,0): across-seed variance / mean SE^2 = 1.008 (99% band [0.56, 1.60], 50 seeds); common random numbers: sd of the rho_S 0.30->0.31 difference = 0.012 x SE",
+  "device": "cpu",
+  "seconds": 12.9
+ },
+ "M3": {
+  "pass": true,
+  "detail": "a_0=1; max |a_(0,1,1)-Spearman|/SE=0.35, vs rho_S 1.97; single-index max |a|/SE: inputs 2.21, output 1.56 (n=1e6, k=4, SUM, rho_S=0.3); SE(1e6)/SE(1e7) median 3.164 (sqrt(10)=3.162); pair: population vs MC max |z|=2.43 over 181 coefficients; triple: population vs MC max |z|=3.14 over 821 coefficients; Gauss-Hermite 160 vs 192 nodes (m=6, rho_S=0.9, triple): max diff 6.0e-13",
+  "device": "cpu",
+  "seconds": 48.4
+ },
+ "M5": {
+  "pass": true,
+  "detail": "flat-D control: max |CONST_DENOM - EXACT_UNCAL| coefficient diff 0.00e+00 over all beliefs, m, k in (2,4,8)",
+  "device": "cpu",
+  "seconds": 11.4
+ },
+ "M6": {
+  "pass": true,
+  "detail": "in-sample covariance identity: max residual 6.66e-16 over 36 defined (belief, m, case) combinations",
+  "device": "cpu",
+  "seconds": 12.4
+ },
+ "M8": {
+  "pass": true,
+  "detail": "TV in s vs x (polynomial Beta densities): max diff 2.4e-07; spiky GOLD (k=2, rho_S<=0.9): TV change 801->1601 s-nodes max 4.5e-08",
+  "device": "cpu",
+  "seconds": 1.8
+ },
+ "M9": {
+  "pass": true,
+  "detail": "k=2 optimiser vs 401x401 endpoint-inclusive grid: max |diff| 8.2e-05; m=1 closed forms (k=2: 1-3|a_011|; k=1: 1-sqrt(3)|a_01|): max |diff| 8.0e-04; min over supp(q), Beta beliefs (48 cases): optimiser - 2001^2 grid <= 3.7e-06 (optimiser lower than the grid in 47)",
+  "device": "cpu",
+  "seconds": 83.0
+ },
+ "M7": {
+  "pass": true,
+  "detail": "coefficient integrals |c0-1| 0.0e+00; s-grid integrals CONST_DENOM/EXACT_UNCAL 2.2e-14; EXACT_CAL under its 192-node normaliser rule 3.3e-16 (on the 801-node s-grid 9.7e-08, reported per row as int_cal); GOLD 2.6e-14; S4, population coefficients, rho_S=0: TV(GOLD, uniform) 5.5e-04 (M=2^20); gauss/SUM: tau_yy 0.355 vs 0.346; max|int c(x|y)dx-1| 1.1e-13; t3/SUM: tau_yy 0.357 vs 0.346; max|int c(x|y)dx-1| 1.1e-13; t10/CONTRAST: tau_yy 0.352 vs 0.346; max|int c(x|y)dx-1| 1.1e-13; clayton/EXCH: tau_yy 0.349 vs 0.346; max|int c(x|y)dx-1| 1.1e-13; gumbel/EXCH: tau_yy 0.345 vs 0.346; max|int c(x|y)dx-1| 1.1e-13; positive-stable frailty Laplace transform max |z| 1.38; Clayton conditional vs d/dx conditional CDF rel err 3.7e-10; Gumbel conditional vs d/dx conditional CDF rel err 4.7e-11; t3 conditional vs d/dx conditional CDF rel err 4.7e-11",
+  "device": "cpu",
+  "seconds": 21.1
+ },
+ "M11": {
+  "pass": true,
+  "detail": "same job twice on cpu: max relative diff 0.0e+00, NaN pattern identical: True; killed worker left 1 claim(s); kill-and-resume merged results identical to a clean run: True (378 rows)",
+  "device": "cpu",
+  "seconds": 44.0
+ },
+ "M4": {
+  "pass": true,
+  "detail": "2088 TV comparisons, worst |diff|/tol 0.75, 0 violations; 18 GOLD-based values in d3 quadrature-limited rows re-checked against a 3000-node x-grid reference: 0 violations; defined-flag mismatches: 15 | REF CONTRAST 0.6 m=2 S2: d3 0.1689, new 0.1693, 3000-node ref 0.1698 | CONTRAST 0.6 m=2 S2: d3 0.1689, new 0.1693, 3000-node ref 0.1698 | CONTRAST 0.6 m=2 S2: d3 0.1689, new 0.1693, 3000-node ref 0.1698 | CONTRAST 0.6 m=4 S2: d3 0.1690, new 0.1694, 3000-node ref 0.1699 | CONTRAST 0.6 m=4 S2: d3 0.1690, new 0.1694, 3000-node ref 0.1699 | CONTRAST 0.6 m=4 S2: d3 0.1690, new 0.1694, 3000-node ref 0.1699 | CONTRAST 0.6 m=6 S2: d3 0.1690, new 0.1694, 3000-node ref 0.1699 | CONTRAST 0.6 m=6 S2: d3 0.1690, new 0.1694, 3000-node ref 0.1699 | FLAGS SUM 0.4 m=6 S3a: d3 defined=0 new=1 (d3 min_D=-0.0062, new minD_supp=0.0171) | SUM 0.4 m=6 S3a: d3 defined=0 new=1 (d3 min_D=-0.0062, new minD_supp=0.0171) | SUM 0.4 m=6 S3a: d3 defined=0 new=1 (d3 min_D=-0.0062, new minD_supp=0.0171) | SUM 0.4 m=6 S3b: d3 defined=0 new=1 (d3 min_D=-0.0062, new minD_supp=0.0150) | SUM 0.4 m=6 S3b: d3 defined=0 new=1 (d3 min_D=-0.0062, new minD_supp=0.0150) | SUM 0.4 m=6 S3b: d3 defined=0 new=1 (d3 min_D=-0.0062, new minD_supp=0.0150)",
+  "device": "cpu",
+  "seconds": 176.0
+ },
+ "M14": {
+  "pass": true,
+  "detail": "(a) chain L=1 vs single-neuron engine: max |TV diff| 2.8e-17; (b) layer-2 closed form / kernel vs MC (2^20 samples): max |z| CONST_DENOM 1.55, EXACT_UNCAL 1.57; (c) val: d/dv autograd -1.455593e-01 vs FD -1.455593e-01 (rel 6.2e-09); (c) nll: d/dv autograd -1.026317e+00 vs FD -1.026317e+00 (rel 1.2e-08); (c) e2e: d/dv autograd -1.277559e-01 vs FD -1.277559e-01 (rel 1.3e-10); (d) value loss: max |grad| over rows i>=2 = 0.0e+00; (e) teacher Markov property: max |partial corr| x sqrt(n) = 1.44; (f) layer-wise true conditionals vs direct GOLD: max TV 3.8e-04 (L=4)",
+  "device": "cpu"
+ }
+}
