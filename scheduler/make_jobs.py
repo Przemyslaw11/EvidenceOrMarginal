@@ -17,33 +17,31 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from gpu.job import ROOT, load_cfg  # noqa: E402
 
 CODE = {"gauss": 1, "families": 2, "lkj": 3, "network": 4}
-# GPU-minutes per unit of work, measured in the pilot (scheduler/cost_model.json); defaults are guesses
-COST_DEFAULT = dict(est=5e-15, prop=5e-15, mind=5e-15, case=0.05)  # ~3x below 10 TFLOP/s fp64
-
-
-def feat(k, basis, m=6):
-    """Rough flops per sample of one A(y) evaluation."""
-    P = k * (k - 1) // 2
-    f = k * m * (m + 1)
-    if k >= 2:
-        f += P * m * m * (m + 1)
-    if basis == "triple" and k >= 3:
-        f += P * m * m * k * m
-    return f
 
 
 def expected_minutes(spec, cfg, cost):
+    """GPU-minutes from the measured cost table (scheduler/cost_model.json, written by profile_cost.py)."""
+    cells = cost.get("cells")
+    if not cells:
+        return 15.0  # no measurement yet
     if spec["exp"] == "network":
-        return cost.get("network", {}).get(f"{spec['k']}_{spec['basis']}", 10.0)
+        return 1.2 * next(iter(cost["network"].values())) / 60 if cost.get("network") else 15.0
     k, basis, n = spec["k"], spec["basis"], len(spec["cases"])
-    M = cfg["numerics"]["M"] * (2 if spec.get("variant") == "M2" else 1)
-    n_est = spec["n_est"] * (2 if spec.get("variant") == "n2" else 1)
-    f = feat(k, basis)
-    md = cfg["numerics"]["mind"]
-    work_est = n * n_est * f * 2
-    work_prop = n * len(cfg["order"]) * M * f * len(cfg["degrees"])
-    work_mind = n * len(cfg["degrees"]) * 1.5 * md["starts"] * md["steps"] * f * 3  # cube run + occasional supp runs
-    return cost["case"] * n + cost["est"] * work_est + cost["prop"] * work_prop + cost["mind"] * work_mind
+    c = cells[f"gauss_{k}_{basis}"]
+    fam = spec.get("family", "gauss")
+    if fam != "gauss":  # family cost relative to the Gaussian, measured at k = 8 (triple)
+        r = cells.get(f"{fam}_8_triple") or cells.get("t3_8_triple")
+        g = cells["gauss_8_triple"]
+        c = dict(est_s_per_case=c["est_s_per_case"] * r["est_s_per_case"] / g["est_s_per_case"],
+                 case_s=c["case_s"] * r["case_s"] / g["case_s"])
+    v = spec.get("variant", "base")
+    est = 0.0 if spec["exp"] == "population" else c["est_s_per_case"] * spec["n_est"] / cost["n_est_ref"]
+    case = c["case_s"]
+    if v == "n2":
+        est *= 2
+    elif v == "M2":
+        case *= 2
+    return 0.5 + n * (est + case) / 60  # 0.5 min: process start, belief sampling
 
 
 def with_id(spec):
@@ -124,7 +122,7 @@ def pilot_jobs(cfg):
 
 def load_cost():
     p = os.path.join(ROOT, "scheduler", "cost_model.json")
-    return json.load(open(p)) if os.path.exists(p) else COST_DEFAULT
+    return json.load(open(p)) if os.path.exists(p) else {}
 
 
 def main(argv):

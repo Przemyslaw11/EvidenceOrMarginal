@@ -90,13 +90,25 @@ def run_one(spec, claim, device, timeout_min):
     return ok, time.time() - t0
 
 
-def worker(jobs_file, device, stale_min, timeout_factor, max_jobs):
+def parse_left(s):
+    """Slurm time left ([D-]HH:MM:SS, MM:SS) in minutes."""
+    d, _, hms = s.strip().rpartition("-")
+    parts = [int(x) for x in hms.split(":")]
+    while len(parts) < 3:
+        parts.insert(0, 0)
+    return (int(d or 0) * 86400 + parts[0] * 3600 + parts[1] * 60 + parts[2]) / 60
+
+
+def worker(jobs_file, device, stale_min, timeout_factor, max_jobs, deadline=None):
     specs = [json.loads(line) for line in open(jobs_file) if line.strip()]
     done = 0
     while max_jobs is None or done < max_jobs:
         progressed = False
         for spec in specs:
             if os.path.exists(out_path(spec)) or n_failures(spec["id"]) >= MAX_ATTEMPTS:
+                continue
+            # do not start a job that would not finish inside the allocation
+            if deadline is not None and time.time() + 60 * 1.3 * spec.get("expected_min", 10) > deadline:
                 continue
             claim = try_claim(spec["id"], stale_min)
             if claim is None:
@@ -133,6 +145,7 @@ def main():
     ap.add_argument("--stale", type=float, default=15.0, help="minutes without heartbeat before a claim is stale")
     ap.add_argument("--timeout-factor", type=float, default=6.0)
     ap.add_argument("--max-jobs", type=int, default=None)
+    ap.add_argument("--time-left", default=None, help="time left in the allocation (squeue %%L format)")
     a = ap.parse_args()
     if a.gpus is not None:
         procs = []
@@ -140,10 +153,12 @@ def main():
             env = dict(os.environ, CUDA_VISIBLE_DEVICES=str(g))
             procs.append(subprocess.Popen([sys.executable, __file__, "--worker", "--device", a.device, "--jobs", *a.jobs,
                                            "--stale", str(a.stale), "--timeout-factor", str(a.timeout_factor)]
-                                          + (["--max-jobs", str(a.max_jobs)] if a.max_jobs else []), env=env))
+                                          + (["--max-jobs", str(a.max_jobs)] if a.max_jobs else [])
+                                          + (["--time-left", a.time_left] if a.time_left else []), env=env))
         sys.exit(max(p.wait() for p in procs))
+    deadline = time.time() + 60 * (parse_left(a.time_left) - 2) if a.time_left else None
     for jf in a.jobs:
-        worker(jf, a.device, a.stale, a.timeout_factor, a.max_jobs)
+        worker(jf, a.device, a.stale, a.timeout_factor, a.max_jobs, deadline)
 
 
 if __name__ == "__main__":

@@ -132,7 +132,17 @@ class Model:
         return A
 
     def D(self, Y):
-        return self.A(input_basis(Y, self.m))[:, 0]
+        """D(y) = A_0(y), computed from the i = 0 columns only (the min-D search evaluates it 1e5-1e6 times)."""
+        Fy = input_basis(Y, self.m)
+        n, km = Fy.shape[0], self.k * self.m
+        Ff = Fy.reshape(n, -1)
+        D = self.Wc[0] + Ff @ self.W1m[:, 0]
+        if self.W2m is not None:
+            Pf = (Fy[:, self.pa, :, None] * Fy[:, self.pb, None, :]).reshape(n, -1)
+            D = D + Pf @ self.W2m[:, 0]
+            if self.W3m is not None:
+                D = D + ((Pf @ self.W3m[:, :km]) * Ff).sum(-1)
+        return D
 
     def sliced(self, m):
         """Degree-m sub-model (indices 0..m on every variable)."""

@@ -15,7 +15,7 @@ import numpy as np
 import torch
 from scipy.special import betaln
 
-from .core import DT, gauss_legendre, input_basis, legendre
+from .core import DT, chunk_for, gauss_legendre, input_basis, legendre
 
 NAN = float("nan")
 
@@ -79,11 +79,15 @@ def beta_logq(ab):
     mode = (a - 1) / (a + b - 2)
     const = torch.tensor(-betaln(a, b).sum())
     a_t, b_t = torch.tensor(a), torch.tensor(b)
+    on = {}  # parameters per device, copied once
 
     def logq(Y):
+        if Y.device not in on:
+            on[Y.device] = (a_t.to(Y.device) - 1, b_t.to(Y.device) - 1, const.to(Y.device))
+        am, bm, c = on[Y.device]
         Yc = torch.clamp(Y, 1e-300, 1.0)
         Zc = torch.clamp(1 - Y, 1e-300, 1.0)
-        return ((a_t.to(Y.device) - 1) * torch.log(Yc) + (b_t.to(Y.device) - 1) * torch.log(Zc)).sum(-1) + const.to(Y.device)
+        return (am * torch.log(Yc) + bm * torch.log(Zc)).sum(-1) + c
 
     lmax = float(((a - 1) * np.log(mode) + (b - 1) * np.log(1 - mode)).sum() - betaln(a, b).sum())
     return logq, lmax
@@ -141,19 +145,102 @@ def _restore(Y, logq, thr, lo, hi, iters=60):
             Y[bad] = torch.clamp(Y[bad] + step[bad], lo, hi)
 
 
+class DStack:
+    """D(y) of G neurons (same k and basis, degrees <= m) evaluated together: row 0 of each model's blocks,
+    zero-padded to degree m, so that one batched product serves all G models. Y: (G, n, k) -> (G, n)."""
+
+    def __init__(self, models):
+        k, m = models[0].k, max(md.m for md in models)
+        assert all(md.k == k and md.basis == models[0].basis for md in models)
+        self.k, self.m = k, m
+        pa, pb = models[0].pa, models[0].pb
+
+        def pad(t, dims):  # zero-pad the trailing degree axes `dims` of t to length m
+            p = [0, 0] * t.dim()
+            for d in dims:
+                p[2 * (t.dim() - 1 - d) + 1] = m - t.shape[d]
+            return torch.nn.functional.pad(t, p)
+
+        b = [md.blocks for md in models]
+        self.c0 = torch.stack([x["c"][0] for x in b])
+        self.w1 = torch.stack([pad(x["W1"][0], (1,)).reshape(-1) for x in b])
+        self.pa, self.pb = pa, pb
+        self.w2 = torch.stack([pad(x["W2"][0], (1, 2)).reshape(-1) for x in b]) if b[0]["W2"] is not None else None
+        self.w3 = (torch.stack([pad(x["W3"][0], (1, 2, 4)).reshape(len(pa) * m * m, k * m) for x in b])
+                   if b[0]["W3"] is not None else None)
+
+    def __call__(self, Y):
+        G, n, k = Y.shape
+        Fy = input_basis(Y, self.m)
+        Ff = Fy.reshape(G, n, -1)
+        D = self.c0[:, None] + torch.bmm(Ff, self.w1[:, :, None])[..., 0]
+        if self.w2 is not None:
+            Pf = (Fy[:, :, self.pa, :, None] * Fy[:, :, self.pb, None, :]).reshape(G, n, -1)
+            D = D + torch.bmm(Pf, self.w2[:, :, None])[..., 0]
+            if self.w3 is not None:
+                D = D + (torch.bmm(Pf, self.w3) * Ff).sum(-1)
+        return D
+
+
+def min_D_cube(models, rng, cfg_md, extras=None, device="cpu", group=None):
+    """Multi-start projected Adam on D(y) over [0,1]^k for several neurons at once (one stacked problem per group of
+    `group` models; Adam acts elementwise, so this equals separate runs). Starts are drawn from `rng` model by model.
+
+    Returns per model (best value, number of starts within 1e-6 of it, number of starts); the value is an upper
+    bound on the true minimum."""
+    extras = extras if extras is not None else [None] * len(models)
+    starts = [_starts(md.k, cfg_md["starts"], rng, ex) for md, ex in zip(models, extras)]
+    if group is None:  # keep the stacked pair-feature matrix of one group below ~3e8 elements (2.4 GB)
+        P = models[0].k * (models[0].k - 1) // 2
+        nf = max(P, 1) * max(md.m for md in models) ** 2
+        group = max(1, int(3e8 // (max(len(s) for s in starts) * nf)))
+    out = []
+    for g0 in range(0, len(models), group):
+        ms, ss = models[g0: g0 + group], starts[g0: g0 + group]
+        n = max(len(s) for s in ss)
+        # equal row counts per model: pad with copies of the first start, excluded from the result
+        Y = torch.tensor(np.stack([np.concatenate([s, np.repeat(s[:1], n - len(s), 0)]) for s in ss]),
+                         dtype=DT, device=device)
+        valid = torch.tensor(np.stack([np.arange(n) < len(s) for s in ss]), device=device)
+        f = DStack(ms)
+        with torch.no_grad():
+            Y.clamp_(0.0, 1.0)
+        Y.requires_grad_(True)
+        opt = torch.optim.Adam([Y], lr=cfg_md["lr"][0])
+        steps = cfg_md["steps"]
+        l0, l1 = cfg_md["lr"]
+        for t in range(steps):
+            for gr in opt.param_groups:
+                gr["lr"] = l1 + 0.5 * (l0 - l1) * (1 + math.cos(math.pi * t / steps))
+            loss = f(Y).sum()
+            opt.zero_grad(set_to_none=True)
+            loss.backward()
+            opt.step()
+            with torch.no_grad():
+                Y.clamp_(0.0, 1.0)
+        with torch.no_grad():
+            D = torch.where(valid, f(Y), math.inf)
+            best = D.min(1).values
+            natt = (D <= best[:, None] + 1e-6).sum(1)
+        out += [(float(b), int(a), int(v)) for b, a, v in zip(best.cpu(), natt.cpu(), valid.sum(1).cpu())]
+    return out
+
+
 def min_D(model, rng, cfg_md, extra=None, logq=None, thr=None, device="cpu"):
-    """Multi-start projected Adam on D(y) over [0,1]^k, or over supp q = {log q >= thr} (projection by `_restore`).
+    """Multi-start projected Adam on D(y) over [0,1]^k (by `min_D_cube`), or over supp q = {log q >= thr}
+    (projection by `_restore`).
 
     Returns (best feasible value, number of starts within 1e-6 of it, number of feasible end points).
     The value is an upper bound on the true minimum."""
+    if logq is None:
+        return min_D_cube([model], rng, cfg_md, [extra], device)[0]
     k = model.k
     Y0 = _starts(k, cfg_md["starts"], rng, extra)
     Y = torch.tensor(Y0, dtype=DT, device=device).requires_grad_(True)
-    lo, hi = (1e-12, 1 - 1e-12) if logq is not None else (0.0, 1.0)
+    lo, hi = 1e-12, 1 - 1e-12
     with torch.no_grad():
         Y.clamp_(lo, hi)
-    if logq is not None:
-        _restore(Y.data, logq, thr, lo, hi)
+    _restore(Y.data, logq, thr, lo, hi)
     opt = torch.optim.Adam([Y], lr=cfg_md["lr"][0])
     steps = cfg_md["steps"]
     l0, l1 = cfg_md["lr"]
@@ -166,11 +253,10 @@ def min_D(model, rng, cfg_md, extra=None, logq=None, thr=None, device="cpu"):
         opt.step()
         with torch.no_grad():
             Y.clamp_(lo, hi)
-        if logq is not None:
-            _restore(Y.data, logq, thr, lo, hi)
+        _restore(Y.data, logq, thr, lo, hi)
     with torch.no_grad():
         D = model.D(Y)
-        feas = torch.ones_like(D, dtype=torch.bool) if logq is None else logq(Y) >= thr
+        feas = logq(Y) >= thr
         if not bool(feas.any()):
             return NAN, 0, 0
         best = D[feas].min()
@@ -187,11 +273,16 @@ class _Acc:
         self.SWA, self.SWQ, self.SWV = z(R, m + 1), z(R, m + 1), z(R)
         self.CAL, self.GOLD = z(R, neps, G), z(R, G)
         self.CALg = z(R, neps, Ng)
-        self.n_bad = self.n_drop = 0
-        self.min_mc = math.inf
+        # counters stay on the device during the MC pass (no host sync per chunk); `host()` converts them once
+        self.n_bad, self.n_drop, self.n_Dneg, self.n_Nneg = (torch.zeros((), dtype=torch.long, device=dev) for _ in range(4))
+        self.min_mc = torch.full((), math.inf, dtype=DT, device=dev)
         self.low_D = None
         self.low_Y = None
-        self.n_Dneg = self.n_Nneg = 0
+
+    def host(self):
+        self.n_bad, self.n_drop, self.n_Dneg, self.n_Nneg = (int(v) for v in (self.n_bad, self.n_drop, self.n_Dneg,
+                                                                                self.n_Nneg))
+        self.min_mc = float(self.min_mc)
 
 
 def evaluate_case(model6, cop, beliefs, grid, cfg, rng_md, degrees, device, dens=None):
@@ -211,7 +302,8 @@ def evaluate_case(model6, cop, beliefs, grid, cfg, rng_md, degrees, device, dens
         Y = src["Y"]
         M = Y.shape[0]
         block = M // R
-        chunk = min(num["chunk_mc"], block)
+        # largest power of two <= chunk_mc that keeps one pair-feature matrix below 4e8 elements
+        chunk = min(2 ** int(math.log2(chunk_for(model6.k, model6.m, model6.basis, num["chunk_mc"], 4.0e8))), block)
         assert block * R == M and block % chunk == 0, "M must split into R blocks of whole chunks"
         logq, thr = src.get("logq"), src.get("thr")
         acc = {m: _Acc(R, m, len(eps_list), G, grid.xg.shape[0], device) for m in degrees}
@@ -235,10 +327,9 @@ def evaluate_case(model6, cop, beliefs, grid, cfg, rng_md, degrees, device, dens
                     wv = torch.where(ok, w, torch.zeros_like(w))
                     a.SWQ[r] += wv @ (A / torch.where(ok, A0, torch.ones_like(A0))[:, None])
                     a.SWV[r] += wv.sum()
-                    a.n_bad += int((~ok & insupp).sum())
-                    a.n_drop += int((~ok & ~insupp).sum())
-                    if bool(insupp.any()):
-                        a.min_mc = min(a.min_mc, float(A0[insupp].min()))
+                    a.n_bad += (~ok & insupp).sum()
+                    a.n_drop += (~ok & ~insupp).sum()
+                    a.min_mc = torch.minimum(a.min_mc, torch.where(insupp, A0, math.inf).min())
                     a.GOLD[r] += w @ gold_c
                     Ns = A @ grid.F[:, : m + 1].T
                     Ng = A @ grid.Fg[:, : m + 1].T
@@ -248,9 +339,9 @@ def evaluate_case(model6, cop, beliefs, grid, cfg, rng_md, degrees, device, dens
                         a.CAL[r, e] += (w / Z) @ torch.clamp(Ns, min=eps)
                         a.CALg[r, e] += (w / Z) @ Ngc
                     if name == "S2":
-                        a.n_Dneg += int((A0 < 0).sum())
+                        a.n_Dneg += (A0 < 0).sum()
                         Fx = legendre(src["X"][st: st + chunk], m)
-                        a.n_Nneg += int(((Fx * A).sum(1) < 0).sum())
+                        a.n_Nneg += ((Fx * A).sum(1) < 0).sum()
                     if name != "S1":  # lowest-D samples in supp q seed the optimiser
                         Dm = torch.where(insupp, A0, torch.full_like(A0, math.inf))
                         K = min(num["mind"]["mc_seeds"], Dm.shape[0])
@@ -259,14 +350,19 @@ def evaluate_case(model6, cop, beliefs, grid, cfg, rng_md, degrees, device, dens
                         cand_Y = Yc[idx] if a.low_Y is None else torch.cat([a.low_Y, Yc[idx]])
                         v2, i2 = torch.topk(cand_D, min(num["mind"]["mc_seeds"], cand_D.shape[0]), largest=False)
                         a.low_D, a.low_Y = v2, cand_Y[i2]
+        for a in acc.values():
+            a.host()
         stats[name] = acc
 
     # ---- min D: over the cube (S1, S2, S4, negativity) and over supp q for the Beta beliefs
     mind = {}
+    extras = []
     for m in degrees:
         extra = [stats[n][m].low_Y[torch.isfinite(stats[n][m].low_D)] for n in names if n in ("S2", "S4")]
-        extra = torch.cat(extra).cpu().numpy() if extra else None
-        cube = min_D(models[m], rng_md, num["mind"], extra, device=device)
+        extras.append(torch.cat(extra).cpu().numpy() if extra else None)
+    cubes = dict(zip(degrees, min_D_cube([models[m] for m in degrees], rng_md, num["mind"], extras, device)))
+    for m in degrees:
+        cube = cubes[m]
         mc_cube = min([stats[n][m].min_mc for n in names if n in ("S2", "S4")], default=math.inf)
         mind[(m, "cube")] = (min(cube[0], mc_cube), cube[0], mc_cube, cube[1], cube[2])
         for n in names:

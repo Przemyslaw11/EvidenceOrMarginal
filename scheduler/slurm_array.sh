@@ -30,4 +30,5 @@ fi
 
 nvidia-smi --query-gpu=name,driver_version,clocks.max.sm,power.limit --format=csv,noheader
 git rev-parse HEAD
-srun python scheduler/launcher.py --worker --device cuda --jobs "$@"
+LEFT=$(squeue -h -j "$SLURM_JOB_ID" -o %L)
+srun python scheduler/launcher.py --worker --device cuda ${LEFT:+--time-left "$LEFT"} --jobs "$@"
