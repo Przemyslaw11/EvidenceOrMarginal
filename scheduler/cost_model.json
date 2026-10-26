@@ -32,16 +32,22 @@
    "case_s": 6
   },
   "gauss_16_triple": {
-   "est_s_per_case": 3.0,
-   "case_s": 6
+   "est_s_per_case": 4.030044806630988,
+   "case_s": 6.850494447507357,
+   "n_jobs": 2,
+   "source": "production"
   },
   "gauss_32_pair": {
-   "est_s_per_case": 7.6,
-   "case_s": 10
+   "est_s_per_case": 7.4040305238021045,
+   "case_s": 22.022083251099836,
+   "n_jobs": 2,
+   "source": "production"
   },
   "gauss_32_triple": {
-   "est_s_per_case": 20.0,
-   "case_s": 15
+   "est_s_per_case": 19.570644046130933,
+   "case_s": 22.300033381110744,
+   "n_jobs": 2,
+   "source": "production"
   },
   "t3_8_triple": {
    "est_s_per_case": 1.7999999999999998,

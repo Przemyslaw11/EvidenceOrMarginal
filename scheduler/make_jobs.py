@@ -27,9 +27,9 @@ def expected_minutes(spec, cfg, cost):
     if spec["exp"] == "network":
         return 1.2 * next(iter(cost["network"].values())) / 60 if cost.get("network") else 15.0
     k, basis, n = spec["k"], spec["basis"], len(spec["cases"])
-    c = cells[f"gauss_{k}_{basis}"]
     fam = spec.get("family", "gauss")
-    if fam != "gauss":  # family cost relative to the Gaussian, measured at k = 8 (triple)
+    c = cells.get(f"{fam}_{k}_{basis}") or cells[f"gauss_{k}_{basis}"]
+    if f"{fam}_{k}_{basis}" not in cells:  # family cost relative to the Gaussian, measured at k = 8 (triple)
         r = cells.get(f"{fam}_8_triple") or cells.get("t3_8_triple")
         g = cells["gauss_8_triple"]
         c = dict(est_s_per_case=c["est_s_per_case"] * r["est_s_per_case"] / g["est_s_per_case"],
