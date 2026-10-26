@@ -4,49 +4,63 @@
  "n_est_ref": 10000000,
  "cells": {
   "gauss_2_pair": {
-   "est_s_per_case": 1.5,
-   "case_s": 4
+   "est_s_per_case": 0.45127332837958084,
+   "case_s": 2.5736645773837443,
+   "n_jobs": 14,
+   "source": "production"
   },
   "gauss_2_triple": {
-   "est_s_per_case": 1.6,
-   "case_s": 4
+   "est_s_per_case": 0.4509107815591913,
+   "case_s": 2.613140194039596,
+   "n_jobs": 17,
+   "source": "production"
   },
   "gauss_4_pair": {
-   "est_s_per_case": 1.2,
-   "case_s": 4
+   "est_s_per_case": 0.498201288675007,
+   "case_s": 2.688468406074925,
+   "n_jobs": 14,
+   "source": "production"
   },
   "gauss_4_triple": {
-   "est_s_per_case": 1.3,
-   "case_s": 4
+   "est_s_per_case": 0.5662773910321688,
+   "case_s": 2.623567323935659,
+   "n_jobs": 14,
+   "source": "production"
   },
   "gauss_8_pair": {
-   "est_s_per_case": 1.5,
-   "case_s": 4
+   "est_s_per_case": 0.7501163733632941,
+   "case_s": 2.964480393811276,
+   "n_jobs": 14,
+   "source": "production"
   },
   "gauss_8_triple": {
-   "est_s_per_case": 1.5,
-   "case_s": 4
+   "est_s_per_case": 1.2795520895405819,
+   "case_s": 3.5216126128246907,
+   "n_jobs": 14,
+   "source": "production"
   },
   "gauss_16_pair": {
-   "est_s_per_case": 2.0,
-   "case_s": 6
+   "est_s_per_case": 2.1537636643961857,
+   "case_s": 6.3431218046891065,
+   "n_jobs": 14,
+   "source": "production"
   },
   "gauss_16_triple": {
-   "est_s_per_case": 4.030044806630988,
-   "case_s": 6.850494447507357,
-   "n_jobs": 2,
+   "est_s_per_case": 4.221088290214539,
+   "case_s": 7.819723995108353,
+   "n_jobs": 16,
    "source": "production"
   },
   "gauss_32_pair": {
-   "est_s_per_case": 7.4040305238021045,
-   "case_s": 22.022083251099836,
-   "n_jobs": 2,
+   "est_s_per_case": 7.4906945730510515,
+   "case_s": 22.51979388061323,
+   "n_jobs": 14,
    "source": "production"
   },
   "gauss_32_triple": {
-   "est_s_per_case": 19.570644046130933,
-   "case_s": 22.300033381110744,
-   "n_jobs": 2,
+   "est_s_per_case": 19.65038603857944,
+   "case_s": 22.554366714075993,
+   "n_jobs": 14,
    "source": "production"
   },
   "t3_8_triple": {
