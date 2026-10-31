@@ -4,76 +4,196 @@
  "n_est_ref": 10000000,
  "cells": {
   "gauss_2_pair": {
-   "est_s_per_case": 0.45127332837958084,
-   "case_s": 2.5736645773837443,
-   "n_jobs": 14,
+   "est_s_per_case": 0.3974626440750925,
+   "case_s": 1.7623316865218315,
+   "n_jobs": 104,
    "source": "production"
   },
   "gauss_2_triple": {
-   "est_s_per_case": 0.4509107815591913,
-   "case_s": 2.613140194039596,
-   "n_jobs": 17,
+   "est_s_per_case": 0.40391576290130615,
+   "case_s": 1.8064798806843005,
+   "n_jobs": 104,
    "source": "production"
   },
   "gauss_4_pair": {
-   "est_s_per_case": 0.498201288675007,
-   "case_s": 2.688468406074925,
-   "n_jobs": 14,
+   "est_s_per_case": 0.42118844860478455,
+   "case_s": 1.8127724245974892,
+   "n_jobs": 104,
    "source": "production"
   },
   "gauss_4_triple": {
-   "est_s_per_case": 0.5662773910321688,
-   "case_s": 2.623567323935659,
-   "n_jobs": 14,
+   "est_s_per_case": 0.4992344379425049,
+   "case_s": 1.9057951600928056,
+   "n_jobs": 105,
    "source": "production"
   },
   "gauss_8_pair": {
-   "est_s_per_case": 0.7501163733632941,
-   "case_s": 2.964480393811276,
-   "n_jobs": 14,
+   "est_s_per_case": 0.6990448801141036,
+   "case_s": 2.2483530421006055,
+   "n_jobs": 106,
    "source": "production"
   },
   "gauss_8_triple": {
-   "est_s_per_case": 1.2795520895405819,
-   "case_s": 3.5216126128246907,
-   "n_jobs": 14,
+   "est_s_per_case": 1.0942363237079822,
+   "case_s": 2.864019142953973,
+   "n_jobs": 105,
    "source": "production"
   },
   "gauss_16_pair": {
-   "est_s_per_case": 2.1537636643961857,
-   "case_s": 6.3431218046891065,
-   "n_jobs": 14,
+   "est_s_per_case": 1.9970687816017554,
+   "case_s": 5.564146399497986,
+   "n_jobs": 100,
    "source": "production"
   },
   "gauss_16_triple": {
-   "est_s_per_case": 4.221088290214539,
-   "case_s": 7.819723995108353,
-   "n_jobs": 16,
+   "est_s_per_case": 4.058030272784986,
+   "case_s": 7.036975007308158,
+   "n_jobs": 100,
    "source": "production"
   },
   "gauss_32_pair": {
-   "est_s_per_case": 7.4906945730510515,
-   "case_s": 22.51979388061323,
-   "n_jobs": 14,
+   "est_s_per_case": 7.4432046538905094,
+   "case_s": 22.0451207098208,
+   "n_jobs": 100,
    "source": "production"
   },
   "gauss_32_triple": {
-   "est_s_per_case": 19.65038603857944,
-   "case_s": 22.554366714075993,
-   "n_jobs": 14,
+   "est_s_per_case": 19.568602725079185,
+   "case_s": 22.200720830967555,
+   "n_jobs": 100,
    "source": "production"
   },
   "t3_8_triple": {
-   "est_s_per_case": 1.7999999999999998,
-   "case_s": 4.8
+   "est_s_per_case": 1.392950032886706,
+   "case_s": 5.342237108632138,
+   "n_jobs": 3,
+   "source": "production"
   },
   "gumbel_8_triple": {
-   "est_s_per_case": 2.25,
-   "case_s": 6.0
+   "est_s_per_case": 3.7567639727341504,
+   "case_s": 6.753784769459775,
+   "n_jobs": 1,
+   "source": "production"
   },
   "clayton_8_triple": {
-   "est_s_per_case": 1.7999999999999998,
-   "case_s": 4.8
+   "est_s_per_case": 11.45548563254507,
+   "case_s": 3.953654314342298,
+   "n_jobs": 1,
+   "source": "production"
+  },
+  "t10_8_triple": {
+   "est_s_per_case": 1.404991024418881,
+   "case_s": 6.010176282179983,
+   "n_jobs": 3,
+   "source": "production"
+  },
+  "t3_8_pair": {
+   "est_s_per_case": 0.9760311151805676,
+   "case_s": 5.17485227082905,
+   "n_jobs": 3,
+   "source": "production"
+  },
+  "t10_2_triple": {
+   "est_s_per_case": 0.5618663210617868,
+   "case_s": 3.529647099344354,
+   "n_jobs": 3,
+   "source": "production"
+  },
+  "t10_4_pair": {
+   "est_s_per_case": 0.6207567265159205,
+   "case_s": 3.6948117707905017,
+   "n_jobs": 3,
+   "source": "production"
+  },
+  "gumbel_8_pair": {
+   "est_s_per_case": 3.825118353492335,
+   "case_s": 6.897661397331639,
+   "n_jobs": 1,
+   "source": "production"
+  },
+  "t3_2_pair": {
+   "est_s_per_case": 0.5595565595124897,
+   "case_s": 3.516415985007035,
+   "n_jobs": 1,
+   "source": "production"
+  },
+  "gumbel_4_pair": {
+   "est_s_per_case": 2.5953418832076225,
+   "case_s": 4.835812819631476,
+   "n_jobs": 1,
+   "source": "production"
+  },
+  "t10_4_triple": {
+   "est_s_per_case": 0.6997182118265253,
+   "case_s": 3.76355336841784,
+   "n_jobs": 3,
+   "source": "production"
+  },
+  "t3_4_triple": {
+   "est_s_per_case": 0.7040764532591167,
+   "case_s": 3.4627677139483,
+   "n_jobs": 3,
+   "source": "production"
+  },
+  "t10_8_pair": {
+   "est_s_per_case": 0.9982567335429944,
+   "case_s": 5.768241995259335,
+   "n_jobs": 3,
+   "source": "production"
+  },
+  "gumbel_4_triple": {
+   "est_s_per_case": 2.6729032240415873,
+   "case_s": 4.8806835726687785,
+   "n_jobs": 1,
+   "source": "production"
+  },
+  "t3_2_triple": {
+   "est_s_per_case": 0.5836340628172222,
+   "case_s": 3.590990367688631,
+   "n_jobs": 3,
+   "source": "production"
+  },
+  "t3_4_pair": {
+   "est_s_per_case": 0.6159481249357525,
+   "case_s": 3.6383711162366366,
+   "n_jobs": 3,
+   "source": "production"
+  },
+  "clayton_4_pair": {
+   "est_s_per_case": 9.715363527599134,
+   "case_s": 2.6467271478552568,
+   "n_jobs": 1,
+   "source": "production"
+  },
+  "clayton_2_triple": {
+   "est_s_per_case": 9.316084510401675,
+   "case_s": 2.53781983726903,
+   "n_jobs": 1,
+   "source": "production"
+  },
+  "clayton_8_pair": {
+   "est_s_per_case": 10.91673755645752,
+   "case_s": 3.3271635959022925,
+   "n_jobs": 1,
+   "source": "production"
+  },
+  "clayton_4_triple": {
+   "est_s_per_case": 9.894125411384984,
+   "case_s": 2.782570424832796,
+   "n_jobs": 1,
+   "source": "production"
+  },
+  "gumbel_2_triple": {
+   "est_s_per_case": 2.0607870503475794,
+   "case_s": 4.006494133095992,
+   "n_jobs": 1,
+   "source": "production"
+  },
+  "gumbel_2_pair": {
+   "est_s_per_case": 2.0528321140690853,
+   "case_s": 4.013473962482653,
+   "n_jobs": 1,
+   "source": "production"
   }
  },
  "network": {
