@@ -254,6 +254,21 @@ def COP():
     et = float(np.abs((ant - fdt) / fdt).max())
     ok &= et < 1e-6
     det.append(f"t3 conditional vs d/dx conditional CDF rel err {et:.1e}")
+    # closed-form t CDF / bisection quantile (on the device) vs scipy, relative to the smaller tail
+    ec = eq = 0.0
+    for nu in (3, 10):
+        xg = np.concatenate([-np.logspace(-6, 6, 300), np.logspace(-6, 6, 300)])
+        F = _np(C.t_cdf(torch.as_tensor(xg, dtype=DT, device=DEV), nu))
+        ref = stdtr(nu, xg)
+        lo = np.minimum(ref, 1 - ref)
+        ok_ = lo > 1e-300  # scipy underflows to 0 far in the tail
+        ec = max(ec, float((np.abs(np.minimum(F, 1 - F) - lo)[ok_] / lo[ok_]).max()))
+        ug = np.concatenate([np.logspace(-14, np.log10(0.5), 200), 1 - np.logspace(-14, np.log10(0.5), 200)])
+        qr = stdtrit(nu, ug)
+        q = _np(C.t_ppf(torch.as_tensor(ug, dtype=DT, device=DEV), nu))
+        eq = max(eq, float((np.abs(q - qr) / np.maximum(np.abs(qr), 1.0)).max()))
+    ok &= ec < 1e-12 and eq < 1e-10
+    det.append(f"t CDF (nu = 3, 10) tail rel err vs scipy {ec:.1e}; quantile rel err {eq:.1e}")
     return bool(ok), "; ".join(det)
 
 

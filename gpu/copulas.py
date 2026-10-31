@@ -114,6 +114,65 @@ def _t_logpdf(z, nu):
             - (nu + 1) / 2 * torch.log1p(z * z / nu))
 
 
+def _t_series(nu, extra=64):
+    """Coefficients (a_j for odd nu, b_j for even nu) of the head (j < n) and tail (n <= j < n + extra); see `_t_lower`."""
+    odd = nu % 2 == 1
+    n = (nu - 1) // 2 if odd else nu // 2
+    coef = [1.0]
+    for jj in range(1, n + extra):
+        coef.append(coef[-1] * (2 * jj / (2 * jj + 1) if odd else (2 * jj - 1) / (2 * jj)))
+    return n, coef
+
+
+def _t_lower(phi, nu):
+    """P(T <= -|x|) for integer nu, with phi = atan2(sqrt(nu), |x|) in (0, pi/2]. With s2 = sin^2 phi, c = cos phi:
+    odd nu: (phi - sin c sum_(j<n) a_j s2^j) / pi, n = (nu - 1) / 2, a_j = a_(j-1) 2j / (2j + 1);
+    even nu: (1 - c sum_(j<n) b_j s2^j) / 2, n = nu / 2, b_j = b_(j-1) (2j - 1) / (2j).
+    In the tails (s2 <= 1/2) the same values are the remainders sum_(j>=n) of the series phi / c = sin sum a_j s2^j
+    and 1 / c = sum b_j s2^j (64 terms), which avoids the cancellation of the finite form."""
+    n, coef = _t_series(nu)
+    cf = torch.tensor(coef, dtype=phi.dtype, device=phi.device)
+    sn, c = torch.sin(phi), torch.cos(phi)
+    pw = (sn * sn)[..., None] ** torch.arange(len(coef), dtype=phi.dtype, device=phi.device)
+    head, tail = pw[..., :n] @ cf[:n], pw[..., n:] @ cf[n:]
+    if nu % 2:
+        direct, series = (phi - sn * c * head) / math.pi, sn * c * tail / math.pi
+    else:
+        direct, series = 0.5 * (1 - c * head), 0.5 * c * tail
+    return torch.where(sn * sn <= 0.5, series, direct)
+
+
+def t_cdf(x, nu):
+    """Student-t CDF for integer nu in closed form (torch, any device); both tails keep their relative accuracy."""
+    lo = _t_lower(torch.atan2(torch.full_like(x, math.sqrt(nu)), x.abs()), nu)
+    return torch.where(x > 0, 1 - lo, lo)
+
+
+def t_ppf(u, nu, bisect=12, newton=5):
+    """Inverse of `t_cdf` for the lower-tail probability p = min(u, 1 - u), in psi = log phi: bisection on
+    [log 1e-18, log pi/2], then Newton steps on log P(psi) (nearly linear there: P ~ phi^nu), kept in the bracket."""
+    p = torch.minimum(u, 1 - u)
+    lp = torch.log(p)
+    a = torch.full_like(u, math.log(1e-18))
+    b = torch.full_like(u, math.log(math.pi / 2))
+    for _ in range(bisect):
+        m = 0.5 * (a + b)
+        below = _t_lower(torch.exp(m), nu) < p
+        a, b = torch.where(below, m, a), torch.where(below, b, m)
+    psi = 0.5 * (a + b)
+    rs = math.sqrt(nu)
+    for _ in range(newton):
+        phi = torch.exp(psi)
+        P = _t_lower(phi, nu)
+        sn = torch.sin(phi)
+        x = rs * torch.cos(phi) / sn
+        dP = torch.exp(_t_logpdf(x, nu)) * rs / (sn * sn) * phi  # dP/dpsi
+        psi = torch.clamp(psi - (torch.log(P) - lp) * P / dP, a, b)
+    phi = torch.exp(psi)
+    x = rs * torch.cos(phi) / torch.sin(phi)  # |x| = sqrt(nu) cot(phi)
+    return torch.where(u > 0.5, x, -x)
+
+
 class Gaussian:
     kinds = ("Z",)
 
@@ -145,13 +204,14 @@ class StudentT(Gaussian):
         self.Syy_inv = torch.tensor(np.linalg.inv(self.R[1:, 1:]), dtype=DT, device=device)
 
     def uniforms(self, base):
-        T = (base["Z"] @ np.linalg.cholesky(self.R).T) / np.sqrt(base[f"chi{self.nu}"] / self.nu)[:, None]
-        U = np.clip(sps.stdtr(self.nu, T), 1e-15, 1 - 1e-15)
-        return torch.as_tensor(U, dtype=DT, device=self.dev)
+        Z = torch.as_tensor(base["Z"], dtype=DT, device=self.dev)
+        W = torch.as_tensor(base[f"chi{self.nu}"], dtype=DT, device=self.dev)
+        T = (Z @ self.L.T) / torch.sqrt(W / self.nu)[:, None]
+        return torch.clamp(t_cdf(T, self.nu), 1e-15, 1 - 1e-15)
 
     def cond_s(self, s, Uy):
         nu, k = self.nu, Uy.shape[1]
-        ty = torch.as_tensor(sps.stdtrit(nu, Uy.cpu().numpy()), dtype=DT, device=self.dev)
+        ty = t_ppf(Uy, nu)
         tx = torch.as_tensor(sps.stdtrit(nu, sps.ndtr(s.cpu().numpy())), dtype=DT, device=self.dev)
         Q = ((ty @ self.Syy_inv) * ty).sum(1)
         mu = ty @ self.beta
