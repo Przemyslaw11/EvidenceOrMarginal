@@ -3,7 +3,7 @@
     .venv/bin/python paper/make_numbers.py
 
 Reads results2/summary/, results2/merged/*_status.json and *_meta.csv, results2/energy/, energy2.md, docs/LOG2.md,
-tests2/test_results2.json, config2.yaml and paper/posthoc.json. Writes generated/numbers.tex (the macro table behind
+tests2/test_results2.json, config2.yaml, paper/posthoc.json, paper/theory.json and paper/semantics.json. Writes generated/numbers.tex (the macro table behind
 \\V{key}), generated/numbers.json (the same table, read by check_numbers.py) and generated/tab_*.tex. Nothing is typed by hand.
 """
 import glob
@@ -565,6 +565,173 @@ def design():
     put("pairs32", math.comb(32, 2))
 
 
+def theory(ph, H):
+    """Numbers of the theory sections (paper/theory.json, paper/semantics.json) and of the post hoc tables built on them."""
+    T = json.load(open(os.path.join(HERE, "theory.json")))
+    Sm = json.load(open(os.path.join(HERE, "semantics.json")))
+    BEL = ("S2", "S3a", "S3b", "S3c", "S3d", "S4")
+    # semantics illustration
+    for r in Sm["k2"]:
+        for sem in ("evidence", "posterior", "marginal"):
+            for form in ("cd", "eu"):
+                put(f"sem.{sem}.{form}.{r['rho']}.{r['tau']}", f(r[sem][form]))
+    rows = []
+    for r in Sm["k2"]:
+        rows.append([f(r["rho"], 1), f(r["tau"], 1)] + [f(r[s_][c]) for s_ in ("evidence", "posterior", "marginal") for c in ("cd", "eu")])
+    table("sem", "rr" + "rr" * 3, rows, ["$\\rho_S$", "$\\tau$", "evid.\\ CD", "evid.\\ EU", "post.\\ CD", "post.\\ EU", "marg.\\ CD", "marg.\\ EU"])
+    rows = [[r["k"], f(r["rho"], 2), f(r["tau"], 1)] + [x for s_ in ("evidence", "posterior", "marginal") for x in (f(r[s_]["cd"]), f(r[s_]["eu"]), pc(r[s_]["cd_closer"]))]
+            for r in Sm["kbig"]]
+    table("sem_big", "rrr" + "rrr" * 3, rows, ["$k$", "$\\rho_S$", "$\\tau$", "evid.\\ CD", "EU", "CD closer", "post.\\ CD", "EU", "CD closer", "marg.\\ CD", "EU", "CD closer"],
+          "\\scriptsize\\setlength{\\tabcolsep}{3.5pt}")
+    big = Sm["kbig"]
+    put("sem.big.lo", f(min(min(r[s_]["cd"], r[s_]["eu"]) for r in big for s_ in ("evidence", "marginal")), 2))
+    put("sem.big.hi", f(max(max(r[s_]["cd"], r[s_]["eu"]) for r in big for s_ in ("evidence", "marginal")), 2))
+    put("sem.big.marg.closer.lo", pc(min(r["marginal"]["cd_closer"] for r in big)))
+    put("sem.big.marg.closer.hi", pc(max(r["marginal"]["cd_closer"] for r in big)))
+    for r in Sm["missing"]:
+        put(f"sem.miss.cd.{r['rho']}", f(r["cd"]))
+        put(f"sem.miss.eu.{r['rho']}", f(r["eu"]))
+    # gap at leading order
+    L = T["leading"]
+    put("lead.n", L["n"])
+    put("lead.lo", f(L["lo"], 2))
+    put("lead.hi", f(L["hi"], 2))
+    put("lead.small.n", L["small_n"])
+    put("lead.small.lo", f(L["small_lo"], 2))
+    put("lead.small.hi", f(L["small_hi"], 2))
+    put("orth.pair", sci(T["orthogonality"]["pair"], 0))
+    cells = {f"{c['type']}/{c['basis']}": c for c in H["H1c"]["cells"]}
+    rows = []
+    for key in ("SUM/pair", "CONTRAST/pair", "SUM/triple", "CONTRAST/triple"):
+        c, c0 = L["cells"][key], cells[key]
+        rows.append([key.replace("/", ", "), c["n"], f(c0["beta"], 2), pc(c0["within2"]), pc(c["within2"]), f"{f(c['lo'], 2)}--{f(c['hi'], 2)}", f(c["med"], 2)])
+    table("lead", "lrrrrrr", rows, ["type, basis", "points", "$\\beta$ (H1c)", "power law", "closed form", "ratio range", "median ratio"])
+    D = T["data_belief"]
+    put("db.n", D["n"])
+    put("db.lo", f(D["lo"], 2))
+    put("db.hi", f(D["hi"], 2))
+    # onsets
+    P = [r for r in T["pair_onset"]]
+    tr = {(r["m"], r["k"]): r for r in T["triple_onset"]}
+    rows = []
+    for m in (2, 4, 6):
+        for k in KS:
+            r = [x for x in P if x["m"] == m and x["k"] == k][0]
+            t = tr.get((m, k))
+            rows.append([m, k, f(r["crude"]), f(r["lower"]), f(min(r["upper"], r["measured"])), f(r["measured"]), f(k * r["measured"], 2),
+                         (f(t["corner"]) if t and t["corner"] else DASH), (f(t["measured"]) if t else DASH)])
+        if m != 6:
+            rows.append("MID")
+    table("onset_all", "rrrrrrrrr", rows, ["$m$", "$k$", "closed", "convex", "search", "measured", "$k\\rho^*$", "triple corner", "triple meas."], "\\footnotesize")
+    rows = []
+    for k in KS:
+        r = [x for x in P if x["m"] == 4 and x["k"] == k][0]
+        t = tr.get((4, k))
+        rows.append([k, f(r["crude"]), f(r["lower"]), f(r["measured"]), (f(t["corner"]) if t and t["corner"] else DASH), (f(t["measured"]) if t else DASH)])
+    table("onset", "rrrrrr", rows, ["$k$", "pair: closed", "pair: convex", "pair: measured", "triple: corner", "triple: measured"])
+    for r in P:
+        if r["m"] == 4:
+            put(f"on.pair.{r['k']}.lower", f(r["lower"]))
+            put(f"on.pair.{r['k']}.meas", f(r["measured"]))
+    g = T["pair_onset_gap"]
+    put("on.gap", pc(g["max_rel_measured"], 1))
+    put("on.gap4", pc(g["max_rel_measured_m4"], 1))
+    a = [r for r in P if r["m"] == 4 and r["k"] == 32][0]
+    put("on.atoms.k32", f(sorted(a["atoms"])[1], 2))
+    put("on.atoms.k32b", f(sorted(a["atoms"])[2], 2))
+    put("on.kr.pair.lo", f(min(r["k"] * r["measured"] for r in P if r["m"] == 4 and r["k"] >= 4), 2))
+    put("on.kr.pair.hi", f(max(r["k"] * r["measured"] for r in P if r["m"] == 4 and r["k"] >= 4), 2))
+    c4 = [r for r in T["triple_onset"] if r["m"] >= 4]
+    put("cor.min", f(T["corner_formula"]["min_balanced_pair"], 2))
+    put("cor.err", sci(T["corner_formula"]["err"], 0))
+    put("on.tri.gap", pc(max(abs(r["corner"] / r["measured"] - 1) for r in c4), 1))
+    put("on.tri.grid.n", T["triple_corner_grid"]["n"])
+    put("on.tri.grid.err", sci(T["triple_corner_grid"]["max_abs"], 0))
+    # E_q[D]
+    E = T["eqd"]
+    put("eqd.n", E["n"])
+    put("eqd.rel", pc(E["max_rel"], 1))
+    put("eqd.s3c", f(E["pair_s3c_min"], 2))
+    put("eqd.triple", f(-E["triple_min"], 0))
+    # noise extremes
+    Z = T["noise_z"]
+    rows = [[r["basis"], r["k"], f(r["measured"], 1), f(r["z_corner"], 1), f(r["z_cube"], 1), pc(r["boundary"]), f(r["union"], 1)] for r in Z]
+    table("noise_z", "lrrrrrr", rows, ["basis", "$k$", "$z$ production", "$z$ corners", "$z$ cube", "coordinates on the boundary", "$\\sqrt{2k\\ln 2}$"], "\\footnotesize")
+    z32 = [r for r in Z if r["basis"] == "pair" and r["k"] == 32][0]
+    put("nz.pair32.cube", f(z32["z_cube"], 1))
+    put("nz.pair32.corner", f(z32["z_corner"], 1))
+    put("nz.pair32.meas", f(z32["measured"], 1))
+    pr = [r for r in Z if r["basis"] == "pair" and r["k"] >= 4]
+    put("nz.bound.lo", pc(min(r["boundary"] for r in pr)))
+    put("nz.bound.hi", pc(max(r["boundary"] for r in pr)))
+    put("nz.var", f(T["noise_var"]["ratio"], 2))
+    Kc = lambda k, o: k * 24 + math.comb(k, 2) * 24 ** 2 + (math.comb(k, 3) * 24 ** 3 if o == 3 else 0)  # noqa: E731  m = 4, T = 24
+    t16 = [r for r in Z if r["basis"] == "triple" and r["k"] == 16][0]
+    put("nz.need.pair32", sci(z32["z_cube"] ** 2 * Kc(32, 2), 1))
+    put("nz.need.triple16", sci(t16["z_cube"] ** 2 * Kc(16, 3), 1))
+    put("nz.ratio.lo", f(min(r["z_cube"] / r["union"] for r in Z), 2))
+    put("nz.ratio.hi", f(max(r["z_cube"] / r["union"] for r in Z), 2))
+    B = T["tv_bound"]
+    put("tvb.n", B["n"])
+    put("tvb.sharp", f(B["med_sharp"], 2))
+    put("tvb.sharpmax", f(B["max_sharp"], 2))
+    put("tvb.old", f(B["med_oldc"], 3))
+    put("tvb.gain", f(B["med_gain"], 1))
+    # truncation, clipping
+    Tr = ph["truncation"]
+    rows = []
+    for basis in BASES:
+        for b in BEL:
+            r = Tr[f"{b}_{basis}"]
+            rows.append([basis, b, thou(r["n"]), f(r["denom"], 4), f(r["eu"], 4), f(r["cd"], 4), f(r["ratio"], 0 if r["ratio"] >= 100 else 1 if r["ratio"] >= 1 else 2),
+                         pc(r["eu_closer"]), pc(r["ec_beats_eu"])])
+            for key in ("denom", "eu", "cd"):
+                put(f"tr.{b}.{basis}.{key}", f(r[key], 4))
+            put(f"tr.{b}.{basis}.ratio", f(r["ratio"], 0 if r["ratio"] >= 10 else 1 if r["ratio"] >= 1 else 2))
+            put(f"tr.{b}.{basis}.euc", pc(r["eu_closer"]))
+            put(f"tr.{b}.{basis}.ec", pc(r["ec_beats_eu"]))
+        if basis == "pair":
+            rows.append("MID")
+    table("trunc", "llrrrrrrr", rows, ["basis", "belief", "rows", "$d_{\\mathrm{denom}}$", "$\\mathrm{TV}(p_{\\mathrm{EU}},p_{\\mathrm{G}})$", "$\\mathrm{TV}(p_{\\mathrm{CD}},p_{\\mathrm{G}})$",
+                                       "ratio", "EU closer", "EC beats EU"])
+    put("clip.max", pc(max(r["ec_beats_eu"] for r in Tr.values())))
+    put("clip.min", pc(min(r["ec_beats_eu"] for r in Tr.values())))
+    for e in ("0.1", "0.01", "0.001"):
+        put(f"clip.dneg.{e}", f(ph["clip_eps"][e], 3))
+    put("clip.S4.eu", f(Tr["S4_pair"]["eu"], 4))
+    put("clip.S4.ec", f(Tr["S4_pair"]["ec"], 3))
+    rows = []
+    for basis in BASES:
+        for b in BEL:
+            r = ph["past_onset"][f"{b}_{basis}"]
+            rows.append([basis, b, thou(r["n"]), pc(r["share"]), f(r["d_total"], 3), f(r["d_dc"], 3), f(r["ec"], 3), pc(r["cd_closer"])])
+        if basis == "pair":
+            rows.append("MID")
+    table("past", "llrrrrrr", rows, ["basis", "belief", "rows", "share undefined", "$d_{\\mathrm{total}}$", "$d_{\\mathrm{dc}}$", "$d_{\\mathrm{model,cal}}$", "CD closer than EC"])
+    po = ph["past_onset"]
+    put("past.pair.lo", f(min(po[f"{b}_pair"]["d_total"] for b in BEL if b != "S4"), 2))
+    put("past.pair.hi", f(max(po[f"{b}_pair"]["d_total"] for b in BEL if b != "S4"), 2))
+    put("past.dc.lo", f(min(po[f"{b}_pair"]["d_dc"] for b in BEL), 3))
+    put("past.dc.hi", f(max(po[f"{b}_pair"]["d_dc"] for b in BEL), 3))
+    # selection, floor, narrow belief
+    Se = ph["selection"]
+    put("sel.cv", f(Se["max_cv"], 2))
+    put("sel.dmax", f(Se["max_d_denom"], 2))
+    put("sel.q99", f(Se["q99_d_denom"], 3))
+    put("sel.k32.pair", pc(Se["s2_share_defined"]["pair_32"]))
+    put("sel.d5.s2", Se["d5"]["S2"]["reached"])
+    put("sel.d5.s2n", Se["d5"]["S2"]["cells"])
+    put("sel.d5.all", sum(v["reached"] for v in Se["d5"].values()))
+    put("sel.d5.alln", sum(v["cells"] for v in Se["d5"].values()))
+    put("floor.shift", f(ph["floor_max_shift"], 3))
+    put("narrow.pair4", f(ph["narrow_by_basis"]["pair_4"], 4))
+    put("narrow.triple4", f(ph["narrow_by_basis"]["triple_4"], 4))
+    put("narrow.triple2", f(ph["narrow_by_basis"]["triple_2"], 4))
+    # the e2e loss sums (c_i - t_i)^2 over rows 1..m and three beliefs, with targets from 2^16 samples: its noise level
+    put("e2e.noise", sci(3 * 4 / 2 ** 16, 1))
+    put("e2e.L4", sci(ph["training"]["e2e4_adam"]["median_val_loss_before"], 1))
+
+
 def main():
     os.makedirs(GEN, exist_ok=True)
     H, tg, tp, conv, cg, ph = load()
@@ -574,6 +741,7 @@ def main():
     hypotheses(H, conv, ph)
     decomposition(cg)
     posthoc(ph, H)
+    theory(ph, H)
     energy()
     validation()
     d3()

@@ -1,4 +1,4 @@
-"""Numerical check of Section 3 on one small case (CPU, seconds): identity, tilted belief, TV bound, flat and data beliefs.
+"""Numerical check of the gap proposition on one small case (CPU, seconds): identity, tilted belief, TV bound, flat and data beliefs.
 
     .venv/bin/python paper/check_identity.py        # prints the residuals; exits non-zero if a check fails
 """

@@ -170,6 +170,14 @@ def parquet():
     check(f"{G.d_total.max():.0f}" == V["ph.tv1.max"], "max d_total")
     Pp = pd.read_parquet(os.path.join(ROOT, "results2", "merged", "population.parquet"), columns=["E_q_D"], filters=[("eps", "==", 0.01)])
     check((Pp.E_q_D <= 0).sum() == n("ph.eqd.pop.nonpos") and len(Pp) == n("ph.eqd.pop.rows"), "population E_q[D]")
+    # headline of the truncation table, straight from the rows
+    D = pd.read_parquet(p, columns=["basis", "belief", "d_denom", "d_model_uncal", "d_model_cal"],
+                        filters=[("eps", "==", 0.01), ("m", "==", 4), ("defined", "==", 1), ("rho_S", ">", 0)])
+    for b, basis, nd in (("S3d", "pair", 0), ("S4", "pair", 1), ("S4", "triple", 2), ("S2", "triple", 2)):
+        x = D[(D.belief == b) & (D.basis == basis)]
+        check(f"{(x.d_model_uncal / x.d_denom).median():.{nd}f}" == V[f"tr.{b}.{basis}.ratio"], f"truncation ratio {b} {basis}")
+    w = D[D.belief != "S1"].groupby(["belief", "basis"]).apply(lambda x: (x.d_model_cal < x.d_model_uncal).mean(), include_groups=False)
+    check(f"{100 * w.max():.0f}" in V["clip.max"], "clipping beats the reference, largest share")
     st = [json.load(open(f)) for f in glob.glob(os.path.join(ROOT, "results2/merged/*_status.json"))]
     check(sum(s["done"] for s in st) == n("jobs") and not any(s["failed"] for s in st), "jobs")
     v = pd.read_csv(os.path.join(S, "convergence_violations.csv"))
