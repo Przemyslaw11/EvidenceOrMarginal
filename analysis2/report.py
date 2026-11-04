@@ -144,8 +144,10 @@ def main():
     w("- With n_est = 1e7 the TVs at k ≥ 8 move by a few per cent of their value when n_est doubles (H4b).")
     w("- Methods note (not deviations): during production D(y) was evaluated from row 0 only, all min-D searches of a job "
       "were stacked into one problem, and the Student-t CDF/quantile moved to the GPU; whole-job outputs agreed with the "
-      "previous code to 1e-10 and test M7 checks the t functions against scipy. Ten t-copula slots that timed out before "
-      "the fix were re-run; no result was produced by the old code.\n")
+      "previous code to 1e-10 and test M7 checks the t functions against 50-digit mpmath. Ten t-copula slots that timed "
+      "out before the fix were re-run; no result was produced by the old code. M7's t check was rewritten after production: "
+      "it first compared 1 - F with scipy, which cannot resolve tails near F = 1 and failed on the A100 with scipy 1.13.1 "
+      "(the record is in docs/LOG2.md); no production code changed.\n")
     w("## Deviations from the pre-registration")
     w(deviations + "\n")
     w("## Three talking points (measurements)")

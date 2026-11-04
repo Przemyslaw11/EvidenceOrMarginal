@@ -15,6 +15,7 @@ import sys
 import tempfile
 import time
 
+import mpmath
 import numpy as np
 import pandas as pd
 import torch
@@ -254,21 +255,30 @@ def COP():
     et = float(np.abs((ant - fdt) / fdt).max())
     ok &= et < 1e-6
     det.append(f"t3 conditional vs d/dx conditional CDF rel err {et:.1e}")
-    # closed-form t CDF / bisection quantile (on the device) vs scipy, relative to the smaller tail
-    ec = eq = 0.0
-    for nu in (3, 10):
-        xg = np.concatenate([-np.logspace(-6, 6, 300), np.logspace(-6, 6, 300)])
-        F = _np(C.t_cdf(torch.as_tensor(xg, dtype=DT, device=DEV), nu))
-        ref = stdtr(nu, xg)
-        lo = np.minimum(ref, 1 - ref)
-        ok_ = lo > 1e-300  # scipy underflows to 0 far in the tail
-        ec = max(ec, float((np.abs(np.minimum(F, 1 - F) - lo)[ok_] / lo[ok_]).max()))
-        ug = np.concatenate([np.logspace(-14, np.log10(0.5), 200), 1 - np.logspace(-14, np.log10(0.5), 200)])
-        qr = stdtrit(nu, ug)
-        q = _np(C.t_ppf(torch.as_tensor(ug, dtype=DT, device=DEV), nu))
-        eq = max(eq, float((np.abs(q - qr) / np.maximum(np.abs(qr), 1.0)).max()))
-    ok &= ec < 1e-12 and eq < 1e-10
-    det.append(f"t CDF (nu = 3, 10) tail rel err vs scipy {ec:.1e}; quantile rel err {eq:.1e}")
+    # closed-form t CDF / quantile (on the device) vs 50-digit mpmath, independent of the scipy version. Doubles near 1
+    # are 1.1e-16 apart, so 1 - F cannot carry a relative error: relative accuracy is checked on the lower tail, the
+    # upper side in absolute terms, and the quantile through the tail probability it reproduces.
+    el = eu = eq = 0.0
+    xg = np.logspace(-6, 6, 300)
+    ug = np.concatenate([np.logspace(-14, np.log10(0.5), 200), 1 - np.logspace(-14, np.log10(0.5), 200)])
+    with mpmath.workdps(50):
+        def t_tail(nu, x):  # P(T > |x|)
+            a = mpmath.mpf(float(abs(x)))
+            return mpmath.betainc(nu / 2, mpmath.mpf(1) / 2, 0, nu / (nu + a * a), regularized=True) / 2
+
+        for nu in (3, 10):
+            tail = [t_tail(nu, x) for x in xg]
+            lower = _np(C.t_cdf(torch.as_tensor(-xg, dtype=DT, device=DEV), nu))
+            upper = _np(C.t_cdf(torch.as_tensor(xg, dtype=DT, device=DEV), nu))
+            el = max(el, max(float(abs(mpmath.mpf(float(f)) / t - 1)) for f, t in zip(lower, tail)))
+            eu = max(eu, max(float(abs(mpmath.mpf(float(f)) - (1 - t))) for f, t in zip(upper, tail)))
+            q = _np(C.t_ppf(torch.as_tensor(ug, dtype=DT, device=DEV), nu))
+            ok &= bool((np.sign(q) * (ug - 0.5) >= 0).all())
+            p = [min(mpmath.mpf(float(u)), 1 - mpmath.mpf(float(u))) for u in ug]
+            eq = max(eq, max(float(abs(t_tail(nu, x) / b - 1)) for x, b in zip(q, p)))
+    ok &= el < 1e-12 and eu < 1e-15 and eq < 1e-12
+    det.append(f"t CDF (nu = 3, 10) vs mpmath: lower tail rel err {el:.1e}, upper side abs err {eu:.1e}; "
+               f"quantile: rel err of its tail probability {eq:.1e}")
     return bool(ok), "; ".join(det)
 
 
