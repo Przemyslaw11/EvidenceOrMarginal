@@ -350,6 +350,27 @@ def summarise():
                      f"{r.J:.3g} ({r.J_lo:.3g}–{r.J_hi:.3g}) | {r.J_net:.3g} | {r.uJ_per_param:.3g} | "
                      f"{r.uJ_per_sample:.3g} | {r.power_W:.0f} | {r.sm_MHz:.0f} | {r.counter_ratio:.3f} |")
         L.append("")
+
+    cr, full = df.counter_ratio, df[df.B == max(BATCHES)]
+    rel = rep.pivot_table(index=key[:1] + key[1:], columns="run_id", values="J")
+    rel = pd.concat([x.dropna(axis=1).pipe(lambda t: t.div(t.mean(axis=1), axis=0)).mean()
+                     for _, x in rel.groupby(level="dtype")])
+    L += ["## Checks\n",
+          f"- Counter vs sampled energy over {len(df)} repeats: median {cr.median():.3f}, 1st-99th percentile "
+          f"{cr.quantile(.01):.3f}-{cr.quantile(.99):.3f}, extremes {cr.min():.3f}-{cr.max():.3f}.",
+          f"- Temperature {df.temp_C.min()}-{df.temp_C.max()} C. Repeats at >= 97.5 % of the power limit: "
+          f"{(df.mean_power_W >= .975 * m0['power_limit_W']).sum()}.",
+          f"- Configurations at B = {max(BATCHES)} with SM clock below maximum: "
+          + "; ".join(f"{dt} {ly} k = {k} (lowest {v.sm_MHz.min():.0f} MHz, median power {v.mean_power_W.median():.0f} W)"
+                      for (dt, ly, k), v in full[full.sm_MHz < m0["max_sm_MHz"]].groupby(["dtype", "layer", "k"])) + ".",
+          f"- Rows where idle power is over 90 % of the energy (J net of idle < 10 % of J; launch-bound, so J / forward "
+          f"mostly measures idle power): {(s.J_net < .1 * s.J).sum()} of {len(s)}.",
+          f"- Runs used {len({v['uuid'] for v in metas.values()})} physical GPUs. Mean energy of a run relative to the "
+          "mean of its dtype's runs, over all configurations:", ""]
+    L += ["| run | dtype | GPU | host | idle W | relative energy |", "|---|---|---|---|---|---|"]
+    for rid, v in sorted(metas.items(), key=lambda kv: kv[1]["uuid"]):
+        L.append(f"| {rid} | {v['dtype']} | {v['uuid'][4:12]} | {v['host']} | {v['idle_W']:.1f} | {rel[rid]:.3f} |")
+    L.append("")
     open(os.path.join(ROOT, "energy2.md"), "w").write("\n".join(L) + "\n")
     print(f"summary: {len(s)} rows from {len(metas)} runs -> results2/energy/summary.csv, energy2.md")
 

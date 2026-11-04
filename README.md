@@ -140,6 +140,8 @@ python -m analysis2.report                                  # report2.md, summar
 Workers are idempotent: a job is done when its result file exists, so an array can be resubmitted until
 `merge.py` reports nothing missing. `tests2/run_tests2.py` (modes `pre`, `post`, `network`) holds the validation tests.
 
+Time and energy of an HCR layer against MLP and KAN layers (descriptive, separate from the statistical study): `energy2.md`.
+
 ## Notes on how this was made
 
 The experiment was specified by me.
