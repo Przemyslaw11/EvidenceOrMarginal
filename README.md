@@ -144,8 +144,7 @@ Time and energy of an HCR layer against MLP and KAN layers (descriptive, separat
 
 ## Notes on how this was made
 
-The experiment was specified by me.
-I reviewed the results, but treat the code as research-grade, not production-grade.
+The experiment was specified by me. I reviewed the results, but treat the code as research-grade, not production-grade.
 This is an independent numerical check, not a criticism of the HCR approach; the paper's
 authors know their method far better than I do, and I would be glad to be corrected.
 
