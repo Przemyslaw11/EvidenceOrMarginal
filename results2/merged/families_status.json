@@ -1,0 +1,9 @@
+{
+ "exp": "families",
+ "expected": 1080,
+ "done": 1080,
+ "failed": [],
+ "missing": [],
+ "stray": [],
+ "gpu_hours": 42.50444973329703
+}

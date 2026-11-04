@@ -75,5 +75,9 @@
   "pass": true,
   "detail": "(a) chain L=1 vs single-neuron engine: max |TV diff| 4.2e-17; (b) layer-2 closed form / kernel vs MC (2^20 samples): max |z| CONST_DENOM 1.55, EXACT_UNCAL 1.57; (c) val: d/dv autograd -1.455593e-01 vs FD -1.455593e-01 (rel 6.2e-09); (c) nll: d/dv autograd -1.026317e+00 vs FD -1.026317e+00 (rel 9.8e-10); (c) e2e: d/dv autograd -1.277559e-01 vs FD -1.277559e-01 (rel 3.7e-11); (d) value loss: max |grad| over rows i>=2 = 0.0e+00; (e) teacher Markov property: max |partial corr| x sqrt(n) = 1.44; (f) layer-wise true conditionals vs direct GOLD: max TV 3.8e-04 (L=4)",
   "device": "cuda"
+ },
+ "M13": {
+  "pass": false,
+  "detail": "1165059 paired TV values, 5460 violations: n2/d_denom: max change 2.7e-03, 21/32064 violations; n2/d_neg: max change 2.3e-02, 287/32064 violations; n2/d_model_uncal: max change 2.1e-02, 495/32064 violations; n2/d_model_cal: max change 1.1e-02, 1333/65022 violations; n2/d_total: max change 8.3e+00, 1689/65022 violations; n2/d_dc: max change 8.3e+00, 1635/65022 violations | violations by (variant, k): {('n2', 8): 498, ('n2', 32): 4962}"
  }
 }

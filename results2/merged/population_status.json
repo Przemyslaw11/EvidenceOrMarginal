@@ -1,0 +1,9 @@
+{
+ "exp": "population",
+ "expected": 100,
+ "done": 100,
+ "failed": [],
+ "missing": [],
+ "stray": [],
+ "gpu_hours": 11.610789293381902
+}

@@ -1,0 +1,9 @@
+{
+ "exp": "network",
+ "expected": 240,
+ "done": 240,
+ "failed": [],
+ "missing": [],
+ "stray": [],
+ "gpu_hours": 30.637971009413402
+}

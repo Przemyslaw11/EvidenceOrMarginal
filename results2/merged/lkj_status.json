@@ -1,0 +1,9 @@
+{
+ "exp": "lkj",
+ "expected": 240,
+ "done": 240,
+ "failed": [],
+ "missing": [],
+ "stray": [],
+ "gpu_hours": 2.7693111661407683
+}

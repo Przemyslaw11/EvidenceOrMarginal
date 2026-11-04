@@ -307,8 +307,8 @@ def h5(net):
 def main():
     res = {}
     pop, gauss, fam, lkj = load("population"), load("gauss"), load("families"), load("lkj")
-    cp = os.path.join(SUMMARY, "curves_population.csv")
-    cg = os.path.join(SUMMARY, "curves_gauss.csv")
+    cp = os.path.join(SUMMARY, "curves_population.csv.gz")
+    cg = os.path.join(SUMMARY, "curves_gauss.csv.gz")
     curves_pop = pd.read_csv(cp) if os.path.exists(cp) else None
     curves_g = pd.read_csv(cg) if os.path.exists(cg) else None
     if pop is not None:

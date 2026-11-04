@@ -20,9 +20,15 @@ OUT = os.environ.get("HCR_FIGURES2", os.path.join(ROOT, "figures2"))
 OI = ["#0072B2", "#E69F00", "#009E73", "#D55E00", "#CC79A7", "#56B4E9", "#000000"]
 MK = ["o", "s", "^", "D", "v", "P", "X"]
 KCOL = {2: 0, 4: 1, 8: 2, 16: 3, 32: 4}
-plt.rcParams.update({"font.size": 12, "axes.titlesize": 13, "axes.labelsize": 12, "legend.fontsize": 11,
+plt.rcParams.update({"font.size": 12, "axes.titlesize": 13, "axes.labelsize": 12, "legend.fontsize": 12,
                      "axes.spines.top": False, "axes.spines.right": False, "axes.grid": True, "grid.alpha": 0.25,
                      "lines.linewidth": 2, "lines.markersize": 7, "savefig.dpi": 200})
+
+
+def run_label(r):
+    """'e2e4_adam' -> 'end-to-end\nL=4\nadam'."""
+    loss, opt = r.split("_")
+    return {"val": "val. loss", "nll": "NLL", "e2e4": "end-to-\nend, L=4"}[loss] + "\n" + opt
 
 
 def save(fig, name):
@@ -121,7 +127,7 @@ def g2(tg, tp):
         ax.set_xlabel("number of inputs k")
         ax.set_title(typ)
     axs[0].set_ylabel("threshold ρ_S (95 % bootstrap CI)")
-    axs[0].legend(fontsize=9)
+    axs[0].legend(fontsize=12)
     fig.suptitle("G2: thresholds vs number of inputs (m=4; missing = not reached before EXACT_UNCAL is undefined)")
     save(fig, "G2_thresholds_vs_k")
 
@@ -152,7 +158,7 @@ def g3(cg):
 def g4(cg):
     if cg is None:
         return
-    fig, axs = plt.subplots(2, 2, figsize=(13, 7))
+    fig, axs = plt.subplots(2, 2, figsize=(13, 7.5), layout="constrained")
     for i, typ in enumerate(("SUM", "CONTRAST")):
         for j, basis in enumerate(("pair", "triple")):
             c = sel(cg, type=typ, belief="S2", basis=basis, m=4, eps=0.01)
@@ -189,7 +195,7 @@ def g5(tf, cf):
         axs[bi].set_title(f"{basis} basis")
         axs[bi].set_xlabel("number of inputs k")
     axs[0].set_ylabel("D<0 onset (ρ_S-equivalent, matched Kendall τ)")
-    axs[1].legend(fontsize=9, ncol=2)
+    fig.legend(*axs[0].get_legend_handles_labels(), loc="lower center", ncol=7, bbox_to_anchor=(0.5, -0.1))
     fig.suptitle("G5: negativity onset by copula family (m=4, n_est=1e7, 95 % CI)")
     save(fig, "G5_copula_families")
 
@@ -234,13 +240,13 @@ def g7(cg):
                 ax.bar(xs, np.nan_to_num(v, nan=0), width=0.18, color=OI[mi], label=mt)
                 for x, val in zip(xs, v):
                     if not np.isfinite(val):
-                        ax.text(x, 1e-4, "n/d", ha="center", va="bottom", fontsize=8, rotation=90)
+                        ax.text(x, 1e-4, "n/d", ha="center", va="bottom", fontsize=12, rotation=90)
             ax.set_xticks(range(len(ks)), [f"k={k}" for k in ks])
             ax.set_yscale("log")
             ax.set_ylim(1e-4, 2)
             ax.set_title(f"{typ}, ρ_S={rho}")
     axs[0, 0].set_ylabel("TV (seed median)")
-    axs[0, 0].legend(fontsize=9)
+    fig.legend(*axs[0, 0].get_legend_handles_labels(), loc="lower center", ncol=4, bbox_to_anchor=(0.5, -0.05))
     fig.suptitle("G7: error decomposition (S2, pair, m=4, eps=0.01; n/d = EXACT_UNCAL undefined)")
     save(fig, "G7_decomposition")
 
@@ -271,7 +277,7 @@ def g8(net):
         ax.set_xlabel("layer l")
         ax.set_title(f"belief {b}")
     axs[0].set_ylabel("d_total = TV(CONST_DENOM, GOLD), seed median")
-    axs[0].legend(fontsize=8, ncol=2)
+    fig.legend(*axs[0].get_legend_handles_labels(), loc="lower center", ncol=6, bbox_to_anchor=(0.5, -0.2))
     fig.suptitle("G8: depth compounding in the HCR chain (direct estimates, pair basis)")
     save(fig, "G8_depth")
 
@@ -298,7 +304,7 @@ def g9(net):
             ax.errorbar(x, med, yerr=[med - lo, hi - med], ls="none", marker=MK[ii], color=OI[ii], capsize=3,
                         label="from direct estimates" if init == "direct" else "flat-D control")
         ax.axhline(0, color="0.3", lw=1)
-        ax.set_xticks(range(len(runs)), runs, rotation=30)
+        ax.set_xticks(range(len(runs)), [run_label(r) for r in runs])
         ax.set_ylabel(lab)
     axs[0].legend()
     fig.suptitle("G9: effect of training (median and 10-90 % over all k, ρ_S, bases, seeds)")
@@ -316,7 +322,7 @@ def onepager(cg, tg, tp, net):
                     curve(ax, c, "d_denom", OI[KCOL[k]], MK[KCOL[k]], f"k={k} {typ}", band=False,
                           ls="-" if typ == "SUM" else "--")
         ax.axhline(0.01, color="0.4", ls=":", lw=1)
-        ax.legend(fontsize=11, ncol=2)
+        ax.legend(fontsize=12, ncol=2)
     ax.set_title("(a) constant-denominator error, flat belief")
     ax.set_xlabel("input Spearman ρ_S")
     ax.set_ylabel("TV(E[N]/E[D], E[N/D])")
@@ -329,7 +335,7 @@ def onepager(cg, tg, tp, net):
                         ls="-" if typ == "SUM" else "--", label=f"{basis} {typ}")
         ax.set_xscale("log", base=2)
         ax.set_xticks([2, 4, 8, 16, 32], ["2", "4", "8", "16", "32"])
-        ax.legend(fontsize=11)
+        ax.legend(fontsize=12)
     ax.set_title("(b) ρ_S where the error reaches 1 % (S2)")
     ax.set_xlabel("number of inputs k")
     ax.set_ylabel("threshold ρ_S")
@@ -342,7 +348,7 @@ def onepager(cg, tg, tp, net):
             ax.plot(c.k, c.neg_onset.replace(np.inf, np.nan), color=OI[ti * 3], marker=MK[ti * 3], ls=ls, label=f"{typ}, {src}")
     ax.set_xscale("log", base=2)
     ax.set_xticks([2, 4, 8, 16, 32], ["2", "4", "8", "16", "32"])
-    ax.legend(fontsize=11)
+    ax.legend(fontsize=12)
     ax.set_title("(c) ρ_S at which D first becomes negative (pair, m=4)")
     ax.set_xlabel("number of inputs k")
     ax.set_ylabel("negativity onset ρ_S")
@@ -356,10 +362,12 @@ def onepager(cg, tg, tp, net):
             for r in runs:
                 a = n1[n1.run == f"{r}_direct"].set_index(["k", "rho_S", "basis", "seed"])[metric]
                 vals.append((a - base[metric]).dropna().median())
-            ax.bar(np.arange(len(runs)) + (mi - 0.5) * 0.38, vals, width=0.36, color=OI[mi], label=lab)
-        ax.set_xticks(range(len(runs)), [r.replace("_", "\n") for r in runs], fontsize=11)
+            x = np.arange(len(runs)) + (mi - 0.5) * 0.38
+            ax.bar(x, vals, width=0.36, color=OI[mi], label=lab)
+            ax.plot(x, vals, ls="none", marker="o", mfc="none", mec=OI[mi], ms=8)  # keeps zero-height bars visible
+        ax.set_xticks(range(len(runs)), [run_label(r) for r in runs], fontsize=12)
         ax.axhline(0, color="0.3", lw=1)
-        ax.legend(fontsize=11)
+        ax.legend(fontsize=12)
     ax.set_title("(d) does training help? median change, neuron 1")
     fig.tight_layout()
     os.makedirs(OUT, exist_ok=True)
@@ -369,8 +377,8 @@ def onepager(cg, tg, tp, net):
 
 
 def main():
-    cg, tg, tp = csv("curves_gauss.csv"), csv("thresholds_gauss.csv"), csv("thresholds_population.csv")
-    tf, cf = csv("thresholds_families.csv"), csv("curves_families.csv")
+    cg, tg, tp = csv("curves_gauss.csv.gz"), csv("thresholds_gauss.csv"), csv("thresholds_population.csv")
+    tf, cf = csv("thresholds_families.csv"), csv("curves_families.csv.gz")
     net = net_frames()
     for f, args in ((g1, (cg,)), (g2, (tg, tp)), (g3, (cg,)), (g4, (cg,)), (g5, (tf, cf)), (g6, (cg,)), (g7, (cg,)),
                     (g8, (net,)), (g9, (net,)), (onepager, (cg, tg, tp, net))):

@@ -1,0 +1,9 @@
+{
+ "exp": "gauss",
+ "expected": 1000,
+ "done": 1000,
+ "failed": [],
+ "missing": [],
+ "stray": [],
+ "gpu_hours": 65.95105464127329
+}

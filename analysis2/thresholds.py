@@ -1,4 +1,4 @@
-"""Seed-median curves and thresholds with bootstrap CIs -> results2/summary/{curves,thresholds}_<exp>.csv
+"""Seed-median curves and thresholds with bootstrap CIs -> results2/summary/curves_<exp>.csv.gz, thresholds_<exp>.csv
 
     python -m analysis2.thresholds [gauss population families lkj]
 """
@@ -83,7 +83,7 @@ def main(exps):
         df = df[[c for c in COLS if c in df.columns]]
         if exp == "lkj":
             continue  # matrices are not on a rho grid: see analysis2/hypotheses.py
-        curves(df).to_csv(os.path.join(SUMMARY, f"curves_{exp}.csv"), index=False)
+        curves(df).to_csv(os.path.join(SUMMARY, f"curves_{exp}.csv.gz"), index=False)
         thresholds(df).to_csv(os.path.join(SUMMARY, f"thresholds_{exp}.csv"), index=False)
         print(f"{exp}: curves and thresholds written")
 
