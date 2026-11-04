@@ -194,10 +194,15 @@ class Meter:
         import pynvml
         self.nv = pynvml
         pynvml.nvmlInit()
-        self.h = None
-        try:
-            self.h = pynvml.nvmlDeviceGetHandleByUUID("GPU-" + str(torch.cuda.get_device_properties(torch_device).uuid))
-        except Exception:
+        torch.zeros(1, device=f"cuda:{torch_device}")  # create the context so this process appears in NVML
+        self.h, self.match = None, "pid"
+        for i in range(pynvml.nvmlDeviceGetCount()):  # the device that runs this process (identical A100s otherwise)
+            h = pynvml.nvmlDeviceGetHandleByIndex(i)
+            if any(p.pid == os.getpid() for p in pynvml.nvmlDeviceGetComputeRunningProcesses(h)):
+                self.h = h
+                break
+        if self.h is None:
+            self.match = "CUDA_VISIBLE_DEVICES"
             vis = os.environ.get("CUDA_VISIBLE_DEVICES", "0").split(",")[torch_device]
             self.h = pynvml.nvmlDeviceGetHandleByIndex(int(vis)) if vis.isdigit() else pynvml.nvmlDeviceGetHandleByUUID(vis)
         name = pynvml.nvmlDeviceGetName(self.h)
@@ -208,7 +213,10 @@ class Meter:
     def info(self):
         nv, h = self.nv, self.h
         procs = nv.nvmlDeviceGetComputeRunningProcesses(h)
-        return dict(name=torch.cuda.get_device_name(0), uuid=str(torch.cuda.get_device_properties(0).uuid),
+        uuid = nv.nvmlDeviceGetUUID(h)
+        bus = nv.nvmlDeviceGetPciInfo(h).busId
+        return dict(name=torch.cuda.get_device_name(0), uuid=uuid.decode() if isinstance(uuid, bytes) else uuid,
+                    pci_bus=bus.decode() if isinstance(bus, bytes) else bus, nvml_match=self.match,
                     driver=nv.nvmlSystemGetDriverVersion(), power_limit_W=nv.nvmlDeviceGetEnforcedPowerLimit(h) / 1e3,
                     max_sm_MHz=nv.nvmlDeviceGetMaxClockInfo(h, nv.NVML_CLOCK_SM),
                     max_mem_MHz=nv.nvmlDeviceGetMaxClockInfo(h, nv.NVML_CLOCK_MEM),
