@@ -4,6 +4,9 @@
 Okabe-Ito colours in a fixed order per entity (validated: CVD separation and normal-vision floor pass; orange and
 reddish purple are below 3:1 contrast, so every series also has its own marker and a legend). Undefined points are
 gaps; points below 3x their MC noise floor are hollow markers; bands are 2.5-97.5 % seed intervals.
+
+    HCR_PAPER=1 HCR_FIGURES2=paper/figures python -m analysis2.figures
+renders the same data for the paper: no figure titles (the captions carry them), the paper's symbols, smaller sizes, PDF only.
 """
 import os
 
@@ -23,16 +26,56 @@ KCOL = {2: 0, 4: 1, 8: 2, 16: 3, 32: 4}
 plt.rcParams.update({"font.size": 12, "axes.titlesize": 13, "axes.labelsize": 12, "legend.fontsize": 12,
                      "axes.spines.top": False, "axes.spines.right": False, "axes.grid": True, "grid.alpha": 0.25,
                      "lines.linewidth": 2, "lines.markersize": 7, "savefig.dpi": 200})
+PAPER = os.environ.get("HCR_PAPER") == "1"
+SYMBOLS = (("CONST_DENOM", r"$p_{\mathrm{CD}}$"), ("EXACT_UNCAL", r"$p_{\mathrm{EU}}$"), ("EXACT_CAL", r"$p_{\mathrm{EC}}$"),
+           ("GOLD", r"$p_{\mathrm{G}}$"), ("d_denom", r"$d_{\mathrm{denom}}$"), ("d_neg", r"$d_{\mathrm{neg}}$"),
+           ("d_model_cal", r"$d_{\mathrm{model,cal}}$"), ("d_total", r"$d_{\mathrm{total}}$"), ("ρ_S", r"$\rho_S$"),
+           ("n_est=1e7", r"$n=10^7$"), ("[0,1]^k", r"$[0,1]^k$"), ("E_q[N/D]", r"$E_q[N/D]$"), ("lbfgs", "L-BFGS"), ("adam", "Adam"))
+if PAPER:
+    plt.rcParams.update({"font.size": 8.5, "axes.titlesize": 9, "axes.labelsize": 8.5, "legend.fontsize": 7.5, "lines.linewidth": 1.3,
+                         "lines.markersize": 4.2, "pdf.fonttype": 42, "mathtext.fontset": "dejavusans", "xtick.labelsize": 8,
+                         "ytick.labelsize": 8})
+    _subplots = plt.subplots
+
+    def _scaled(*a, figsize, **kw):
+        return _subplots(*a, figsize=(0.6 * figsize[0], 0.6 * figsize[1]), **kw)
+
+    plt.subplots = _scaled
 
 
 def run_label(r):
     """'e2e4_adam' -> 'end-to-end\nL=4\nadam'."""
     loss, opt = r.split("_")
+    if PAPER:
+        return {"val": "value", "nll": "NLL", "e2e4": "e2e\nL=4"}[loss] + "\n" + {"adam": "Adam", "lbfgs": "L-BFGS"}[opt]
     return {"val": "val. loss", "nll": "NLL", "e2e4": "end-to-\nend, L=4"}[loss] + "\n" + opt
+
+
+def typeset(fig):
+    """Paper rendering of a finished figure: presentation only."""
+    if fig._suptitle is not None:
+        fig._suptitle.remove()
+        fig._suptitle = None
+    for ax in fig.axes:
+        if ax.get_title().startswith("G6:"):
+            ax.set_title("")
+    for t in fig.findobj(matplotlib.text.Text):
+        txt = t.get_text()
+        for a, b in SYMBOLS:
+            txt = txt.replace(a, b)
+        t.set_text(txt)
+        t.set_fontsize(min(t.get_fontsize(), 8.5))
+    if len(fig.axes) >= 4 and not fig.get_constrained_layout():
+        fig.subplots_adjust(hspace=0.42)
 
 
 def save(fig, name):
     os.makedirs(OUT, exist_ok=True)
+    if PAPER:
+        typeset(fig)
+        fig.savefig(os.path.join(OUT, name + ".pdf"), bbox_inches="tight")
+        plt.close(fig)
+        return
     fig.savefig(os.path.join(OUT, name + ".png"), bbox_inches="tight")
     fig.savefig(os.path.join(OUT, name + ".pdf"), bbox_inches="tight")
     plt.close(fig)
@@ -127,7 +170,10 @@ def g2(tg, tp):
         ax.set_xlabel("number of inputs k")
         ax.set_title(typ)
     axs[0].set_ylabel("threshold ρ_S (95 % bootstrap CI)")
-    axs[0].legend(fontsize=12)
+    if PAPER:
+        fig.legend(*axs[0].get_legend_handles_labels(), loc="lower center", ncol=3, bbox_to_anchor=(0.5, -0.2))
+    else:
+        axs[0].legend(fontsize=12)
     fig.suptitle("G2: thresholds vs number of inputs (m=4; missing = not reached before EXACT_UNCAL is undefined)")
     save(fig, "G2_thresholds_vs_k")
 
@@ -195,7 +241,7 @@ def g5(tf, cf):
         axs[bi].set_title(f"{basis} basis")
         axs[bi].set_xlabel("number of inputs k")
     axs[0].set_ylabel("D<0 onset (ρ_S-equivalent, matched Kendall τ)")
-    fig.legend(*axs[0].get_legend_handles_labels(), loc="lower center", ncol=7, bbox_to_anchor=(0.5, -0.1))
+    fig.legend(*axs[0].get_legend_handles_labels(), loc="lower center", ncol=7, bbox_to_anchor=(0.5, -0.2 if PAPER else -0.1))
     fig.suptitle("G5: negativity onset by copula family (m=4, n_est=1e7, 95 % CI)")
     save(fig, "G5_copula_families")
 
@@ -382,6 +428,8 @@ def main():
     net = net_frames()
     for f, args in ((g1, (cg,)), (g2, (tg, tp)), (g3, (cg,)), (g4, (cg,)), (g5, (tf, cf)), (g6, (cg,)), (g7, (cg,)),
                     (g8, (net,)), (g9, (net,)), (onepager, (cg, tg, tp, net))):
+        if PAPER and f is onepager:
+            continue
         f(*args)
         print("figure", f.__name__, "done")
 
