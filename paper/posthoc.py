@@ -123,6 +123,49 @@ def curves_stats(out):
     out["families_rho0"] = {f"{r.family}_{int(r.k)}": dict(chi=float(r.chi_D_med), minD=float(r.minD_med)) for r in g.itertuples()}
 
 
+def reframe(out):
+    """Which error is largest, what clipping does, what the `defined` filter selects, and the outcomes past the onset."""
+    cols = ["k", "type", "basis", "belief", "rho_S", "seed", "m", "eps", "defined", "d_denom", "d_model_uncal", "d_model_cal", "d_total", "d_dc", "d_neg",
+            "E_q_D", "sd_q_D", "minD"]
+    A = pq("gauss", cols)
+    A = A[A.belief != "S1"]
+    G = primary(A)
+    g4 = G[(G.m == 4) & (G.rho_S > 0)]
+    d = g4[g4.defined == 1]
+    tr = {}
+    for (b, basis), x in d.groupby(["belief", "basis"]):
+        ratio = x.d_model_uncal / x.d_denom
+        tr[f"{b}_{basis}"] = dict(n=len(x), denom=float(x.d_denom.median()), model=float(x.d_model_uncal.median()), ratio=float(ratio.median()),
+                                  model_bigger=float((x.d_model_uncal > x.d_denom).mean()), cd=float(x.d_total.median()), eu=float(x.d_model_uncal.median()),
+                                  ec=float(x.d_model_cal.median()), eu_closer=float((x.d_model_uncal < x.d_total).mean()),
+                                  ec_beats_eu=float((x.d_model_cal < x.d_model_uncal).mean()))
+    out["truncation"] = tr
+    # clipping: how much the floor eps matters, on defined rows, pair, flat belief
+    e = A[(A.m == 4) & (A.rho_S > 0) & (A.defined == 1) & (A.belief == "S2") & (A.basis == "pair")]
+    out["clip_eps"] = {str(k_): float(x.d_neg.median()) for k_, x in e.groupby("eps")}
+    # past the onset: only d_total and d_dc exist
+    u = g4[g4.defined != 1]
+    out["past_onset"] = {f"{b}_{basis}": dict(n=len(x), share=float(len(x) / len(g4[(g4.belief == b) & (g4.basis == basis)])), d_total=float(x.d_total.median()),
+                                              d_dc=float(x.d_dc.median()), ec=float(x.d_model_cal.median()), cd_closer=float((x.d_total < x.d_model_cal).mean()))
+                         for (b, basis), x in u.groupby(["belief", "basis"])}
+    # the `defined` filter: how large can the gap be among the survivors, and how much of the grid survives
+    cv = d.sd_q_D / d.E_q_D.abs()
+    s2 = G[(G.m == 4) & (G.belief == "S2")]
+    out["selection"] = dict(max_cv=float(cv.max()), max_d_denom=float(d.d_denom.max()), q99_d_denom=float(d.d_denom.quantile(0.99)),
+                            s2_share_defined={f"{b}_{int(k_)}": float((x.defined == 1).mean()) for (b, k_), x in s2.groupby(["basis", "k"])})
+    t = pd.read_csv(os.path.join(SUMMARY, "thresholds_gauss.csv"))
+    t = t[(t.m == 4) & (t.belief != "S1")]
+    out["selection"]["d5"] = {b: dict(cells=len(x), reached=int(np.isfinite(x.denom_5pct).sum()), reached1=int(np.isfinite(x.denom_1pct).sum())) for b, x in t.groupby("belief")}
+    # the floor: share of flat-belief rows with min D above it; D_floor itself is frozen, this only shows how little it decides
+    out["floor"] = {str(fl): {f"{b}_{int(k_)}": float((x.minD >= fl).mean()) for (b, k_), x in s2.groupby(["basis", "k"])} for fl in (0.0, 0.01, 0.05, 0.1)}
+    out["floor_max_shift"] = max(abs(out["floor"]["0.0"][c] - out["floor"]["0.05"][c]) for c in out["floor"]["0.0"])
+    # narrow belief, seed medians, by basis and degree
+    c = pd.read_csv(os.path.join(SUMMARY, "curves_gauss.csv.gz"))
+    n = c[(c.belief == "S3d") & np.isclose(c.eps, 0.01) & (c.share_undefined < 0.5)]
+    out["narrow_by_basis"] = {f"{b}_{int(m)}": float(x.d_denom_med.max()) for (b, m), x in n.groupby(["basis", "m"])}
+    out["narrow_rows_pair_m4"] = float(d[(d.belief == "S3d") & (d.basis == "pair")].d_denom.max())
+
+
 def lkj(out):
     L = primary(pq("lkj", ["k", "basis", "belief", "m", "eps", "eta", "defined"]))
     L = L[(L.m == 4) & (L.belief == "S2")]
@@ -237,7 +280,7 @@ def commits(out):
 
 def main():
     out = {}
-    for f in (single_neuron, curves_stats, lkj, convergence, network, commits):
+    for f in (single_neuron, curves_stats, reframe, lkj, convergence, network, commits):
         f(out)
         print("done", f.__name__)
     json.dump(out, open(os.path.join(ROOT, "paper", "posthoc.json"), "w"), indent=1, sort_keys=True)
