@@ -1,0 +1,214 @@
+"""Check every number of the paper against its source; exits non-zero on any failure.
+
+    .venv/bin/python paper/check_numbers.py
+
+1. Regenerates generated/ from the sources and requires identical bytes.
+2. Re-applies the pre-registered decision rules to hypotheses.json and compares the hypothesis table, row by row.
+3. Compares the generated tables and macros with report2.md and energy2.md, which other code wrote.
+4. Recomputes post hoc counts from the merged parquet files, by a separate route, when those files exist.
+5. Scans main.tex: every \\V key exists, and no decimal or percentage is typed outside the whitelist of design constants.
+6. Confirms PREREGISTRATION.md is byte-identical to the frozen commit.
+"""
+import glob
+import json
+import os
+import re
+import subprocess
+import sys
+
+import pandas as pd
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
+sys.path.insert(0, HERE)
+import make_numbers  # noqa: E402
+
+GEN = os.path.join(HERE, "generated")
+S = os.path.join(ROOT, "results2", "summary")
+bad = []
+n_ok = 0
+
+
+def check(cond, what):
+    global n_ok
+    if cond:
+        n_ok += 1
+    else:
+        bad.append(what)
+
+
+def regenerate():
+    paths = sorted(glob.glob(os.path.join(GEN, "*")))
+    before = {p: open(p, "rb").read() for p in paths}
+    make_numbers.V.clear()
+    make_numbers.main()
+    for p in paths:
+        check(open(p, "rb").read() == before[p], f"regenerated file differs: {os.path.basename(p)}")
+    check(sorted(glob.glob(os.path.join(GEN, "*"))) == paths, "regeneration changed the file list")
+
+
+def rule(sig, n):
+    """Section 6 aggregation rule."""
+    if n < 3:
+        return "inconclusive"
+    if sig >= 2 / 3 * n:
+        return "supported"
+    if n - sig >= 2 / 3 * n:
+        return "not supported"
+    return "inconclusive"
+
+
+def hypotheses():
+    H = json.load(open(os.path.join(S, "hypotheses.json")))
+    want = {}
+    for h in ("H1a", "H1b", "H2a", "H2b_population", "H2b_gauss", "H5a", "H5b", "H5c", "H5d"):
+        c = H[h]["cells"]
+        sig = sum(x["sig"] for x in c)
+        check(sig == H[h]["significant"], f"{h}: significant count")
+        want[h] = rule(sig, len(c))
+    s = [x["within2"] for x in H["H1c"]["cells"]]
+    cell = ["supported" if v >= 0.9 else "not supported" if v < 0.5 else "inconclusive" for v in s]
+    check(cell == [x["verdict"] for x in H["H1c"]["cells"]], "H1c cell verdicts")
+    # the pre-registration rules H1c per (type, basis); analysis2/hypotheses.py at the freeze commit combines the cells by unanimity
+    want["H1c"] = cell[0] if len(set(cell)) == 1 else "inconclusive"
+    v = H["H2c"]["share"]
+    want["H2c"] = "supported" if v >= 0.8 else "not supported" if v <= 0.5 else "inconclusive"
+    for h in ("H3a", "H3b"):
+        c = H[h]["cells"]
+        check(sum(x["inside"] for x in c) == H[h]["n_inside"] and sum(x["outside"] for x in c) == H[h]["n_outside"], f"{h}: counts")
+        want[h] = "not supported" if any(x["outside"] for x in c) else "supported" if all(x["inside"] for x in c) else "inconclusive"
+    for x in H["H3a"]["cells"]:
+        check(x["inside"] == (-0.05 <= x["ci"][0] and x["ci"][1] <= 0.05), f"H3a cell {x['family']} {x['k']}: inside")
+    v = H["H3c"]["share"]
+    want["H3c"] = "supported" if v >= 0.8 else "not supported" if v < 0.5 else "inconclusive"
+    v = H["H4a"]["share"]
+    want["H4a"] = "supported" if v >= 0.9 else "not supported" if v < 0.5 else "inconclusive"
+    conv = pd.read_csv(os.path.join(S, "convergence.csv"))
+    want["H4b"] = "not supported" if conv.n_violations.sum() > 0 else "supported"
+    for h, w in want.items():
+        check(w == H[h]["verdict"], f"{h}: rule gives {w}, file says {H[h]['verdict']}")
+    # table rows, in file order, against the file
+    t = open(os.path.join(GEN, "tab_hyp.tex")).read()
+    rows = re.findall(r"^(H\d[a-d]) & (.*?) & \\emph\{(.*?)\} & (.*?) \\\\$", t, re.M)
+    keys = ["H1a", "H1b", "H1c", "H2a", "H2b_population", "H2b_gauss", "H2c", "H3a", "H3b", "H3c", "H4a", "H4b", "H5a", "H5b", "H5c", "H5d"]
+    check(len(rows) == len(keys) == len(H), "hypothesis table has every outcome")
+    for r, k in zip(rows, keys):
+        check(r[0] == k[:3] and r[2] == H[k]["verdict"], f"table row {r[0]}: verdict")
+        if "significant" in H[k]:
+            n = len(H[k]["cells"])
+            check(r[3].startswith(f"{H[k]['significant']}/{n}"), f"table row {k}: count")
+    check(set(w for _, _, w, _ in rows) <= {"supported", "not supported", "inconclusive"}, "verdict words")
+
+
+def tex_rows(name):
+    t = open(os.path.join(GEN, f"tab_{name}.tex")).read()
+    return [[c.strip() for c in r.split(" & ")] for r in re.findall(r"^(.*?) \\\\$", t, re.M)][1:]
+
+
+def reports():
+    rep = open(os.path.join(ROOT, "report2.md")).read()
+    norm = lambda c: c.replace("—", "---").replace("–", "--").strip()  # noqa: E731
+    md = {tuple(c[:3]): [norm(x) for x in c[3:]] for c in
+          ([x.strip() for x in line.strip("|").split("|")] for line in rep.splitlines() if re.match(r"\| (SUM|CONTRAST) \| (pair|triple) \|", line))}
+    rows = tex_rows("thr_full")
+    last = None
+    n = 0
+    for r in rows:
+        if r[0] in ("SUM", "CONTRAST"):
+            n += 1
+            check(md.get(tuple(r[:3])) == r[3:], f"thresholds differ from report2.md: {r[:3]}")
+    check(n == len(md) == 20, "threshold rows")
+    V = make_numbers.V
+    for pat, key in ((r"\*\*(?:not )?supported\*\* \(4/4 cells", None),):
+        check(re.search(pat, rep), "report2 H1a")
+    for txt, key in (("21/48 CIs inside, 27 entirely outside", "H3a"), ("73/236 inside, 156 outside", "H3b"), ("11/72; 51 cells", "H5a"),
+                     ("5/18 significant, 1 significant", "H5b"), ("24/78 significant, 19 significant", "H5c"), ("27/192 significant, 84 significant", "H5d")):
+        a, b = (int(x) for x in re.findall(r"\d+", txt)[:2])
+        if key in ("H3a", "H3b"):
+            check((int(V[f"{key}.in"]), int(V[f"{key}.n"])) == (a, b), f"{key} vs report2")
+        else:
+            check((int(V[f"{key}.sig"]), int(V[f"{key}.n"])) == (a, b), f"{key} vs report2")
+        check(txt in rep, f"report2 lacks {txt}")
+    for fam in ("clayton", "gumbel", "t10", "t3"):
+        m = re.search(rf"\| {fam} \| \d+ \| .*? \| \d+ \| \d+ \| ([\d.]+) \|", rep)
+        check(m and m.group(1) == V[f"fam.{fam}.ratio"], f"family ratio {fam}")
+    m = re.search(r"gives (\d+) of (\d+) \(k = 8 and 32", rep)
+    check(int(m.group(1)) == int(V["H4b.viol"].replace("{,}", "")) and int(m.group(2)) == int(V["H4b.n2"].replace("{,}", "")), "H4b vs report2")
+    m = re.search(r"S2 ([\d.]+), S3c ([\d.]+), S4 ([\d.]+);", rep)
+    check(m.groups() == (V["H5a.ratio.S2"], V["H5a.ratio.S3c"], V["H5a.ratio.S4"]), "H5a ratios vs report2")
+    # energy: every row of both full tables against energy2.md
+    en = open(os.path.join(ROOT, "energy2.md")).read()
+    secs = re.split(r"^## (float\d\d)$", en, flags=re.M)
+    for dt, body in zip(secs[1::2], secs[2::2]):
+        md = {}
+        for line in body.splitlines():
+            c = [x.strip() for x in line.strip("|").split("|")]
+            if len(c) >= 12 and c[1].isdigit():
+                md[(c[0], c[1], c[2])] = (c[4].split()[0], c[5].split()[0])
+        rows = tex_rows(f"energy_{dt}")
+        check(len(rows) == len(md) == 24, f"energy rows {dt}")
+        for r in rows:
+            key = (r[0], r[1], r[2].replace("{,}", ""))
+            a, b = md[key]
+            check(abs(float(a) / float(r[4]) - 1) < 6e-3 and abs(float(b) / float(r[5]) - 1) < 6e-3, f"energy {dt} {key}")
+
+
+def parquet():
+    p = os.path.join(ROOT, "results2", "merged", "gauss.parquet")
+    if not os.path.exists(p):
+        print("parquet files absent: post hoc recomputation skipped")
+        return
+    V = make_numbers.V
+    n = lambda k: int(V[k].replace("{,}", ""))  # noqa: E731
+    G = pd.read_parquet(p, columns=["basis", "k", "m", "E_q_D", "d_total"], filters=[("eps", "==", 0.01)])
+    check(len(G) == n("ph.eqd.rows"), "rows")
+    neg = G[G.E_q_D <= 0]
+    check(len(neg) == n("ph.eqd.nonpos"), "E_q[D] <= 0 count")
+    check((neg.m == 4).sum() == n("ph.eqd.nonpos4"), "E_q[D] <= 0 count, m = 4")
+    check(set(neg.basis) == {"triple"} and neg.k.min() == int(V["ph.eqd.mink"]), "E_q[D] <= 0 cells")
+    check((G.d_total > 1).sum() == n("ph.tv1.n"), "d_total > 1 count")
+    check(f"{G.d_total.max():.0f}" == V["ph.tv1.max"], "max d_total")
+    Pp = pd.read_parquet(os.path.join(ROOT, "results2", "merged", "population.parquet"), columns=["E_q_D"], filters=[("eps", "==", 0.01)])
+    check((Pp.E_q_D <= 0).sum() == n("ph.eqd.pop.nonpos") and len(Pp) == n("ph.eqd.pop.rows"), "population E_q[D]")
+    st = [json.load(open(f)) for f in glob.glob(os.path.join(ROOT, "results2/merged/*_status.json"))]
+    check(sum(s["done"] for s in st) == n("jobs") and not any(s["failed"] for s in st), "jobs")
+    v = pd.read_csv(os.path.join(S, "convergence_violations.csv"))
+    check(len(v) == n("H4b.viol") and (v.k == 8).sum() == n("H4b.k8") and (v.k == 32).sum() == n("H4b.k32"), "H4b violations")
+
+
+ALLOWED = {  # design constants and mathematics, never results
+    "0", "0.01", "0.02", "0.03", "0.05", "0.075", "0.1", "0.15", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "0.001", "0.003", "0.005", "0.0001",
+    "1", "1.5", "2", "4", "5", "10", "1%", "5%", "50%", "80%", "90%", "95%", "10%", "97.5", "97.5%", "2.5", "2.5%", "1.0", "4.0",
+}
+
+
+def scan():
+    t = open(os.path.join(HERE, "main.tex")).read()
+    t = t[t.index("\\begin{document}"):]
+    keys = re.findall(r"\\V\{([^}]*)\}", t)
+    for k in keys:
+        check(k in make_numbers.V, f"unknown key {k}")
+    print(len(keys), "numbers used in main.tex,", len(set(keys)), "distinct")
+    x = re.sub(r"%.*$", "", t.replace("\\%", "PCT"), flags=re.M)
+    x = re.sub(r"\\(V|ref|eqref|label|cite[tp]?|input|includegraphics|texttt|section|subsection)(\[[^\]]*\])*\{[^}]*\}", " ", x)
+    x = x.replace("\\,", "").replace("PCT", "%")
+    for m in re.finditer(r"(?<![\w.{^_-])\d+\.\d+%?|(?<![\w.{^_-])\d+%", x):
+        check(m.group(0) in ALLOWED, f"typed number {m.group(0)}: ...{x[max(0, m.start() - 40):m.end() + 20]!r}")
+
+
+def frozen():
+    a = subprocess.run(["/usr/bin/git", "show", "6a98646:PREREGISTRATION.md"], cwd=ROOT, capture_output=True, check=True).stdout
+    check(a == open(os.path.join(ROOT, "PREREGISTRATION.md"), "rb").read(), "PREREGISTRATION.md changed")
+
+
+def main():
+    for f in (regenerate, hypotheses, reports, parquet, scan, frozen):
+        f()
+    print(f"{n_ok} checks passed, {len(bad)} failed")
+    for b in bad:
+        print("FAIL:", b)
+    sys.exit(1 if bad else 0)
+
+
+if __name__ == "__main__":
+    main()

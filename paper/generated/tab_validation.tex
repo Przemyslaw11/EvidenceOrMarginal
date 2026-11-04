@@ -1,0 +1,21 @@
+\footnotesize
+\begin{tabular}{@{}lp{0.72\linewidth}l@{}}
+\toprule
+test & what it checks & result \\
+\midrule
+M1 & orthonormality of the basis, explicit $f_1,\dots,f_4$ & pass \\
+M2 & index families, coefficient counts, block vs dense estimator & pass \\
+M3 & estimator vs population moments, SE scaling, Gauss--Hermite convergence & pass \\
+M4 & reproduces the $d=3$ study (TV values, flags) & pass \\
+M5 & flat-$D$ control: $p_{\mathrm{CD}}=p_{\mathrm{EU}}$ & pass \\
+M6 & covariance identity in sample & pass \\
+M7 & integrals of all densities; copula samplers and conditionals; Student-$t$ CDF and quantile against 50-digit mpmath & pass \\
+M8 & TV in $s$ vs $x$; grid refinement with spiky $p_{\mathrm{G}}$ & pass \\
+M9 & min-$D$ optimiser vs brute-force grids and closed forms & pass \\
+M10 & positive definiteness of all correlation matrices; LKJ moments & pass \\
+M11 & bitwise reproducibility; kill and resume of a job & pass \\
+M12 & seed variance matches estimated SE; common random numbers & pass \\
+M13 & convergence under doubling = hypothesis H4b, on production data & \textbf{fail} \\
+M14 & chain: $L=1$ vs engine, closed form vs MC, autograd vs finite differences, teacher Markov property & pass \\
+\bottomrule
+\end{tabular}
