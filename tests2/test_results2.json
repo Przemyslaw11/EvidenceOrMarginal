@@ -3,7 +3,7 @@
   "pass": true,
   "detail": "Gram max err 1.83e-14; explicit f1..f4 max err 5.20e-14",
   "device": "cuda",
-  "seconds": 3.1
+  "seconds": 0.5
  },
  "M2": {
   "pass": true,
@@ -21,55 +21,55 @@
   "pass": true,
   "detail": "a_(0,1,1): across-seed variance / mean SE^2 = 1.002 (99% band [0.56, 1.60], 50 seeds); a_(1,1,0): across-seed variance / mean SE^2 = 1.008 (99% band [0.56, 1.60], 50 seeds); common random numbers: sd of the rho_S 0.30->0.31 difference = 0.012 x SE",
   "device": "cuda",
-  "seconds": 0.6
+  "seconds": 0.7
  },
  "M3": {
   "pass": true,
   "detail": "a_0=1; max |a_(0,1,1)-Spearman|/SE=0.35, vs rho_S 1.97; single-index max |a|/SE: inputs 2.21, output 1.56 (n=1e6, k=4, SUM, rho_S=0.3); SE(1e6)/SE(1e7) median 3.164 (sqrt(10)=3.162); pair: population vs MC max |z|=2.43 over 181 coefficients; triple: population vs MC max |z|=3.14 over 821 coefficients; Gauss-Hermite 160 vs 192 nodes (m=6, rho_S=0.9, triple): max diff 6.0e-13",
   "device": "cuda",
-  "seconds": 70.3
+  "seconds": 72.0
  },
  "M5": {
   "pass": true,
   "detail": "flat-D control: max |CONST_DENOM - EXACT_UNCAL| coefficient diff 0.00e+00 over all beliefs, m, k in (2,4,8)",
   "device": "cuda",
-  "seconds": 9.6
+  "seconds": 5.6
  },
  "M6": {
   "pass": true,
   "detail": "in-sample covariance identity: max residual 2.22e-16 over 36 defined (belief, m, case) combinations",
   "device": "cuda",
-  "seconds": 41.5
+  "seconds": 13.1
  },
  "M8": {
   "pass": true,
   "detail": "TV in s vs x (polynomial Beta densities): max diff 2.4e-07; spiky GOLD (k=2, rho_S<=0.9): TV change 801->1601 s-nodes max 4.5e-08",
   "device": "cuda",
-  "seconds": 0.3
+  "seconds": 0.2
  },
  "M9": {
   "pass": true,
   "detail": "k=2 optimiser vs 401x401 endpoint-inclusive grid: max |diff| 8.2e-05; m=1 closed forms (k=2: 1-3|a_011|; k=1: 1-sqrt(3)|a_01|): max |diff| 8.0e-04; min over supp(q), Beta beliefs (48 cases): optimiser - 2001^2 grid <= 3.7e-06 (optimiser lower than the grid in 47)",
   "device": "cuda",
-  "seconds": 331.8
+  "seconds": 348.0
  },
  "M7": {
   "pass": true,
   "detail": "coefficient integrals |c0-1| 0.0e+00; s-grid integrals CONST_DENOM/EXACT_UNCAL 2.2e-14; EXACT_CAL under its 192-node normaliser rule 1.1e-16 (on the 801-node s-grid 9.7e-08, reported per row as int_cal); GOLD 2.6e-14; S4, population coefficients, rho_S=0: TV(GOLD, uniform) 5.5e-04 (M=2^20); gauss/SUM: tau_yy 0.355 vs 0.346; max|int c(x|y)dx-1| 1.1e-13; t3/SUM: tau_yy 0.357 vs 0.346; max|int c(x|y)dx-1| 1.9e-12; t10/CONTRAST: tau_yy 0.352 vs 0.346; max|int c(x|y)dx-1| 4.1e-12; clayton/EXCH: tau_yy 0.349 vs 0.346; max|int c(x|y)dx-1| 1.1e-13; gumbel/EXCH: tau_yy 0.345 vs 0.346; max|int c(x|y)dx-1| 1.1e-13; positive-stable frailty Laplace transform max |z| 1.38; Clayton conditional vs d/dx conditional CDF rel err 3.0e-10; Gumbel conditional vs d/dx conditional CDF rel err 5.1e-11; t3 conditional vs d/dx conditional CDF rel err 8.2e-11; t CDF (nu = 3, 10) vs mpmath: lower tail rel err 6.2e-15, upper side abs err 2.8e-16; quantile: rel err of its tail probability 1.6e-14",
   "device": "cuda",
-  "seconds": 11.2
+  "seconds": 8.2
  },
  "M11": {
   "pass": true,
   "detail": "same job twice on cuda: max relative diff 0.0e+00, NaN pattern identical: True; killed worker left 1 claim(s); kill-and-resume merged results identical to a clean run: True (378 rows)",
   "device": "cuda",
-  "seconds": 165.9
+  "seconds": 76.7
  },
  "M4": {
   "pass": true,
   "detail": "2088 TV comparisons, worst |diff|/tol 0.33, 0 violations; 18 GOLD-based values in d3 quadrature-limited rows re-checked against a 3000-node x-grid reference: 0 violations; defined-flag mismatches: 0 | REF CONTRAST 0.6 m=2 S2: d3 0.1689, new 0.1697, 3000-node ref 0.1698 | CONTRAST 0.6 m=2 S2: d3 0.1689, new 0.1697, 3000-node ref 0.1698 | CONTRAST 0.6 m=2 S2: d3 0.1689, new 0.1697, 3000-node ref 0.1698 | CONTRAST 0.6 m=4 S2: d3 0.1690, new 0.1698, 3000-node ref 0.1699 | CONTRAST 0.6 m=4 S2: d3 0.1690, new 0.1698, 3000-node ref 0.1699 | CONTRAST 0.6 m=4 S2: d3 0.1690, new 0.1698, 3000-node ref 0.1699 | CONTRAST 0.6 m=6 S2: d3 0.1690, new 0.1699, 3000-node ref 0.1699 | CONTRAST 0.6 m=6 S2: d3 0.1690, new 0.1699, 3000-node ref 0.1699",
   "device": "cuda",
-  "seconds": 185.2
+  "seconds": 129.9
  },
  "M14": {
   "pass": true,
