@@ -1,0 +1,439 @@
+\begin{thebibliography}{59}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Bertinetto et~al.(2021)Bertinetto, Henriques, Albanie, Paganini, and
+  Varol]{bertinetto2021preface}
+Luca Bertinetto, Jo{\~a}o~F. Henriques, Samuel Albanie, Michela Paganini, and
+  G{\"u}l Varol.
+\newblock Preface.
+\newblock In \emph{NeurIPS 2020 Workshop on Pre-registration in Machine
+  Learning}, volume 148 of \emph{Proceedings of Machine Learning Research},
+  pages i--i. PMLR, 2021.
+\newblock URL \url{https://proceedings.mlr.press/v148/bertinetto21a.html}.
+
+\bibitem[Boyen and Koller(1998)]{boyen1998tractable}
+Xavier Boyen and Daphne Koller.
+\newblock Tractable inference for complex stochastic processes.
+\newblock In \emph{Proceedings of the Fourteenth Conference on Uncertainty in
+  Artificial Intelligence (UAI1998)}, pages 33--42, 1998.
+
+\bibitem[Burtscher et~al.(2014)Burtscher, Zecena, and
+  Zong]{burtscher2014measuring}
+Martin Burtscher, Ivan Zecena, and Ziliang Zong.
+\newblock Measuring {GPU} power with the {K20} built-in sensor.
+\newblock In \emph{Proceedings of Workshop on General Purpose Processing Using
+  GPUs}, pages 28--36. ACM, 2014.
+\newblock \doi{10.1145/2588768.2576783}.
+
+\bibitem[Cardoso et~al.(2022)Cardoso, Samsonov, Thin, Moulines, and
+  Olsson]{cardoso2022brsnis}
+Gabriel Cardoso, Sergey Samsonov, Achille Thin, Eric Moulines, and Jimmy
+  Olsson.
+\newblock {BR-SNIS}: Bias reduced self-normalized importance sampling.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~35, 2022.
+
+\bibitem[{\v{C}}encov(1962)]{cencov1962evaluation}
+N.~N. {\v{C}}encov.
+\newblock Evaluation of an unknown distribution density from observations.
+\newblock \emph{Soviet Mathematics}, 3:\penalty0 1559--1562, 1962.
+
+\bibitem[Chatrabgoun et~al.(2017)Chatrabgoun, Parham, and
+  Chinipardaz]{chatrabgoun2017legendre}
+O.~Chatrabgoun, G.~Parham, and R.~Chinipardaz.
+\newblock A {L}egendre multiwavelets approach to copula density estimation.
+\newblock \emph{Statistical Papers}, 58\penalty0 (3):\penalty0 673--690, 2017.
+\newblock \doi{10.1007/s00362-015-0720-0}.
+
+\bibitem[Cochran(1977)]{cochran1977sampling}
+William~G. Cochran.
+\newblock \emph{Sampling Techniques}.
+\newblock Wiley Series in Probability and Mathematical Statistics. Wiley, 3
+  edition, 1977.
+\newblock ISBN 0-471-16240-X.
+
+\bibitem[Demarta and McNeil(2005)]{demarta2005t}
+Stefano Demarta and Alexander~J. McNeil.
+\newblock The t copula and related copulas.
+\newblock \emph{International Statistical Review}, 73\penalty0 (1):\penalty0
+  111--129, 2005.
+\newblock \doi{10.1111/j.1751-5823.2005.tb00254.x}.
+
+\bibitem[Duda(2017)]{duda2017rapid}
+Jarek Duda.
+\newblock Rapid parametric density estimation, 2017.
+
+\bibitem[Duda(2018{\natexlab{a}})]{duda2018exploiting}
+Jarek Duda.
+\newblock Exploiting statistical dependencies of time series with hierarchical
+  correlation reconstruction, 2018{\natexlab{a}}.
+
+\bibitem[Duda(2018{\natexlab{b}})]{duda2018hierarchical}
+Jarek Duda.
+\newblock Hierarchical correlation reconstruction with missing data, for
+  example for biology-inspired neuron, 2018{\natexlab{b}}.
+
+\bibitem[Duda(2024)]{duda2024biology}
+Jarek Duda.
+\newblock Biology-inspired joint distribution neurons based on {H}ierarchical
+  {C}orrelation {R}econstruction allowing for multidirectional propagation of
+  values and densities, 2024.
+\newblock Version 9, 4 June 2026.
+
+\bibitem[Duda and Snarska(2018)]{duda2018modeling}
+Jarek Duda and Ma{\l}gorzata Snarska.
+\newblock Modeling joint probability distribution of yield curve parameters,
+  2018.
+
+\bibitem[Duda and Szulc(2018)]{duda2018credibility}
+Jarek Duda and Adam Szulc.
+\newblock Credibility evaluation of income data with hierarchical correlation
+  reconstruction, 2018.
+
+\bibitem[Duda and Bhatta(2024)]{duda2024predicting}
+Jaroslaw Duda and Gopal Bhatta.
+\newblock Predicting conditional probability distributions of redshifts of
+  active galactic nuclei using hierarchical correlation reconstruction.
+\newblock \emph{Monthly Notices of the Royal Astronomical Society},
+  530\penalty0 (2):\penalty0 2282--2291, 2024.
+\newblock \doi{10.1093/mnras/stae963}.
+
+\bibitem[Duda et~al.(2020)Duda, Gurgul, and Syrek]{duda2020modelling}
+Jaros{\l}aw Duda, Henryk Gurgul, and Robert Syrek.
+\newblock Modelling bid-ask spread conditional distributions using hierarchical
+  correlation reconstruction.
+\newblock \emph{Statistics in Transition New Series}, 21\penalty0 (5):\penalty0
+  99--118, 2020.
+\newblock \doi{10.21307/stattrans-2020-057}.
+
+\bibitem[Efromovich(2010)]{efromovich2010orthogonal}
+Sam Efromovich.
+\newblock Orthogonal series density estimation.
+\newblock \emph{WIREs Computational Statistics}, 2\penalty0 (4):\penalty0
+  467--476, 2010.
+\newblock \doi{10.1002/wics.97}.
+
+\bibitem[Efron(1979)]{efron1979bootstrap}
+B.~Efron.
+\newblock Bootstrap methods: Another look at the jackknife.
+\newblock \emph{The Annals of Statistics}, 7\penalty0 (1):\penalty0 1--26,
+  1979.
+\newblock \doi{10.1214/aos/1176344552}.
+
+\bibitem[Efron and Tibshirani(1993)]{efron1993introduction}
+Bradley Efron and R.~J. Tibshirani.
+\newblock \emph{An Introduction to the Bootstrap}.
+\newblock Monographs on Statistics and Applied Probability. Chapman \& Hall,
+  1993.
+\newblock \doi{10.1201/9780429246593}.
+
+\bibitem[Forde and Paganini(2019)]{forde2019scientific}
+Jessica~Zosa Forde and Michela Paganini.
+\newblock The scientific method in the science of machine learning, 2019.
+\newblock Presented at the ICLR 2019 Debugging Machine Learning Models
+  workshop.
+
+\bibitem[Gajek(1986)]{gajek1986improving}
+Leslaw Gajek.
+\newblock On improving density estimators which are not bona fide functions.
+\newblock \emph{The Annals of Statistics}, 14\penalty0 (4):\penalty0
+  1612--1618, 1986.
+\newblock \doi{10.1214/aos/1176350182}.
+
+\bibitem[Gast and Roth(2018)]{gast2018lightweight}
+Jochen Gast and Stefan Roth.
+\newblock Lightweight probabilistic deep networks.
+\newblock In \emph{2018 IEEE/CVF Conference on Computer Vision and Pattern
+  Recognition}, pages 3369--3378, 2018.
+\newblock \doi{10.1109/CVPR.2018.00355}.
+
+\bibitem[Glad et~al.(2003)Glad, Hjort, and Ushakov]{glad2003correction}
+Ingrid~K. Glad, Nils~Lid Hjort, and Nikolai~G. Ushakov.
+\newblock Correction of density estimators that are not densities.
+\newblock \emph{Scandinavian Journal of Statistics}, 30\penalty0 (2):\penalty0
+  415--427, 2003.
+\newblock \doi{10.1111/1467-9469.00339}.
+
+\bibitem[Goulet et~al.(2021)Goulet, Nguyen, and Amiri]{goulet2021tractable}
+James-A. Goulet, Luong~Ha Nguyen, and Saeid Amiri.
+\newblock Tractable approximate {G}aussian inference for {B}ayesian neural
+  networks.
+\newblock \emph{Journal of Machine Learning Research}, 22\penalty0
+  (251):\penalty0 1--23, 2021.
+
+\bibitem[Hartley and Ross(1954)]{hartley1954unbiased}
+H.~O. Hartley and A.~Ross.
+\newblock Unbiased ratio estimators.
+\newblock \emph{Nature}, 174\penalty0 (4423):\penalty0 270--271, 1954.
+\newblock \doi{10.1038/174270a0}.
+
+\bibitem[Henderson et~al.(2020)Henderson, Hu, Romoff, Brunskill, Jurafsky, and
+  Pineau]{henderson2020towards}
+Peter Henderson, Jieru Hu, Joshua Romoff, Emma Brunskill, Dan Jurafsky, and
+  Joelle Pineau.
+\newblock Towards the systematic reporting of the energy and carbon footprints
+  of machine learning.
+\newblock \emph{Journal of Machine Learning Research}, 21\penalty0
+  (248):\penalty0 1--43, 2020.
+
+\bibitem[Hern{\'a}ndez-Lobato and
+  Adams(2015)]{hernandezlobato2015probabilistic}
+Jos{\'e}~Miguel Hern{\'a}ndez-Lobato and Ryan~P. Adams.
+\newblock Probabilistic backpropagation for scalable learning of {B}ayesian
+  neural networks.
+\newblock In \emph{Proceedings of the 32nd International Conference on Machine
+  Learning}, volume~37 of \emph{Proceedings of Machine Learning Research},
+  pages 1861--1869, 2015.
+
+\bibitem[Julier and Uhlmann(2004)]{julier2004unscented}
+S.~J. Julier and J.~K. Uhlmann.
+\newblock Unscented filtering and nonlinear estimation.
+\newblock \emph{Proceedings of the IEEE}, 92\penalty0 (3):\penalty0 401--422,
+  2004.
+\newblock \doi{10.1109/JPROC.2003.823141}.
+
+\bibitem[Kanter(1975)]{kanter1975stable}
+Marek Kanter.
+\newblock Stable densities under change of scale and total variation
+  inequalities.
+\newblock \emph{The Annals of Probability}, 3\penalty0 (4):\penalty0 697--707,
+  1975.
+\newblock \doi{10.1214/aop/1176996309}.
+
+\bibitem[Kingma and Ba(2015)]{kingma2015adam}
+Diederik~P. Kingma and Jimmy Ba.
+\newblock Adam: A method for stochastic optimization.
+\newblock In \emph{3rd International Conference for Learning Representations},
+  2015.
+
+\bibitem[Kronmal and Tarter(1968)]{kronmal1968estimation}
+R.~Kronmal and M.~Tarter.
+\newblock The estimation of probability densities and cumulatives by {F}ourier
+  series methods.
+\newblock \emph{Journal of the American Statistical Association}, 63\penalty0
+  (323):\penalty0 925--952, 1968.
+\newblock \doi{10.1080/01621459.1968.11009321}.
+
+\bibitem[Lewandowski et~al.(2009)Lewandowski, Kurowicka, and
+  Joe]{lewandowski2009generating}
+Daniel Lewandowski, Dorota Kurowicka, and Harry Joe.
+\newblock Generating random correlation matrices based on vines and extended
+  onion method.
+\newblock \emph{Journal of Multivariate Analysis}, 100\penalty0 (9):\penalty0
+  1989--2001, 2009.
+\newblock \doi{10.1016/j.jmva.2009.04.008}.
+
+\bibitem[Lindskog et~al.(2003)Lindskog, McNeil, and
+  Schmock]{lindskog2003kendall}
+Filip Lindskog, Alexander McNeil, and Uwe Schmock.
+\newblock Kendall's tau for elliptical distributions.
+\newblock In \emph{Credit Risk}, Contributions to Economics, pages 149--156.
+  Physica-Verlag HD, 2003.
+\newblock \doi{10.1007/978-3-642-59365-9_8}.
+
+\bibitem[Lipton and Steinhardt(2019)]{lipton2019troubling}
+Zachary~C. Lipton and Jacob Steinhardt.
+\newblock Troubling trends in machine learning scholarship.
+\newblock \emph{Queue}, 17\penalty0 (1):\penalty0 45--77, 2019.
+\newblock \doi{10.1145/3317287.3328534}.
+
+\bibitem[Liu and Nocedal(1989)]{liu1989limited}
+Dong~C. Liu and Jorge Nocedal.
+\newblock On the limited memory {BFGS} method for large scale optimization.
+\newblock \emph{Mathematical Programming}, 45\penalty0 (1-3):\penalty0
+  503--528, 1989.
+\newblock \doi{10.1007/BF01589116}.
+
+\bibitem[Liu et~al.(2025)Liu, Wang, Vaidya, Ruehle, Halverson,
+  Solja{\v{c}}i{\'c}, Hou, and Tegmark]{liu2025kan}
+Ziming Liu, Yixuan Wang, Sachin Vaidya, Fabian Ruehle, James Halverson, Marin
+  Solja{\v{c}}i{\'c}, Thomas~Y. Hou, and Max Tegmark.
+\newblock {KAN}: {K}olmogorov-{A}rnold networks.
+\newblock In \emph{International Conference on Learning Representations}, 2025.
+
+\bibitem[Marshall and Olkin(1988)]{marshall1988families}
+Albert~W. Marshall and Ingram Olkin.
+\newblock Families of multivariate distributions.
+\newblock \emph{Journal of the American Statistical Association}, 83\penalty0
+  (403):\penalty0 834--841, 1988.
+\newblock \doi{10.1080/01621459.1988.10478671}.
+
+\bibitem[McNeil and Ne{\v{s}}lehov{\'a}(2009)]{mcneil2009multivariate}
+Alexander~J. McNeil and Johanna Ne{\v{s}}lehov{\'a}.
+\newblock Multivariate {A}rchimedean copulas, d-monotone functions and
+  $\ell_1$-norm symmetric distributions.
+\newblock \emph{The Annals of Statistics}, 37\penalty0 (5B):\penalty0
+  3059--3097, 2009.
+\newblock \doi{10.1214/07-AOS556}.
+
+\bibitem[Meng(1993)]{meng1993absolute}
+Xiao-Li Meng.
+\newblock On the absolute bias ratio of ratio estimators.
+\newblock \emph{Statistics \& Probability Letters}, 18\penalty0 (5):\penalty0
+  345--348, 1993.
+\newblock \doi{10.1016/0167-7152(93)90026-F}.
+
+\bibitem[Minka(2001)]{minka2001expectation}
+Thomas~P. Minka.
+\newblock Expectation propagation for approximate {B}ayesian inference.
+\newblock In J.~Breese and D.~Koller, editors, \emph{Proceedings of the
+  Seventeenth Conference on Uncertainty in Artificial Intelligence (UAI2001)},
+  pages 362--369. Morgan Kaufmann, 2001.
+
+\bibitem[Nelsen(2006)]{nelsen2006introduction}
+Roger~B. Nelsen.
+\newblock \emph{An Introduction to Copulas}.
+\newblock Springer Series in Statistics. Springer, 2 edition, 2006.
+\newblock ISBN 978-0-387-28659-4.
+\newblock \doi{10.1007/0-387-28678-0}.
+
+\bibitem[Ngounou~Bakam and Pommeret(2025)]{ngounoubakam2025nonparametric}
+Yves~I. Ngounou~Bakam and Denys Pommeret.
+\newblock Nonparametric estimation of copulas and copula densities by
+  orthogonal projections.
+\newblock \emph{Econometrics and Statistics}, 36:\penalty0 90--118, 2025.
+\newblock \doi{10.1016/j.ecosta.2023.04.002}.
+
+\bibitem[Nosek et~al.(2018)Nosek, Ebersole, DeHaven, and
+  Mellor]{nosek2018preregistration}
+Brian~A. Nosek, Charles~R. Ebersole, Alexander~C. DeHaven, and David~T. Mellor.
+\newblock The preregistration revolution.
+\newblock \emph{Proceedings of the National Academy of Sciences}, 115\penalty0
+  (11):\penalty0 2600--2606, 2018.
+\newblock \doi{10.1073/pnas.1708274114}.
+
+\bibitem[Oehlert(1992)]{oehlert1992note}
+Gary~W. Oehlert.
+\newblock A note on the delta method.
+\newblock \emph{The American Statistician}, 46\penalty0 (1):\penalty0 27--29,
+  1992.
+\newblock \doi{10.1080/00031305.1992.10475842}.
+
+\bibitem[Owen(2013)]{owen2013monte}
+Art~B. Owen.
+\newblock Monte carlo theory, methods and examples, 2013.
+\newblock URL \url{https://artowen.su.domains/mc/}.
+
+\bibitem[Paszke et~al.(2019)Paszke, Gross, Massa, Lerer, Bradbury, Chanan,
+  Killeen, Lin, Gimelshein, Antiga, Desmaison, K{\"o}pf, Yang, DeVito, Raison,
+  Tejani, Chilamkurthy, Steiner, Fang, Bai, and Chintala]{paszke2019pytorch}
+Adam Paszke, Sam Gross, Francisco Massa, Adam Lerer, James Bradbury, Gregory
+  Chanan, Trevor Killeen, Zeming Lin, Natalia Gimelshein, Luca Antiga, Alban
+  Desmaison, Andreas K{\"o}pf, Edward Yang, Zach DeVito, Martin Raison, Alykhan
+  Tejani, Sasank Chilamkurthy, Benoit Steiner, Lu~Fang, Junjie Bai, and Soumith
+  Chintala.
+\newblock {PyTorch}: An imperative style, high-performance deep learning
+  library.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~32, 2019.
+
+\bibitem[Pineau et~al.(2021)Pineau, Vincent-Lamarre, Sinha, Larivi{\`e}re,
+  Beygelzimer, d'Alch{\'e} Buc, Fox, and Larochelle]{pineau2021improving}
+Joelle Pineau, Philippe Vincent-Lamarre, Koustuv Sinha, Vincent Larivi{\`e}re,
+  Alina Beygelzimer, Florence d'Alch{\'e} Buc, Emily Fox, and Hugo Larochelle.
+\newblock Improving reproducibility in machine learning research (a report from
+  the {NeurIPS} 2019 reproducibility program).
+\newblock \emph{Journal of Machine Learning Research}, 22\penalty0
+  (164):\penalty0 1--20, 2021.
+
+\bibitem[Sandve et~al.(2013)Sandve, Nekrutenko, Taylor, and
+  Hovig]{sandve2013ten}
+Geir~Kjetil Sandve, Anton Nekrutenko, James Taylor, and Eivind Hovig.
+\newblock Ten simple rules for reproducible computational research.
+\newblock \emph{PLoS Computational Biology}, 9\penalty0 (10):\penalty0
+  e1003285, 2013.
+\newblock \doi{10.1371/journal.pcbi.1003285}.
+
+\bibitem[Schochet et~al.(2022)Schochet, Pashley, Miratrix, and
+  Kautz]{schochet2022design}
+Peter~Z. Schochet, Nicole~E. Pashley, Luke~W. Miratrix, and Tim Kautz.
+\newblock Design-based ratio estimators and central limit theorems for
+  clustered, blocked {RCTs}.
+\newblock \emph{Journal of the American Statistical Association}, 117\penalty0
+  (540):\penalty0 2135--2146, 2022.
+\newblock \doi{10.1080/01621459.2021.1906685}.
+
+\bibitem[Schwartz(1967)]{schwartz1967estimation}
+Stuart~C. Schwartz.
+\newblock Estimation of probability density by an orthogonal series.
+\newblock \emph{The Annals of Mathematical Statistics}, 38\penalty0
+  (4):\penalty0 1261--1265, 1967.
+\newblock \doi{10.1214/aoms/1177698795}.
+
+\bibitem[Sklar(1959)]{sklar1959fonctions}
+Abe Sklar.
+\newblock Fonctions de r{\'e}partition {\`a} n dimensions et leurs marges.
+\newblock \emph{Publications de l'Institut de Statistique de l'Universit{\'e}
+  de Paris}, 8:\penalty0 229--231, 1959.
+
+\bibitem[Stodden et~al.(2016)Stodden, McNutt, Bailey, Deelman, Gil, Hanson,
+  Heroux, Ioannidis, and Taufer]{stodden2016enhancing}
+Victoria Stodden, Marcia McNutt, David~H. Bailey, Ewa Deelman, Yolanda Gil,
+  Brooks Hanson, Michael~A. Heroux, John P.~A. Ioannidis, and Michela Taufer.
+\newblock Enhancing reproducibility for computational methods.
+\newblock \emph{Science}, 354\penalty0 (6317):\penalty0 1240--1241, 2016.
+\newblock \doi{10.1126/science.aah6168}.
+
+\bibitem[Strawa and Duda(2025)]{strawa2025improving}
+Jakub Strawa and Jarek Duda.
+\newblock Improving {KAN} with {CDF} normalization to quantiles, 2025.
+
+\bibitem[{The mpmath development team}(2026)]{mpmath2026}
+{The mpmath development team}.
+\newblock \emph{mpmath: a {P}ython library for arbitrary-precision
+  floating-point arithmetic}, 2026.
+\newblock \url{https://mpmath.org/}.
+
+\bibitem[Virtanen et~al.(2020)Virtanen, Gommers, Oliphant, Haberland, Reddy,
+  Cournapeau, Burovski, Peterson, Weckesser, Bright, van~der Walt, Brett,
+  Wilson, Millman, Mayorov, Nelson, Jones, Kern, Larson, Carey, Polat, Feng,
+  Moore, VanderPlas, Laxalde, Perktold, Cimrman, Henriksen, Quintero, Harris,
+  Archibald, Ribeiro, Pedregosa, van Mulbregt, and {SciPy 1.0
+  Contributors}]{virtanen2020scipy}
+Pauli Virtanen, Ralf Gommers, Travis~E. Oliphant, Matt Haberland, Tyler Reddy,
+  David Cournapeau, Evgeni Burovski, Pearu Peterson, Warren Weckesser, Jonathan
+  Bright, St{\'e}fan~J. van~der Walt, Matthew Brett, Joshua Wilson, K.~Jarrod
+  Millman, Nikolay Mayorov, Andrew R.~J. Nelson, Eric Jones, Robert Kern, Eric
+  Larson, CJ~Carey, {\.I}lhan Polat, Yu~Feng, Eric~W. Moore, Jake VanderPlas,
+  Denis Laxalde, Josef Perktold, Robert Cimrman, Ian Henriksen, E.~A. Quintero,
+  Charles~R Harris, Anne~M. Archibald, Ant{\^o}nio~H. Ribeiro, Fabian
+  Pedregosa, Paul van Mulbregt, and {SciPy 1.0 Contributors}.
+\newblock {SciPy} 1.0: fundamental algorithms for scientific computing in
+  {P}ython.
+\newblock \emph{Nature Methods}, 17\penalty0 (3):\penalty0 261--272, 2020.
+\newblock \doi{10.1038/s41592-019-0686-2}.
+
+\bibitem[Wang et~al.(2016)Wang, Shi, and Yeung]{wang2016natural}
+Hao Wang, Xingjian Shi, and Dit-Yan Yeung.
+\newblock Natural-parameter networks: A class of probabilistic neural networks.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~29, 2016.
+
+\bibitem[Wright et~al.(2024)Wright, Nakahira, and Moura]{wright2024analytic}
+Oren Wright, Yorie Nakahira, and Jos{\'e} M.~F. Moura.
+\newblock An analytic solution to covariance propagation in neural networks.
+\newblock In \emph{Proceedings of The 27th International Conference on
+  Artificial Intelligence and Statistics}, volume 238 of \emph{Proceedings of
+  Machine Learning Research}, pages 4087--4095, 2024.
+
+\bibitem[Wu et~al.(2019)Wu, Nowozin, Meeds, Turner, Hern{\'a}ndez-Lobato, and
+  Gaunt]{wu2019deterministic}
+Anqi Wu, Sebastian Nowozin, Edward Meeds, Richard~E. Turner, Jos{\'e}~Miguel
+  Hern{\'a}ndez-Lobato, and Alexander~L. Gaunt.
+\newblock Deterministic variational inference for robust {B}ayesian neural
+  networks.
+\newblock In \emph{International Conference on Learning Representations}, 2019.
+
+\bibitem[Yang et~al.(2024)Yang, Adamek, and Armour]{yang2024accurate}
+Zeyu Yang, Karel Adamek, and Wesley Armour.
+\newblock Accurate and convenient energy measurements for {GPUs}: A detailed
+  study of {NVIDIA} {GPU}'s built-in power sensor.
+\newblock In \emph{SC24: International Conference for High Performance
+  Computing, Networking, Storage and Analysis}, pages 1--17. IEEE, 2024.
+\newblock \doi{10.1109/SC41406.2024.00028}.
+
+\end{thebibliography}
