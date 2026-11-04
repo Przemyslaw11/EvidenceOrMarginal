@@ -108,6 +108,38 @@ results/ figures/      generated outputs
 docs/d3/               plan, assumptions and lab log of the d = 3 study
 ```
 
+## Scaled-up study (k up to 32, GPU)
+
+A second, pre-registered study (`PREREGISTRATION.md`) repeats the check for neurons with k = 2-32 inputs, three
+bases, five copula families, LKJ correlation matrices and chains of up to four neurons with training. Results:
+`report2.md` (with `summary_PL2.md`), figures in `figures2/`, summaries in `results2/summary/`, process notes in
+`docs/PLAN2.md`, `docs/LOG2.md` and `docs/ASSUMPTIONS2.md`. The production run used 2900 GPU jobs, about 190 A100
+GPU-hours.
+
+**Small reproduction** (reduced grid, writes `results2/small/` and `figures2/small/`; meant to finish in under 30 min
+on one GPU, tested end to end on CPU):
+
+```bash
+python run_small.py              # --device cpu works too, slower
+```
+
+**Full study on a Slurm cluster** (from the repository root, with a `venv` holding `requirements.txt` and PyTorch):
+
+```bash
+python scheduler/make_jobs.py gauss population convergence families lkj network   # job lists results2/jobs_<exp>.jsonl
+sbatch -A <account> --array=0-39 scheduler/slurm_array.sh results2/jobs_gauss.jsonl [more lists]
+# or on one machine: python scheduler/launcher.py --jobs results2/jobs_gauss.jsonl --gpus 0-3
+python scheduler/merge.py gauss population convergence families lkj network       # results2/merged/
+python -m analysis2.thresholds gauss population families    # curves, thresholds, bootstrap CIs
+python tests2/run_tests2.py post                            # M13 convergence test
+python -m analysis2.hypotheses                              # hypotheses.json (decision rules of PREREGISTRATION.md)
+python -m analysis2.figures                                 # figures2/
+python -m analysis2.report                                  # report2.md, summary_PL2.md
+```
+
+Workers are idempotent: a job is done when its result file exists, so an array can be resubmitted until
+`merge.py` reports nothing missing. `tests2/run_tests2.py` (modes `pre`, `post`, `network`) holds the validation tests.
+
 ## Notes on how this was made
 
 The experiment was specified by me.
