@@ -1,4 +1,4 @@
-\begin{thebibliography}{59}
+\begin{thebibliography}{77}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -42,6 +42,19 @@ N.~N. {\v{C}}encov.
 \newblock Evaluation of an unknown distribution density from observations.
 \newblock \emph{Soviet Mathematics}, 3:\penalty0 1559--1562, 1962.
 
+\bibitem[Chan and Darwiche(2003)]{chan2003revision}
+Hei Chan and Adnan Darwiche.
+\newblock On the revision of probabilistic beliefs using uncertain evidence.
+\newblock In \emph{Proceedings of the Eighteenth International Joint Conference
+  on Artificial Intelligence}, pages 99--105, 2003.
+
+\bibitem[Chan and Darwiche(2005)]{chan2005revision}
+Hei Chan and Adnan Darwiche.
+\newblock On the revision of probabilistic beliefs using uncertain evidence.
+\newblock \emph{Artificial Intelligence}, 163\penalty0 (1):\penalty0 67--90,
+  2005.
+\newblock \doi{10.1016/j.artint.2004.09.005}.
+
 \bibitem[Chatrabgoun et~al.(2017)Chatrabgoun, Parham, and
   Chinipardaz]{chatrabgoun2017legendre}
 O.~Chatrabgoun, G.~Parham, and R.~Chinipardaz.
@@ -62,6 +75,13 @@ Stefano Demarta and Alexander~J. McNeil.
 \newblock \emph{International Statistical Review}, 73\penalty0 (1):\penalty0
   111--129, 2005.
 \newblock \doi{10.1111/j.1751-5823.2005.tb00254.x}.
+
+\bibitem[Diaconis and Zabell(1982)]{diaconis1982updating}
+Persi Diaconis and Sandy~L. Zabell.
+\newblock Updating subjective probability.
+\newblock \emph{Journal of the American Statistical Association}, 77\penalty0
+  (380):\penalty0 822--830, 1982.
+\newblock \doi{10.1080/01621459.1982.10477893}.
 
 \bibitem[Duda(2017)]{duda2017rapid}
 Jarek Duda.
@@ -137,12 +157,25 @@ Jessica~Zosa Forde and Michela Paganini.
 \newblock Presented at the ICLR 2019 Debugging Machine Learning Models
   workshop.
 
+\bibitem[Fukumizu et~al.(2013)Fukumizu, Song, and Gretton]{fukumizu2013kernel}
+Kenji Fukumizu, Le~Song, and Arthur Gretton.
+\newblock Kernel {B}ayes' rule: {B}ayesian inference with positive definite
+  kernels.
+\newblock \emph{Journal of Machine Learning Research}, 14:\penalty0 3753--3783,
+  2013.
+
 \bibitem[Gajek(1986)]{gajek1986improving}
 Leslaw Gajek.
 \newblock On improving density estimators which are not bona fide functions.
 \newblock \emph{The Annals of Statistics}, 14\penalty0 (4):\penalty0
   1612--1618, 1986.
 \newblock \doi{10.1214/aos/1176350182}.
+
+\bibitem[Gallant and Nychka(1987)]{gallant1987semi}
+A.~Ronald Gallant and Douglas~W. Nychka.
+\newblock Semi-nonparametric maximum likelihood estimation.
+\newblock \emph{Econometrica}, 55\penalty0 (2):\penalty0 363--390, 1987.
+\newblock \doi{10.2307/1913241}.
 
 \bibitem[Gast and Roth(2018)]{gast2018lightweight}
 Jochen Gast and Stefan Roth.
@@ -164,6 +197,14 @@ James-A. Goulet, Luong~Ha Nguyen, and Saeid Amiri.
   networks.
 \newblock \emph{Journal of Machine Learning Research}, 22\penalty0
   (251):\penalty0 1--23, 2021.
+
+\bibitem[Grathwohl et~al.(2020)Grathwohl, Wang, Jacobsen, Duvenaud, Norouzi,
+  and Swersky]{grathwohl2020classifier}
+Will Grathwohl, Kuan-Chieh Wang, J{\"o}rn-Henrik Jacobsen, David Duvenaud,
+  Mohammad Norouzi, and Kevin Swersky.
+\newblock Your classifier is secretly an energy based model and you should
+  treat it like one.
+\newblock In \emph{International Conference on Learning Representations}, 2020.
 
 \bibitem[Hartley and Ross(1954)]{hartley1954unbiased}
 H.~O. Hartley and A.~Ross.
@@ -189,6 +230,11 @@ Jos{\'e}~Miguel Hern{\'a}ndez-Lobato and Ryan~P. Adams.
   Learning}, volume~37 of \emph{Proceedings of Machine Learning Research},
   pages 1861--1869, 2015.
 
+\bibitem[Jeffrey(1965)]{jeffrey1965logic}
+Richard~C. Jeffrey.
+\newblock \emph{The Logic of Decision}.
+\newblock McGraw-Hill, 1965.
+
 \bibitem[Julier and Uhlmann(2004)]{julier2004unscented}
 S.~J. Julier and J.~K. Uhlmann.
 \newblock Unscented filtering and nonlinear estimation.
@@ -204,6 +250,14 @@ Marek Kanter.
   1975.
 \newblock \doi{10.1214/aop/1176996309}.
 
+\bibitem[Khosravi et~al.(2019)Khosravi, Choi, Liang, Vergari, and Van~den
+  Broeck]{khosravi2019expected}
+Pasha Khosravi, YooJung Choi, Yitao Liang, Antonio Vergari, and Guy Van~den
+  Broeck.
+\newblock On tractable computation of expected predictions.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~32, 2019.
+
 \bibitem[Kingma and Ba(2015)]{kingma2015adam}
 Diederik~P. Kingma and Jimmy Ba.
 \newblock Adam: A method for stochastic optimization.
@@ -217,6 +271,14 @@ R.~Kronmal and M.~Tarter.
 \newblock \emph{Journal of the American Statistical Association}, 63\penalty0
   (323):\penalty0 925--952, 1968.
 \newblock \doi{10.1080/01621459.1968.11009321}.
+
+\bibitem[Kschischang et~al.(2001)Kschischang, Frey, and
+  Loeliger]{kschischang2001factor}
+F.~R. Kschischang, B.~J. Frey, and H.-A. Loeliger.
+\newblock Factor graphs and the sum-product algorithm.
+\newblock \emph{IEEE Transactions on Information Theory}, 47\penalty0
+  (2):\penalty0 498--519, 2001.
+\newblock \doi{10.1109/18.910572}.
 
 \bibitem[Lewandowski et~al.(2009)Lewandowski, Kurowicka, and
   Joe]{lewandowski2009generating}
@@ -255,6 +317,13 @@ Ziming Liu, Yixuan Wang, Sachin Vaidya, Fabian Ruehle, James Halverson, Marin
 \newblock {KAN}: {K}olmogorov-{A}rnold networks.
 \newblock In \emph{International Conference on Learning Representations}, 2025.
 
+\bibitem[Loconte et~al.(2024)Loconte, Sladek, Mengel, Trapp, Solin, Gillis, and
+  Vergari]{loconte2024subtractive}
+Lorenzo Loconte, Aleksanteri~M. Sladek, Stefan Mengel, Martin Trapp, Arno
+  Solin, Nicolas Gillis, and Antonio Vergari.
+\newblock Subtractive mixture models via squaring: Representation and learning.
+\newblock In \emph{International Conference on Learning Representations}, 2024.
+
 \bibitem[Marshall and Olkin(1988)]{marshall1988families}
 Albert~W. Marshall and Ingram Olkin.
 \newblock Families of multivariate distributions.
@@ -283,6 +352,11 @@ Thomas~P. Minka.
 \newblock In J.~Breese and D.~Koller, editors, \emph{Proceedings of the
   Seventeenth Conference on Uncertainty in Artificial Intelligence (UAI2001)},
   pages 362--369. Morgan Kaufmann, 2001.
+
+\bibitem[Munk et~al.(2022)Munk, Mead, and Wood]{munk2022uncertain}
+Andreas Munk, Alexander Mead, and Frank Wood.
+\newblock Uncertain evidence in probabilistic models and stochastic simulators,
+  2022.
 
 \bibitem[Nelsen(2006)]{nelsen2006introduction}
 Roger~B. Nelsen.
@@ -331,6 +405,19 @@ Adam Paszke, Sam Gross, Francisco Massa, Adam Lerer, James Bradbury, Gregory
 \newblock In \emph{Advances in Neural Information Processing Systems},
   volume~32, 2019.
 
+\bibitem[Pearl(1988)]{pearl1988probabilistic}
+Judea Pearl.
+\newblock \emph{Probabilistic Reasoning in Intelligent Systems: Networks of
+  Plausible Inference}.
+\newblock Morgan Kaufmann, 1988.
+
+\bibitem[Peng et~al.(2010)Peng, Zhang, and Pan]{peng2010uncertain}
+Yun Peng, Shenyong Zhang, and Rong Pan.
+\newblock {B}ayesian network reasoning with uncertain evidences.
+\newblock \emph{International Journal of Uncertainty, Fuzziness and
+  Knowledge-Based Systems}, 18\penalty0 (5):\penalty0 539--564, 2010.
+\newblock \doi{10.1142/S0218488510006696}.
+
 \bibitem[Pineau et~al.(2021)Pineau, Vincent-Lamarre, Sinha, Larivi{\`e}re,
   Beygelzimer, d'Alch{\'e} Buc, Fox, and Larochelle]{pineau2021improving}
 Joelle Pineau, Philippe Vincent-Lamarre, Koustuv Sinha, Vincent Larivi{\`e}re,
@@ -339,6 +426,12 @@ Joelle Pineau, Philippe Vincent-Lamarre, Koustuv Sinha, Vincent Larivi{\`e}re,
   the {NeurIPS} 2019 reproducibility program).
 \newblock \emph{Journal of Machine Learning Research}, 22\penalty0
   (164):\penalty0 1--20, 2021.
+
+\bibitem[Rudi and Ciliberto(2021)]{rudi2021psd}
+Alessandro Rudi and Carlo Ciliberto.
+\newblock {PSD} representations for effective probability models.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~34, 2021.
 
 \bibitem[Sandve et~al.(2013)Sandve, Nekrutenko, Taylor, and
   Hovig]{sandve2013ten}
@@ -370,6 +463,14 @@ Abe Sklar.
 \newblock \emph{Publications de l'Institut de Statistique de l'Universit{\'e}
   de Paris}, 8:\penalty0 229--231, 1959.
 
+\bibitem[Song et~al.(2011)Song, Gretton, Bickson, Low, and
+  Guestrin]{song2011kernel}
+Le~Song, Arthur Gretton, Danny Bickson, Yucheng Low, and Carlos Guestrin.
+\newblock Kernel belief propagation.
+\newblock In \emph{Proceedings of the Fourteenth International Conference on
+  Artificial Intelligence and Statistics}, volume~15 of \emph{Proceedings of
+  Machine Learning Research}, pages 707--715, 2011.
+
 \bibitem[Stodden et~al.(2016)Stodden, McNutt, Bailey, Deelman, Gil, Hanson,
   Heroux, Ioannidis, and Taufer]{stodden2016enhancing}
 Victoria Stodden, Marcia McNutt, David~H. Bailey, Ewa Deelman, Yolanda Gil,
@@ -387,6 +488,20 @@ Jakub Strawa and Jarek Duda.
 \newblock \emph{mpmath: a {P}ython library for arbitrary-precision
   floating-point arithmetic}, 2026.
 \newblock \url{https://mpmath.org/}.
+
+\bibitem[Tsuchida et~al.(2023)Tsuchida, Ong, and
+  Sejdinovic]{tsuchida2023squared}
+Russell Tsuchida, Cheng~Soon Ong, and Dino Sejdinovic.
+\newblock Squared neural families: A new class of tractable density models.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~36, 2023.
+
+\bibitem[Vershynin(2018)]{vershynin2018high}
+Roman Vershynin.
+\newblock \emph{High-Dimensional Probability: An Introduction with Applications
+  in Data Science}.
+\newblock Cambridge University Press, 2018.
+\newblock \doi{10.1017/9781108231596}.
 
 \bibitem[Virtanen et~al.(2020)Virtanen, Gommers, Oliphant, Haberland, Reddy,
   Cournapeau, Burovski, Peterson, Weckesser, Bright, van~der Walt, Brett,
@@ -435,5 +550,9 @@ Zeyu Yang, Karel Adamek, and Wesley Armour.
 \newblock In \emph{SC24: International Conference for High Performance
   Computing, Networking, Storage and Analysis}, pages 1--17. IEEE, 2024.
 \newblock \doi{10.1109/SC41406.2024.00028}.
+
+\bibitem[Yu(2020)]{yu2020soft}
+Edward Yu.
+\newblock {B}ayesian neural networks with soft evidence, 2020.
 
 \end{thebibliography}
