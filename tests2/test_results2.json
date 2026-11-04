@@ -55,9 +55,9 @@
  },
  "M7": {
   "pass": true,
-  "detail": "coefficient integrals |c0-1| 0.0e+00; s-grid integrals CONST_DENOM/EXACT_UNCAL 2.2e-14; EXACT_CAL under its 192-node normaliser rule 1.1e-16 (on the 801-node s-grid 9.7e-08, reported per row as int_cal); GOLD 2.6e-14; S4, population coefficients, rho_S=0: TV(GOLD, uniform) 5.5e-04 (M=2^20); gauss/SUM: tau_yy 0.355 vs 0.346; max|int c(x|y)dx-1| 1.1e-13; t3/SUM: tau_yy 0.357 vs 0.346; max|int c(x|y)dx-1| 1.9e-12; t10/CONTRAST: tau_yy 0.352 vs 0.346; max|int c(x|y)dx-1| 4.1e-12; clayton/EXCH: tau_yy 0.349 vs 0.346; max|int c(x|y)dx-1| 1.1e-13; gumbel/EXCH: tau_yy 0.345 vs 0.346; max|int c(x|y)dx-1| 1.1e-13; positive-stable frailty Laplace transform max |z| 1.38; Clayton conditional vs d/dx conditional CDF rel err 3.0e-10; Gumbel conditional vs d/dx conditional CDF rel err 5.1e-11; t3 conditional vs d/dx conditional CDF rel err 8.2e-11",
+  "detail": "coefficient integrals |c0-1| 0.0e+00; s-grid integrals CONST_DENOM/EXACT_UNCAL 2.2e-14; EXACT_CAL under its 192-node normaliser rule 1.1e-16 (on the 801-node s-grid 9.7e-08, reported per row as int_cal); GOLD 2.6e-14; S4, population coefficients, rho_S=0: TV(GOLD, uniform) 5.5e-04 (M=2^20); gauss/SUM: tau_yy 0.355 vs 0.346; max|int c(x|y)dx-1| 1.1e-13; t3/SUM: tau_yy 0.357 vs 0.346; max|int c(x|y)dx-1| 1.9e-12; t10/CONTRAST: tau_yy 0.352 vs 0.346; max|int c(x|y)dx-1| 4.1e-12; clayton/EXCH: tau_yy 0.349 vs 0.346; max|int c(x|y)dx-1| 1.1e-13; gumbel/EXCH: tau_yy 0.345 vs 0.346; max|int c(x|y)dx-1| 1.1e-13; positive-stable frailty Laplace transform max |z| 1.38; Clayton conditional vs d/dx conditional CDF rel err 3.0e-10; Gumbel conditional vs d/dx conditional CDF rel err 5.1e-11; t3 conditional vs d/dx conditional CDF rel err 8.2e-11; t CDF (nu = 3, 10) vs mpmath: lower tail rel err 6.2e-15, upper side abs err 2.8e-16; quantile: rel err of its tail probability 1.6e-14",
   "device": "cuda",
-  "seconds": 50.2
+  "seconds": 11.2
  },
  "M11": {
   "pass": true,
