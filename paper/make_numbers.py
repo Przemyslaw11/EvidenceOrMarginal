@@ -155,7 +155,7 @@ def thresholds(H, tg, tp):
             for k in KS:
                 r = g.loc[(t, b, k)]
                 c = lambda n: DASH if not np.isfinite(r[n]) else f"{f(r[n])} ({f(r[n + '_lo'])}--{f(r[n + '_hi'])})"  # noqa: E731
-                rr.append([t, b, k, c("relvar_5pct"), c("relvar_20pct"), f(r.minD_at_0)])
+                rr.append([t, b, k, c("relvar_5pct"), c("relvar_20pct"), f(r.minD_at_0).replace("-", "$-$")])
     table("thr_relvar", "llrllr", rr, ["type", "basis", "$k$", "$|\\mathrm{relvar}|\\geq 5\\,\\%$", "$|\\mathrm{relvar}|\\geq 20\\,\\%$", "$\\min D$ at $\\rho_S=0$"], "\\footnotesize", thin=2)
     # all beliefs, pair basis
     t4 = tg[(tg.m == 4) & (tg.basis == "pair")]
