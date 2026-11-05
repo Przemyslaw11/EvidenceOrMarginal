@@ -1,4 +1,4 @@
-\begin{thebibliography}{77}
+\begin{thebibliography}{79}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -357,10 +357,12 @@ Thomas~P. Minka.
   Seventeenth Conference on Uncertainty in Artificial Intelligence}, pages
   362--369. Morgan Kaufmann, 2001.
 
-\bibitem[Munk et~al.(2022)Munk, Mead, and Wood]{munk2022uncertain}
+\bibitem[Munk et~al.(2023)Munk, Mead, and Wood]{munk2022uncertain}
 Andreas Munk, Alexander Mead, and Frank Wood.
 \newblock Uncertain evidence in probabilistic models and stochastic simulators.
-\newblock \emph{arXiv preprint arXiv:2210.12236}, 2022.
+\newblock In \emph{Proceedings of the 40th International Conference on Machine
+  Learning}, volume 202 of \emph{Proceedings of Machine Learning Research},
+  pages 25486--25500, 2023.
 
 \bibitem[Nelsen(2006)]{nelsen2006introduction}
 Roger~B. Nelsen.
@@ -374,6 +376,13 @@ Yves~I. Ngounou~Bakam and Denys Pommeret.
   orthogonal projections.
 \newblock \emph{Econometrics and Statistics}, 36:\penalty0 90--118, 2025.
 \newblock \doi{10.1016/j.ecosta.2023.04.002}.
+
+\bibitem[Noorshams and Wainwright(2013)]{noorshams2013belief}
+Nima Noorshams and Martin~J. Wainwright.
+\newblock Belief propagation for continuous state spaces: Stochastic
+  message-passing with quantitative guarantees.
+\newblock \emph{Journal of Machine Learning Research}, 14:\penalty0 2799--2835,
+  2013.
 
 \bibitem[Nosek et~al.(2018)Nosek, Ebersole, DeHaven, and
   Mellor]{nosek2018preregistration}
@@ -394,6 +403,12 @@ Gary~W. Oehlert.
 Art~B. Owen.
 \newblock {M}onte {C}arlo theory, methods and examples, 2013.
 \newblock URL \url{https://artowen.su.domains/mc/}.
+
+\bibitem[Pace and Barry(1997)]{pace1997sparse}
+R.~Kelley Pace and Ronald Barry.
+\newblock Sparse spatial autoregressions.
+\newblock \emph{Statistics \& Probability Letters}, 33\penalty0 (3):\penalty0
+  291--297, 1997.
 
 \bibitem[Paszke et~al.(2019)Paszke, Gross, Massa, Lerer, Bradbury, Chanan,
   Killeen, Lin, Gimelshein, Antiga, Desmaison, K{\"o}pf, Yang, DeVito, Raison,
