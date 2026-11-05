@@ -10,7 +10,10 @@ only error besides the update itself is truncation. An observation o = s + tau e
   missing   belief: a point on y_1 and flat on y_2;                                        truth p(x | y_1), closed form
 k = 2 uses the full tensor and Gauss-Hermite quadrature; rho stays below the negativity onset so D > 0 everywhere and no floor is
 involved. k = 4, 8 use the pair basis and Monte Carlo over the belief, also below the onset, to show truncation blurring the contrast.
+flip() repeats the three problems beyond the pair family (post hoc): the full tensor at k = 3, 4 and the triple family at k = 3, 4, 8. It has its
+own random stream, so the rows above do not depend on it, and it asserts min D > 0 at each setting.
 """
+import itertools
 import json
 import math
 import os
@@ -84,6 +87,72 @@ def summary(rows):
     return res
 
 
+class Full:
+    """Full tensor of degree m per variable, population coefficients by tensor Gauss-Hermite; A as in gpu.core.Model."""
+
+    def __init__(self, R, nodes):
+        d = len(R)
+        z, w = nph.hermegauss(nodes)
+        w = w / w.sum()
+        L = np.linalg.cholesky(R)
+        G = np.stack([g.ravel() for g in np.meshgrid(*[z] * d, indexing="ij")], 1)
+        Wt = np.ones(1)
+        for _ in range(d):
+            Wt = np.multiply.outer(Wt, w).ravel()
+        h, T, step = d // 2, 0, 1 << 18
+        for i in range(0, len(G), step):
+            F = [legendre(torch.tensor(ndtr(G[i:i + step] @ L[a])), m).numpy() for a in range(d)]
+            T = T + (self.outer(F[:h]) * Wt[i:i + step, None]).T @ self.outer(F[h:])
+        self.T = torch.tensor(T.reshape((m + 1,) * d).reshape(m + 1, -1))  # rows: f_i(x); columns: the input multi-index
+
+    @staticmethod
+    def outer(fs):
+        o = fs[0]
+        for g in fs[1:]:
+            o = (o[:, :, None] * g[:, None, :]).reshape(len(o), -1)
+        return o
+
+    def A(self, Fy):
+        ones = torch.ones(Fy.shape[0], 1, dtype=Fy.dtype)
+        return self.outer([torch.cat([ones, Fy[:, a, :m]], 1) for a in range(Fy.shape[1])]) @ self.T.T
+
+
+def min_d(mod, k, rng):
+    """Upper bound on min D over the cube: coordinate descent from corners and random points (D is a polynomial in each coordinate)."""
+    h = np.linspace(0, 1, 201)
+    Y = np.concatenate([np.array(list(itertools.product((0.0, 1.0), repeat=k))), rng.random((64, k))])
+    best = np.inf
+    for _ in range(6):
+        for a in range(k):
+            T = np.repeat(Y[:, None, :], len(h), 1)
+            T[:, :, a] = h
+            D = mod.A(input_basis(torch.tensor(np.clip(T.reshape(-1, k), 1e-12, 1 - 1e-12)), m))[:, 0].numpy().reshape(len(Y), -1)
+            Y[:, a] = h[D.argmin(1)]
+            best = min(best, D.min())
+    return float(best)
+
+
+def flip():
+    """The three problems in the models that can hold the conditional, below the onset of each setting."""
+    rng = np.random.default_rng(20261106)
+    rows = []
+    for model, k, rho in (("full", 3, 0.15), ("full", 4, 0.15), ("triple", 3, 0.15), ("triple", 4, 0.09), ("triple", 8, 0.04)):
+        R, Ryy, beta, sig2 = teacher(k, rho)
+        mod = Full(R, {3: 30, 4: 20}[k]) if model == "full" else population_model(R, m, "triple", nodes=64)
+        if model == "full":  # the tensor's one-input rows must match the repository's exact coefficients
+            T = mod.T.reshape((m + 1,) * (k + 1)).numpy()
+            W1 = population_model(R, m, "pair", nodes=64).blocks["W1"].numpy()
+            assert abs(T.flat[0] - 1) < 1e-9 and np.abs(T[(slice(1, None), slice(1, None)) + (0,) * (k - 1)] - W1[1:, 0, :]).max() < 5e-3
+        md = min_d(mod, k, rng)
+        assert md > 0, (model, k, rho, md)
+        for tau in (0.5, 1.0):
+            mc = lambda mu, L: (mu + rng.standard_normal((1 << 15, k)) @ L.T, np.full(1 << 15, 2.0 ** -15))  # noqa: E731
+            r = summary([row(mod, Ryy, beta, sig2, tau, rng, mc) for _ in range(60)])
+            rows.append(dict(model=model, k=k, rho=rho, tau=tau, min_d=md, **r))
+            print(model, k, rho, tau, round(md, 3), r, flush=True)
+    return rows
+
+
 def main():
     rng = np.random.default_rng(20261105)
     out = dict(k2=[], kbig=[], missing=[], example={})
@@ -125,6 +194,7 @@ def main():
     Y = np.stack([a.ravel() for a in np.meshgrid(g, g, indexing="ij")], 1)
     D = mod.D(torch.tensor(Y)).numpy().reshape(100, 100)
     out["example"] = dict(rho=rho, tau=tau, g=g.tolist(), D=D.tolist())
+    out["flip"] = flip()
     json.dump(out, open(os.path.join(ROOT, "paper/semantics.json"), "w"), indent=0, sort_keys=True)
 
 

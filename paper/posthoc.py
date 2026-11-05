@@ -12,6 +12,7 @@ import os
 
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MERGED = os.path.join(ROOT, "results2", "merged")
@@ -66,6 +67,7 @@ def single_neuron(out):
     out["closer"] = {f"{b}_{basis}": float(v) for (b, basis), v in x.groupby(["belief", "basis"]).closer.mean().items()}
     out["closer"]["all"] = float(x.closer.mean())
     out["closer"]["undefined"] = float(x[x.defined != 1].closer.mean())
+    out["closer"]["undefined_pair"] = float(x[(x.defined != 1) & (x.basis == "pair")].closer.mean())
     out["closer"]["defined"] = float(x[x.defined == 1].closer.mean())
 
 
@@ -126,7 +128,7 @@ def curves_stats(out):
 def reframe(out):
     """Which error is largest, what clipping does, what the `defined` filter selects, and the outcomes past the onset."""
     cols = ["k", "type", "basis", "belief", "rho_S", "seed", "m", "eps", "defined", "d_denom", "d_model_uncal", "d_model_cal", "d_total", "d_dc", "d_neg",
-            "E_q_D", "sd_q_D", "minD"]
+            "E_q_D", "sd_q_D", "minD", "n_drop", "M"]
     A = pq("gauss", cols)
     A = A[A.belief != "S1"]
     G = primary(A)
@@ -153,6 +155,21 @@ def reframe(out):
     s2 = G[(G.m == 4) & (G.belief == "S2")]
     out["selection"] = dict(max_cv=float(cv.max()), max_d_denom=float(d.d_denom.max()), q99_d_denom=float(d.d_denom.quantile(0.99)),
                             s2_share_defined={f"{b}_{int(k_)}": float((x.defined == 1).mean()) for (b, k_), x in s2.groupby(["basis", "k"])})
+    allm = G[(G.rho_S > 0) & (G.defined == 1)]
+    out["selection"]["all_m"] = dict(max_cv=float((allm.sd_q_D / allm.E_q_D.abs()).max()), max_d_denom=float(allm.d_denom.max()))
+    # `defined` under a Beta belief is relative to the protocol's support cut, not to the open cube
+    b = d[d.belief.str.startswith("S3")]
+    rng = np.random.default_rng(20261105)
+    inside = {}
+    for name, ab in (("S3a", [(3, 3)]), ("S3b", [(4, 2)]), ("S3c", [(4, 2), (2, 4)]), ("S3d", [(6, 6)])):
+        for k_ in (16, 32):
+            pars = [ab[i % len(ab)] for i in range(k_)]
+            Y = np.stack([rng.beta(a_, b_, 1 << 20) for a_, b_ in pars], 1)
+            lq = sum(stats.beta.logpdf(Y[:, i], *pars[i]) for i in range(k_))
+            lmax = sum(stats.beta.logpdf((a_ - 1) / (a_ + b_ - 2), a_, b_) for a_, b_ in pars)
+            inside[f"{name}_{k_}"] = float((lq >= lmax + math.log(1e-6)).mean())
+    out["support_cut"] = dict(inside=inside, max_dropped=float((b.n_drop / b.M).max()),
+                              sign_change={f"{int(k_)}": float((x.minD < 0).mean()) for k_, x in b[b.belief == "S3d"].groupby("k")})
     t = pd.read_csv(os.path.join(SUMMARY, "thresholds_gauss.csv"))
     t = t[(t.m == 4) & (t.belief != "S1")]
     out["selection"]["d5"] = {b: dict(cells=len(x), reached=int(np.isfinite(x.denom_5pct).sum()), reached1=int(np.isfinite(x.denom_1pct).sum())) for b, x in t.groupby("belief")}

@@ -17,7 +17,7 @@ import torch
 from numpy.polynomial import hermite_e as nph
 from numpy.polynomial import legendre as npl
 from scipy import stats
-from scipy.optimize import brentq, minimize
+from scipy.optimize import brentq, linprog, minimize
 from scipy.special import ndtr
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -343,6 +343,40 @@ def pair_onset():
                                  max_rel_measured_m4=max(abs(r_["measured"] / r_["lower"] - 1) for r_ in b if r_["m"] == 4))
 
 
+def psi_min(k, rho, m, nodes=801):
+    """min of Psi_k over measures on a grid by Kelley's cutting planes: a linear program in the weights, with an epigraph variable for the quadratic."""
+    A = amat(rs(rho), m)
+    F = fall(np.linspace(0, 1, nodes), m)[:, 1:]
+    phi = np.einsum("np,pq,nq->n", F, A, F)
+    c = np.r_[-k / 2 * phi, 1.0]
+    eq = np.r_[np.ones(nodes), 0][None]
+    cuts = [np.zeros(m)]
+    for _ in range(200):
+        g = [k * k * (A @ u) for u in cuts]
+        res = linprog(c, A_ub=np.array([np.r_[F @ gi, -1.0] for gi in g]), b_ub=[gi @ u / 2 for gi, u in zip(g, cuts)], A_eq=eq, b_eq=[1],
+                      bounds=[(0, None)] * nodes + [(None, None)], method="highs")
+        mu, tau = res.x[:-1], res.x[-1]
+        u = mu @ F
+        q = k * k / 2 * u @ A @ u
+        if q - tau < 1e-7:
+            break
+        cuts.append(u)
+    return 1 + q - k / 2 * mu @ phi
+
+
+def pair_onset_large():
+    """k rho* of the convex bound far beyond the study's range, m = 4. A numerical observation, not a limit theorem."""
+    rows = []
+    for k in (8, 32, 128, 512, 2048):
+        x = brentq(lambda rho: psi_min(k, rho, 4), 0.3 / k, 3 / k, xtol=2e-3 / k)
+        rows.append(dict(k=k, rho=x, k_rho=k * x))
+        print(f"convex bound k={k} k rho* {k * x:.3f}", flush=True)
+    out["pair_onset_large"] = rows
+    fw = {r["k"]: r["lower"] for r in out["pair_onset"] if r["m"] == 4}
+    check("cutting planes agree with Frank-Wolfe at k = 8, 32", all(abs(r["rho"] / fw[r["k"]] - 1) < 0.02 for r in rows if r["k"] in fw))
+    check("k rho* of the convex bound settles", abs(rows[-1]["k_rho"] - rows[-2]["k_rho"]) < 0.005)
+
+
 def corner_onset(k, m, basis):
     def val(x):
         v = [dpop(np.r_[np.ones(n), np.zeros(k - n)], rs(x), m, basis) for n in range(k // 2 + 1)]
@@ -562,7 +596,7 @@ def tv_bounds():
 
 
 def main():
-    for f in (semantics, flat_expansion, data_belief, corner_formula, pair_onset, triple_onset, belief_mass, noise_variance, tv_bounds, noise_extremes):
+    for f in (semantics, flat_expansion, data_belief, corner_formula, pair_onset, pair_onset_large, triple_onset, belief_mass, noise_variance, tv_bounds, noise_extremes):
         print("---", f.__name__, flush=True)
         f()
         json.dump(out, open(os.path.join(ROOT, "paper/theory.json"), "w"), indent=1, sort_keys=True)
