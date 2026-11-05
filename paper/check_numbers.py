@@ -8,6 +8,7 @@
 4. Recomputes post hoc counts from the merged parquet files, by a separate route, when those files exist.
 5. Scans main.tex: every \\V key exists, and no decimal or percentage is typed outside the whitelist of design constants.
 6. Confirms PREREGISTRATION.md is byte-identical to the frozen commit.
+7. Scans main.tex and every generated file it includes for repository detail: the paper must not name files, commits or code.
 """
 import glob
 import json
@@ -102,7 +103,13 @@ def hypotheses():
 
 def tex_rows(name):
     t = open(os.path.join(GEN, f"tab_{name}.tex")).read()
-    return [[c.strip() for c in r.split(" & ")] for r in re.findall(r"^(.*?) \\\\$", t, re.M)][1:]
+    rows = [[c.strip() for c in r.split(" & ")] for r in re.findall(r"^(.*?) \\\\$", t, re.M)][1:]
+    for a, b in zip(rows, rows[1:]):  # the tables leave repeated labels blank
+        for i, c in enumerate(b):
+            if c:
+                break
+            b[i] = a[i]
+    return rows
 
 
 def reports():
@@ -148,7 +155,7 @@ def reports():
         rows = tex_rows(f"energy_{dt}")
         check(len(rows) == len(md) == 24, f"energy rows {dt}")
         for r in rows:
-            key = (r[0], r[1], r[2].replace("{,}", ""))
+            key = (r[2], r[0], r[1].replace("{,}", ""))
             a, b = md[key]
             check(abs(float(a) / float(r[4]) - 1) < 6e-3 and abs(float(b) / float(r[5]) - 1) < 6e-3, f"energy {dt} {key}")
 
@@ -204,13 +211,28 @@ def scan():
         check(m.group(0) in ALLOWED, f"typed number {m.group(0)}: ...{x[max(0, m.start() - 40):m.end() + 20]!r}")
 
 
+REPO = re.compile(r"\.md\b|\.py\b|\.csv\b|commit|\bgit\b|branch|repositor|README|version-controlled|(?-i:PREREGISTRATION)|results2|\bgpu/|\bnetwork/|SeedSequence"
+                  r"|\\texttt\{[^}]*\b[0-9a-f]{7,40}\b|\b(?=[0-9a-f]*[a-f])(?=[0-9a-f]*[0-9])[0-9a-f]{7,40}\b|\bjob\b 3\d{6}", re.I)
+
+
+def repo_detail():
+    """A reader meets a study, not a code base: file names, hashes and version-control words stay out of everything the PDF is built from."""
+    t = open(os.path.join(HERE, "main.tex")).read()
+    n = sorted(set(re.findall(r"\\input\{(generated/[^}]+)\}", t)))
+    check("generated/numbers.tex" in n and any("tab_hyp" in x for x in n), "included files")
+    for name, x in [("main.tex", t)] + [(f, open(os.path.join(HERE, f if f.endswith(".tex") else f + ".tex")).read()) for f in n]:
+        for m in REPO.finditer(x):
+            bad.append(f"repository detail in {name}: ...{x[max(0, m.start() - 30):m.end() + 20]!r}")
+        check(True, name)
+
+
 def frozen():
     a = subprocess.run(["/usr/bin/git", "show", "6a98646:PREREGISTRATION.md"], cwd=ROOT, capture_output=True, check=True).stdout
     check(a == open(os.path.join(ROOT, "PREREGISTRATION.md"), "rb").read(), "PREREGISTRATION.md changed")
 
 
 def main():
-    for f in (regenerate, hypotheses, reports, parquet, scan, frozen):
+    for f in (regenerate, hypotheses, reports, parquet, scan, repo_detail, frozen):
         f()
     print(f"{n_ok} checks passed, {len(bad)} failed")
     for b in bad:

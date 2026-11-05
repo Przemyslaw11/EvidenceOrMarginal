@@ -55,13 +55,31 @@ def thou(n):
     return f"{int(n):,}".replace(",", "{,}")
 
 
-def table(name, cols, rows, head, size="\\small"):
-    """A booktabs tabular; rows may contain the string 'MID' for a midrule."""
-    L = [size, f"\\begin{{tabular}}{{{cols}}}", "\\toprule", " & ".join(head) + " \\\\", "\\midrule"]
+def table(name, cols, rows, head, size="\\small", thin=0):
+    """A booktabs tabular; rows may contain the string 'MID' for a midrule. head is a list of cells or raw header lines.
+    thin: number of leading label columns in which a repeat of the row above is left blank (check_numbers.py fills them back)."""
+    head = head if isinstance(head, str) else " & ".join(head)
+    L = [size, f"\\begin{{tabular}}{{{cols}}}", "\\toprule", head + " \\\\", "\\midrule"]
+    last = None
     for r in rows:
-        L.append("\\midrule" if r == "MID" else " & ".join(str(c) for c in r) + " \\\\")
+        if r == "MID":
+            L.append("\\midrule")
+            last = None
+            continue
+        c = [str(x) for x in r]
+        shown = list(c)
+        for i in range(thin):
+            if last and c[:i + 1] == last[:i + 1]:
+                shown[i] = ""
+        last = c
+        L.append(" & ".join(shown) + " \\\\")
     L += ["\\bottomrule", "\\end{tabular}"]
     open(os.path.join(GEN, f"tab_{name}.tex"), "w").write("\n".join(L) + "\n")
+
+
+def mc(*cells):
+    """Header cells over decimal-aligned columns."""
+    return [f"\\multicolumn{{1}}{{c}}{{{c}}}" for c in cells]
 
 
 def load():
@@ -86,16 +104,15 @@ def compute_block():
     meta = {e: pd.read_csv(os.path.join(ROOT, f"results2/merged/{e}_meta.csv")) for e in st}
     order = ("6a98646", "8addd92", "9bac5d5", "b8e5341", "3dd5707")
     rows = []
-    for e in ("gauss", "population", "convergence", "families", "lkj", "network"):
+    plain = {"gauss": "Gaussian sweep", "population": "population sweep", "convergence": "convergence study", "families": "copula families", "lkj": "LKJ matrices", "network": "chains"}
+    for e in plain:
         c = meta[e].git.str[:7].value_counts()
-        rows.append([f"\\texttt{{{e}}}", thou(st[e]["done"]), f"{st[e]['gpu_hours']:.1f}"] + [thou(c.get(o, 0)) if c.get(o, 0) else DASH for o in order])
+        rows.append([plain[e], thou(st[e]["done"]), f"{st[e]['gpu_hours']:.1f}"] + [thou(c.get(o, 0)) if c.get(o, 0) else DASH for o in order])
     tot = pd.concat(meta.values()).git.str[:7].value_counts()
     rows += ["MID", ["total", V["jobs"], V["gpuh.jobs"]] + [thou(tot.get(o, 0)) for o in order]]
     assert set(tot.index) == set(order)
-    table("commits", "lrr" + "r" * 5, rows, ["experiment", "jobs", "GPU-h"] + [f"\\texttt{{{o}}}" for o in order])
-    put("commits.n", len(tot))
-    for o in order:
-        put(f"commit.{o}", thou(tot[o]))
+    table("batches", "lrr" + "r" * 5, rows, ["experiment", "runs", "GPU-h"] + [f"batch {i + 1}" for i in range(len(order))], "\\footnotesize")
+    put("batches.n", len(tot))
     allm = pd.concat(meta.values())
     assert allm.torch.nunique() == 1 and allm.numpy.nunique() == 1 and allm.gpu.nunique() == 1
     put("sw.torch", allm.torch.iloc[0])
@@ -130,8 +147,8 @@ def thresholds(H, tg, tp):
                 out.append("MID")
         return out
     h = ["basis", "$k$", "$d_{\\mathrm{denom}}\\geq 1\\,\\%$", "$d_{\\mathrm{denom}}\\geq 5\\,\\%$", "onset, $n=10^7$", "onset, pop.", "undefined from"]
-    table("thr_main", "lrrrrrr", rows(("SUM",), False), h)
-    table("thr_full", "llrlllrr", rows(TYPES, True), ["type"] + h, "\\scriptsize\\setlength{\\tabcolsep}{4pt}")
+    table("thr_main", "lrrrrrr", rows(("SUM",), False), h, "\\footnotesize", thin=1)
+    table("thr_full", "llrlllrr", rows(TYPES, True), ["type"] + h, "\\scriptsize\\setlength{\\tabcolsep}{4pt}", thin=2)
     rr = []
     for t in TYPES:
         for b in BASES:
@@ -139,7 +156,7 @@ def thresholds(H, tg, tp):
                 r = g.loc[(t, b, k)]
                 c = lambda n: DASH if not np.isfinite(r[n]) else f"{f(r[n])} ({f(r[n + '_lo'])}--{f(r[n + '_hi'])})"  # noqa: E731
                 rr.append([t, b, k, c("relvar_5pct"), c("relvar_20pct"), f(r.minD_at_0)])
-    table("thr_relvar", "llrllr", rr, ["type", "basis", "$k$", "$|\\mathrm{relvar}|\\geq 5\\,\\%$", "$|\\mathrm{relvar}|\\geq 20\\,\\%$", "$\\min D$ at $\\rho_S=0$"], "\\footnotesize")
+    table("thr_relvar", "llrllr", rr, ["type", "basis", "$k$", "$|\\mathrm{relvar}|\\geq 5\\,\\%$", "$|\\mathrm{relvar}|\\geq 20\\,\\%$", "$\\min D$ at $\\rho_S=0$"], "\\footnotesize", thin=2)
     # all beliefs, pair basis
     t4 = tg[(tg.m == 4) & (tg.basis == "pair")]
     rows_b = []
@@ -154,13 +171,11 @@ def thresholds(H, tg, tp):
             rows_b.append(c)
         if t == "SUM":
             rows_b.append("MID")
-    table("beliefs", "lrllllll", rows_b, ["type", "$k$", "S2", "S3a", "S3b", "S3c", "S3d", "S4"], "\\footnotesize")
+    table("beliefs", "lrllllll", rows_b, ["type", "$k$", "S2", "S3a", "S3b", "S3c", "S3d", "S4"], "\\footnotesize", thin=1)
     # degree dependence of the onset (H2a)
-    r2 = []
-    for c in H["H2a"]["cells"]:
-        if c["type"] == "SUM":
-            r2.append([c["basis"], c["k"], f(c["onset_m2"]), f(c["onset_m4"]), f(c["onset_m6"])])
-    table("onset_m", "lrrrr", r2, ["basis", "$k$", "$m=2$", "$m=4$", "$m=6$"], "\\footnotesize")
+    c2 = {(c["basis"], c["k"]): c for c in H["H2a"]["cells"] if c["type"] == "SUM"}
+    r2 = [[k] + [f(c2[(b, k)][f"onset_m{m}"]) for b in BASES for m in (2, 4, 6)] for k in KS]
+    table("onset_m", "r" + "r" * 6, r2, "& \\multicolumn{3}{c}{pair} & \\multicolumn{3}{c}{triple} \\\\ \\cmidrule(lr){2-4}\\cmidrule(l){5-7}\n$k$ & $m=2$ & $m=4$ & $m=6$ & $m=2$ & $m=4$ & $m=6$", "\\footnotesize")
 
 
 def hypotheses(H, conv, ph):
@@ -229,7 +244,7 @@ def hypotheses(H, conv, ph):
         put(f"hyp.{key}", one.count(w_))
     assert len(one) == sum(one.count(w_) for w_ in ("supported", "inconclusive", "not supported"))
     vd = lambda k: f"\\emph{{{verdicts[k]}}}"  # noqa: E731
-    wtxt = ", ".join(f"{k} {f(x['within2'], 2)}" for k, x in w.items())
+    wtxt = ", ".join(f"{k} {f(w[k]['within2'], 2)}" for k in ("SUM/pair", "CONTRAST/pair", "SUM/triple", "CONTRAST/triple"))
     rows = [
         ["H1a", "population onset falls with $k$", vd("H1a"), f"{V['H1a.sig']}/{V['H1a.n']} cells strictly decreasing"],
         ["H1b", "same at $n=10^7$", vd("H1b"), f"{V['H1b.sig']}/{V['H1b.n']}; SUM/pair {V['H1b.sp.k2']} ($k=2$) vs {V['H1b.sp.k32']} ($k=32$)"],
@@ -246,12 +261,12 @@ def hypotheses(H, conv, ph):
         ["H5a", "$d_{\\mathrm{total}}$ grows from $L=1$ to 4", vd("H5a"), f"{V['H5a.sig']}/{V['H5a.n']}; {V['H5a.opp']} significantly below 1"],
         ["H5b", "training reduces $d_{\\mathrm{denom}}$", vd("H5b"), f"{V['H5b.sig']}/{V['H5b.n']}; {V['H5b.opp']} opposite"],
         ["H5c", "training reduces $P(D<0)$", vd("H5c"), f"{V['H5c.sig']}/{V['H5c.n']}; {V['H5c.opp']} opposite"],
-        ["H5d", "e2e training reduces held-out $d_{\\mathrm{total}}$", vd("H5d"), f"{V['H5d.sig']}/{V['H5d.n']}; {V['H5d.opp']} opposite"],
+        ["H5d", "end-to-end training reduces held-out $d_{\\mathrm{total}}$", vd("H5d"), f"{V['H5d.sig']}/{V['H5d.n']}; {V['H5d.opp']} opposite"],
     ]
     table("hyp", "@{}l>{\\raggedright\\arraybackslash}p{0.31\\linewidth}l>{\\raggedright\\arraybackslash}p{0.40\\linewidth}@{}", rows, ["", "claim", "verdict", "evidence"], "\\footnotesize")
     # H1c and H3c details
     table("h1c", "llrrrrl", [[x["type"], x["basis"], x["n"], f(x["beta"], 2), f(x["C"], 3), f(x["within2"], 2), x["verdict"]] for x in H["H1c"]["cells"]],
-          ["type", "basis", "points", "$\\beta$", "$C$", "within $2\\times$", "cell verdict"], "\\footnotesize")
+          ["type", "basis", "points", "$\\beta$", "$C$", "within $2\\times$", "cell verdict"], "\\footnotesize", thin=1)
     for x in H["H1c"]["cells"]:
         put(f"H1c.verdict.{x['type']}/{x['basis']}", x["verdict"])
     put("H1c.cells", len(H["H1c"]["cells"]))
@@ -261,10 +276,11 @@ def hypotheses(H, conv, ph):
     b3 = pd.DataFrame(H["H3b"]["cells"]).groupby("family").ratio.median()
     rows = []
     for fam, g in c3.groupby("family"):
-        rows.append([fam, len(g), f"{g['diff'].min():+.3f} \\dots\\ {g['diff'].max():+.3f}", int(g.inside.sum()), int(g.outside.sum()), f(b3[fam], 2)])
+        sg = lambda v: f"{v:+.3f}".replace("-", "$-$")  # noqa: E731
+        rows.append([{"clayton": "Clayton", "gumbel": "Gumbel", "t10": "$t_{10}$", "t3": "$t_3$"}[fam], len(g), sg(g["diff"].min()), sg(g["diff"].max()), int(g.inside.sum()), int(g.outside.sum()), f(b3[fam], 2)])
         put(f"fam.{fam}.ratio", f(b3[fam], 2))
         put(f"fam.{fam}.min", f"{g['diff'].min():+.3f}".replace("-", "$-$"))
-    table("families", "lrcrrr", rows, ["family", "cells", "onset $-$ Gaussian (min \\dots\\ max)", "CI inside", "CI outside", "median ratio"])
+    table("families", "lrrrrrr", rows, ["family", "cells", "min diff.", "max diff.", "CI inside", "CI outside", "median ratio"], "\\footnotesize")
     rows = []
     for key, val in sorted(h3c["pair"]["by_k_eta"].items()):
         k_, e_ = key.split("_")
@@ -277,7 +293,7 @@ def hypotheses(H, conv, ph):
     rows = []
     for vn, g in conv.groupby("variant"):
         rows.append([lab[vn], thou(g.n.sum()), thou(g.n_violations.sum()), sci(g.median_change.median()), sci(g.max_change.max()), f(g.worst_ratio.max(), 2)])
-    table("conv", "lrrrrr", rows, ["variant", "paired values", "violations", "median change", "max change", "worst ratio to tol."])
+    table("conv", "lrrrr" + "D{.}{.}{2}", rows, ["variant", "paired values", "violations", "median change", "max change"] + mc("worst ratio"), "\\footnotesize")
 
 
 def decomposition(cg):
@@ -293,7 +309,7 @@ def decomposition(cg):
                     put(f"dec.{bel}.{t}.{rho}.{x}", f(r[x + "_med"], 4))
         if bel != "S4":
             rows.append("MID")
-    table("decomp", "llrrrrrr", rows, ["belief", "type", "$\\rho_S$", "$d_{\\mathrm{denom}}$", "$d_{\\mathrm{neg}}$", "$d_{\\mathrm{model,uncal}}$", "$d_{\\mathrm{model,cal}}$", "$d_{\\mathrm{total}}$"], "\\footnotesize")
+    table("decomp", "llrrrrrr", rows, ["belief", "type", "$\\rho_S$", "$d_{\\mathrm{denom}}$", "$d_{\\mathrm{neg}}$", "$d_{\\mathrm{model,uncal}}$", "$d_{\\mathrm{model,cal}}$", "$d_{\\mathrm{total}}$"], "\\footnotesize", thin=2)
     for t in TYPES:
         for rho in (0.2,):
             r = c[(c.belief == "S2") & (c.type == t) & (c.k == 2) & np.isclose(c.rho_S, rho)].iloc[0]
@@ -361,7 +377,7 @@ def posthoc(ph, H):
         if r["basis"] == "triple" and r["k"] == 2:
             continue
         rows.append([r["basis"], r["k"], thou(r["n_coef_D"]), f(r["sd_corner"], 3), f(r["drop"], 3), f(r["z"], 1), sci(r["chi0"], 2), sci(r["chi0_pred"], 2)])
-    table("noise", "lrrrrrrr", rows, ["basis", "$k$", "$|B_D|$", "$\\sigma_{\\mathrm{c}}$", "$1-\\min D$", "ratio", "$\\chi_D$", "$\\sqrt{|B_D|/n}$"], "\\footnotesize")
+    table("noise", "lrrrrrrr", rows, ["basis", "$k$", "$|B_D|$", "$\\sigma_{\\mathrm{c}}$", "$1-\\min D$", "ratio", "$\\chi_D$", "$\\sqrt{|B_D|/n}$"], "\\footnotesize", thin=1)
     zs = [r["z"] for r in ph["noise"]]
     put("ph.noise.zmin", f(min(zs), 1))
     put("ph.noise.zmax", f(max(zs), 1))
@@ -407,7 +423,7 @@ def posthoc(ph, H):
                 put(f"ph.depth.{bel}.{basis}.{L}", f(g[str(L)]["d_total"], 4))
                 put(f"ph.depth.var.{bel}.{basis}.{L}", f(g[str(L)]["var_gold"], 4))
                 put(f"ph.depth.varcd.{bel}.{basis}.{L}", f(g[str(L)]["var_cd"], 4))
-    table("depth", "llrrrrrrrr", rows, ["belief", "basis", "$L=1$", "$L=2$", "$L=3$", "$L=4$", "$\\mathrm{Var}\\,p_{\\mathrm{G}}$, $L=1$", "$L=4$", "ratio", "above/below/all"], "\\footnotesize")
+    table("depth", "llrrrrrrrr", rows, "& & \\multicolumn{4}{c}{$d_{\\mathrm{total}}$ at layer} & \\multicolumn{2}{c}{$\\mathrm{Var}\\,p_{\\mathrm{G}}$} & \\multicolumn{2}{c}{H5a} \\\\ \\cmidrule(lr){3-6}\\cmidrule(lr){7-8}\\cmidrule(l){9-10}\nbelief & basis & $L=1$ & $L=2$ & $L=3$ & $L=4$ & $L=1$ & $L=4$ & ratio & above/below/all", "\\footnotesize", thin=1)
     s_ = ph["h5a_sig"]
     put("ph.h5a.sig.maxL4", f(s_["max_d_total_L4"], 4))
     put("ph.h5a.sig.floor", f(s_["max_over_floor_L4"], 2))
@@ -416,7 +432,7 @@ def posthoc(ph, H):
     put("ph.layer.minDlow", f(ph["layer_minD_low"], 2))
     # training
     tr = ph["training"]
-    name = {"val": "value", "nll": "NLL", "e2e1": "e2e, $L=1$", "e2e2": "e2e, $L=2$", "e2e3": "e2e, $L=3$", "e2e4": "e2e, $L=4$"}
+    name = {"val": "value", "nll": "NLL", "e2e1": "end-to-end, $L=1$", "e2e2": "end-to-end, $L=2$", "e2e3": "end-to-end, $L=3$", "e2e4": "end-to-end, $L=4$"}
     rows = []
     for st in ("val", "nll", "e2e1", "e2e2", "e2e3", "e2e4"):
         for opt, on in (("adam", "Adam"), ("lbfgs", "L-BFGS")):
@@ -426,7 +442,7 @@ def posthoc(ph, H):
             for key, val in (("kept", pc(r["kept_initial"])), ("test", pc(abs(r["median_rel_test"]), 1)), ("dP", f(abs(r["median_dP_where_neg"]), 3)),
                              ("dminD", f(abs(r["median_minD_change"]), 1))):
                 put(f"ph.tr.{st}.{opt}.{key}", val)
-    table("training", "llrrrrrr", rows, ["loss", "optimiser", "kept initial", "coef.\\ dist.", "test loss", "test loss down", "$\\Delta P(D<0)$", "$\\Delta\\min D$"], "\\footnotesize")
+    table("training", "llrrrrrr", rows, ["loss", "optimiser", "kept initial", "coef.\\ dist.", "test loss", "test loss down", "$\\Delta P(D<0)$", "$\\Delta\\min D$"], "\\footnotesize", thin=1)
     assert all(r["n_nonfinite"] == 0 and r["n_cross"] == 0 for r in tr.values())
     put("ph.tr.runs", thou(sum(r["n"] for r in tr.values())))
     by = ph["by_loss"]
@@ -468,12 +484,12 @@ def energy():
         for dt, r in (("32", a), ("64", b)):
             put(f"en.{l}.{dt}.ms", sig(r.ms))
             put(f"en.{l}.{dt}.J", sig(r.J))
-    table("energy_main", "lrrrrr", rows, ["layer", "parameters", "float32 ms", "float32 J", "float64 ms", "float64 J"])
+    table("energy_main", "lr" + "D{.}{.}{4}" * 4, rows, "& & \\multicolumn{2}{c}{float32} & \\multicolumn{2}{c}{float64} \\\\ \\cmidrule(lr){3-4}\\cmidrule(l){5-6}\nlayer & parameters & " + " & ".join(mc("ms", "J", "ms", "J")), "\\footnotesize")
     for dt in ("float32", "float64"):
         rows = []
         for r in e[e.dtype == dt].sort_values(["k", "B", "layer"], kind="stable").itertuples():
-            rows.append([r.layer, r.k, thou(r.B), thou(r.params), sig(r.ms), sig(r.J), sig(r.J_net), f"{r.power_W:.0f}", f"{r.sm_MHz:.0f}", f"{r.counter_ratio:.3f}"])
-        table(f"energy_{dt}", "lrrrrrrrrr", rows, ["layer", "$k$", "$B$", "params", "ms", "J", "J net", "W", "MHz", "counter"], "\\scriptsize")
+            rows.append([r.k, thou(r.B), r.layer, thou(r.params), sig(r.ms), sig(r.J), sig(r.J_net), f"{r.power_W:.0f}", f"{r.sm_MHz:.0f}", f"{r.counter_ratio:.3f}"])
+        table(f"energy_{dt}", "rrlr" + "D{.}{.}{4}" + "D{.}{.}{5}" + "D{.}{.}{6}" + "rrr", rows, ["$k$", "batch", "layer", "params"] + mc("ms", "J", "J net") + ["W", "MHz", "counter"], "\\scriptsize", thin=2)
     t = open(os.path.join(ROOT, "energy2.md")).read()
     m = re.search(r"Counter vs sampled energy over (\d+) repeats: median ([\d.]+), 1st-99th percentile ([\d.]+)-([\d.]+)", t)
     put("sw.driver", re.search(r"driver ([\d.]+),", t).group(1))
@@ -508,12 +524,12 @@ def validation():
     T = json.load(open(os.path.join(ROOT, "tests2", "test_results2.json")))
     d = {k: v["detail"] for k, v in T.items()}
     what = {"M1": "orthonormality of the basis, explicit $f_1,\\dots,f_4$", "M2": "index families, coefficient counts, block vs dense estimator",
-            "M3": "estimator vs population moments, SE scaling, Gauss--Hermite convergence", "M4": "reproduces the $d=3$ study (TV values, flags)",
+            "M3": "estimator vs population moments, SE scaling, Gauss--Hermite convergence", "M4": "reproduces the TV values of the $d=3$ study",
             "M5": "flat-$D$ control: $p_{\\mathrm{CD}}=p_{\\mathrm{EU}}$", "M6": "covariance identity in sample",
             "M7": "integrals of all densities; copula samplers and conditionals; Student-$t$ CDF and quantile against 50-digit mpmath",
             "M8": "TV in $s$ vs $x$; grid refinement with spiky $p_{\\mathrm{G}}$", "M9": "min-$D$ optimiser vs brute-force grids and closed forms",
-            "M10": "positive definiteness of all correlation matrices; LKJ moments", "M11": "bitwise reproducibility; kill and resume of a job",
-            "M12": "seed variance matches estimated SE; common random numbers", "M13": "convergence under doubling = hypothesis H4b, on production data",
+            "M10": "positive definiteness of all correlation matrices; LKJ moments", "M11": "bitwise reproducibility; a run interrupted and resumed",
+            "M12": "seed variance matches estimated SE; common random numbers", "M13": "convergence under doubling = hypothesis H4b, on the study's data",
             "M14": "chain: $L=1$ vs engine, closed form vs MC, autograd vs finite differences, teacher Markov property"}
     rows = [[k, what[k], "pass" if T[k]["pass"] else "\\textbf{fail}"] for k in sorted(T, key=lambda s: int(s[1:]))]
     assert all(T[k]["pass"] for k in T if k != "M13") and not T["M13"]["pass"] and len(T) == 14
@@ -578,11 +594,12 @@ def theory(ph, H):
     rows = []
     for r in Sm["k2"]:
         rows.append([f(r["rho"], 1), f(r["tau"], 1)] + [f(r[s_][c]) for s_ in ("evidence", "posterior", "marginal") for c in ("cd", "eu")])
-    table("sem", "rr" + "rr" * 3, rows, ["$\\rho_S$", "$\\tau$", "evid.\\ CD", "evid.\\ EU", "post.\\ CD", "post.\\ EU", "marg.\\ CD", "marg.\\ EU"])
+    SEM = "\\multicolumn{%d}{c}{evidence} & \\multicolumn{%d}{c}{posterior} & \\multicolumn{%d}{c}{marginal}"
+    table("sem", "rr" + "rr" * 3, rows, "& & " + SEM % (2, 2, 2) + " \\\\ \\cmidrule(lr){3-4}\\cmidrule(lr){5-6}\\cmidrule(l){7-8}\n$\\rho_S$ & $\\sigma_{\\mathrm{obs}}$ & CD & EU & CD & EU & CD & EU", "\\footnotesize", thin=1)
     rows = [[r["k"], f(r["rho"], 2), f(r["tau"], 1)] + [x for s_ in ("evidence", "posterior", "marginal") for x in (f(r[s_]["cd"]), f(r[s_]["eu"]), pc(r[s_]["cd_closer"]))]
             for r in Sm["kbig"]]
-    table("sem_big", "rrr" + "rrr" * 3, rows, ["$k$", "$\\rho_S$", "$\\tau$", "evid.\\ CD", "EU", "CD closer", "post.\\ CD", "EU", "CD closer", "marg.\\ CD", "EU", "CD closer"],
-          "\\scriptsize\\setlength{\\tabcolsep}{3.5pt}")
+    table("sem_big", "rrr" + "rrr" * 3, rows, "& & & " + SEM % (3, 3, 3) + " \\\\ \\cmidrule(lr){4-6}\\cmidrule(lr){7-9}\\cmidrule(l){10-12}\n$k$ & $\\rho_S$ & $\\sigma_{\\mathrm{obs}}$ & CD & EU & closer & CD & EU & closer & CD & EU & closer",
+          "\\footnotesize\\setlength{\\tabcolsep}{4.5pt}", thin=2)
     big = Sm["kbig"]
     put("sem.big.lo", f(min(min(r[s_]["cd"], r[s_]["eu"]) for r in big for s_ in ("evidence", "marginal")), 2))
     put("sem.big.hi", f(max(max(r[s_]["cd"], r[s_]["eu"]) for r in big for s_ in ("evidence", "marginal")), 2))
@@ -605,7 +622,7 @@ def theory(ph, H):
     for key in ("SUM/pair", "CONTRAST/pair", "SUM/triple", "CONTRAST/triple"):
         c, c0 = L["cells"][key], cells[key]
         rows.append([key.replace("/", ", "), c["n"], f(c0["beta"], 2), pc(c0["within2"]), pc(c["within2"]), f"{f(c['lo'], 2)}--{f(c['hi'], 2)}", f(c["med"], 2)])
-    table("lead", "lrrrrrr", rows, ["type, basis", "points", "$\\beta$ (H1c)", "power law", "closed form", "ratio range", "median ratio"])
+    table("lead", "lrrrrrr", rows, ["type, basis", "points", "$\\beta$ (H1c)", "power law", "closed form", "ratio range", "median ratio"], "\\footnotesize")
     D = T["data_belief"]
     put("db.n", D["n"])
     put("db.lo", f(D["lo"], 2))
@@ -622,13 +639,13 @@ def theory(ph, H):
                          (f(t["corner"]) if t and t["corner"] else DASH), (f(t["measured"]) if t else DASH)])
         if m != 6:
             rows.append("MID")
-    table("onset_all", "rrrrrrrrr", rows, ["$m$", "$k$", "closed", "convex", "search", "measured", "$k\\rho^*$", "triple corner", "triple meas."], "\\footnotesize")
+    table("onset_all", "rrrrrrrrr", rows, "& & \\multicolumn{5}{c}{pair} & \\multicolumn{2}{c}{triple} \\\\ \\cmidrule(lr){3-7}\\cmidrule(l){8-9}\n$m$ & $k$ & closed & convex & search & measured & $k\\rho^*$ & corner & measured", "\\footnotesize", thin=1)
     rows = []
     for k in KS:
         r = [x for x in P if x["m"] == 4 and x["k"] == k][0]
         t = tr.get((4, k))
         rows.append([k, f(r["crude"]), f(r["lower"]), f(r["measured"]), (f(t["corner"]) if t and t["corner"] else DASH), (f(t["measured"]) if t else DASH)])
-    table("onset", "rrrrrr", rows, ["$k$", "pair: closed", "pair: convex", "pair: measured", "triple: corner", "triple: measured"])
+    table("onset", "rrrrrr", rows, "& \\multicolumn{3}{c}{pair basis} & \\multicolumn{2}{c}{triple basis} \\\\ \\cmidrule(lr){2-4}\\cmidrule(l){5-6}\n$k$ & closed & convex & measured & corner & measured", "\\footnotesize")
     for r in P:
         if r["m"] == 4:
             put(f"on.pair.{r['k']}.lower", f(r["lower"]))
@@ -656,7 +673,7 @@ def theory(ph, H):
     # noise extremes
     Z = T["noise_z"]
     rows = [[r["basis"], r["k"], f(r["measured"], 1), f(r["z_corner"], 1), f(r["z_cube"], 1), pc(r["boundary"]), f(r["union"], 1)] for r in Z]
-    table("noise_z", "lrrrrrr", rows, ["basis", "$k$", "$z$ production", "$z$ corners", "$z$ cube", "coordinates on the boundary", "$\\sqrt{2k\\ln 2}$"], "\\footnotesize")
+    table("noise_z", "lrrrrrr", rows, ["basis", "$k$", "$z$ measured", "$z$ corners", "$z$ cube", "on the boundary", "$\\sqrt{2k\\ln 2}$"], "\\footnotesize", thin=1)
     z32 = [r for r in Z if r["basis"] == "pair" and r["k"] == 32][0]
     put("nz.pair32.cube", f(z32["z_cube"], 1))
     put("nz.pair32.corner", f(z32["z_corner"], 1))
@@ -692,8 +709,8 @@ def theory(ph, H):
             put(f"tr.{b}.{basis}.ec", pc(r["ec_beats_eu"]))
         if basis == "pair":
             rows.append("MID")
-    table("trunc", "llrrrrrrr", rows, ["basis", "belief", "rows", "$d_{\\mathrm{denom}}$", "$\\mathrm{TV}(p_{\\mathrm{EU}},p_{\\mathrm{G}})$", "$\\mathrm{TV}(p_{\\mathrm{CD}},p_{\\mathrm{G}})$",
-                                       "ratio", "EU closer", "EC beats EU"])
+    table("trunc", "llrrrr" + "D{.}{.}{2}" + "rr", rows, ["basis", "belief", "evaluations", "$d_{\\mathrm{denom}}$", "$\\mathrm{TV}(p_{\\mathrm{EU}},p_{\\mathrm{G}})$", "$\\mathrm{TV}(p_{\\mathrm{CD}},p_{\\mathrm{G}})$"]
+          + mc("ratio") + ["EU closer", "EC beats EU"], "\\footnotesize", thin=1)
     put("clip.max", pc(max(r["ec_beats_eu"] for r in Tr.values())))
     put("clip.min", pc(min(r["ec_beats_eu"] for r in Tr.values())))
     for e in ("0.1", "0.01", "0.001"):
@@ -707,7 +724,7 @@ def theory(ph, H):
             rows.append([basis, b, thou(r["n"]), pc(r["share"]), f(r["d_total"], 3), f(r["d_dc"], 3), f(r["ec"], 3), pc(r["cd_closer"])])
         if basis == "pair":
             rows.append("MID")
-    table("past", "llrrrrrr", rows, ["basis", "belief", "rows", "share undefined", "$d_{\\mathrm{total}}$", "$d_{\\mathrm{dc}}$", "$d_{\\mathrm{model,cal}}$", "CD closer than EC"])
+    table("past", "llrrrrrr", rows, ["basis", "belief", "evaluations", "share undefined", "$d_{\\mathrm{total}}$", "$d_{\\mathrm{dc}}$", "$d_{\\mathrm{model,cal}}$", "CD closer than EC"], "\\footnotesize", thin=1)
     po = ph["past_onset"]
     put("past.pair.lo", f(min(po[f"{b}_pair"]["d_total"] for b in BEL if b != "S4"), 2))
     put("past.pair.hi", f(max(po[f"{b}_pair"]["d_total"] for b in BEL if b != "S4"), 2))
@@ -746,7 +763,7 @@ def main():
     validation()
     d3()
     with open(os.path.join(GEN, "numbers.tex"), "w") as o:
-        o.write("% generated by paper/make_numbers.py; do not edit\n")
+        o.write("% generated; do not edit\n")
         for k, v in sorted(V.items()):
             o.write(f"\\expandafter\\def\\csname v@{k}\\endcsname{{{v}}}\n")
     json.dump(V, open(os.path.join(GEN, "numbers.json"), "w"), indent=0, sort_keys=True)
