@@ -1,0 +1,11 @@
+\scriptsize\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{lllllllll}
+\toprule
+& \multicolumn{5}{c}{MSE of the clipped mean} & \multicolumn{3}{c}{mean clipped log density} \\ \cmidrule(lr){2-6}\cmidrule(l){7-9}
+scenario & CD & EU & REG & boosting & marginal & CD & EU & REG \\
+\midrule
+all inputs seen & 0.046--0.059 & 0.042--0.056 & 0.019--0.021 & 0.012 & 0.083 & 0.18--0.32 & 0.21--0.36 & 0.55--0.68 \\
+half missing & 0.057--0.064 & 0.071--0.075 & 0.057--0.058 & 0.038 & 0.083 & 0.14--0.21 & 0.02--0.08 & 0.07--0.12 \\
+noisy & 0.058--0.064 & 0.065--0.070 & 0.050--0.057 & 0.046 & 0.083 & 0.13--0.17 & 0.04--0.13 & 0.01--0.17 \\
+\bottomrule
+\end{tabular}

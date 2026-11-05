@@ -115,7 +115,7 @@ def f3(th):
         if b == "pair":
             r = pd.DataFrame(th["pair_onset"])
             r = r[r.m == 4].sort_values("k")
-            ax.plot(r.k, r.crude, color=GREY, ls=":", marker="x", label="closed bound")
+            ax.plot(r.k, r.crude, color=GREY, ls=":", marker="x", label="first bound")
             ax.plot(r.k, r.lower, color=F.OI[2], ls="-.", marker="^", label="convex bound")
         else:
             r = pd.DataFrame(th["triple_onset"])

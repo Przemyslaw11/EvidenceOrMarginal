@@ -3,7 +3,7 @@
     .venv/bin/python paper/make_numbers.py
 
 Reads results2/summary/, results2/merged/*_status.json and *_meta.csv, results2/energy/, energy2.md, docs/LOG2.md,
-tests2/test_results2.json, config2.yaml, paper/posthoc.json, paper/theory.json and paper/semantics.json. Writes generated/numbers.tex (the macro table behind
+tests2/test_results2.json, config2.yaml, paper/posthoc.json, paper/theory.json, paper/semantics.json, paper/regression.json and paper/pilot.json. Writes generated/numbers.tex (the macro table behind
 \\V{key}), generated/numbers.json (the same table, read by check_numbers.py) and generated/tab_*.tex. Nothing is typed by hand.
 """
 import glob
@@ -352,6 +352,7 @@ def posthoc(ph, H):
     c = ph["closer"]
     put("ph.closer.all", pc(c["all"]))
     put("ph.closer.undef", pc(c["undefined"]))
+    put("ph.closer.undef.pair", pc(c["undefined_pair"]))
     put("ph.closer.def", pc(c["defined"]))
     for key in ("S4_pair", "S3b_pair", "S2_pair", "S2_triple", "S4_triple", "S3c_pair"):
         put(f"ph.closer.{key}", pc(c[key]))
@@ -605,6 +606,23 @@ def theory(ph, H):
     put("sem.big.hi", f(max(max(r[s_]["cd"], r[s_]["eu"]) for r in big for s_ in ("evidence", "marginal")), 2))
     put("sem.big.marg.closer.lo", pc(min(r["marginal"]["cd_closer"] for r in big)))
     put("sem.big.marg.closer.hi", pc(max(r["marginal"]["cd_closer"] for r in big)))
+    fl = Sm["flip"]
+    SEMS = ("evidence", "posterior", "marginal")
+    rows = [[r["model"], r["k"], f(r["rho"], 2), f(r["tau"], 1)] + [x for s_ in SEMS for x in (f(r[s_]["cd"]), f(r[s_]["eu"]), pc(r[s_]["cd_closer"]))] for r in fl]
+    table("sem_flip", "lrrr" + "rrr" * 3, rows, "& & & & " + SEM % (3, 3, 3) + " \\\\ \\cmidrule(lr){5-7}\\cmidrule(lr){8-10}\\cmidrule(l){11-13}\nmodel & $k$ & $\\rho_S$ & $\\sigma_{\\mathrm{obs}}$ & CD & EU & closer & CD & EU & closer & CD & EU & closer",
+          "\\footnotesize\\setlength{\\tabcolsep}{4pt}", thin=3)
+    for r in fl:
+        for s_ in SEMS:
+            for c in ("cd", "eu"):
+                put(f"sem.flip.{r['model']}.{r['k']}.{r['tau']}.{s_}.{c}", f(r[s_][c]))
+    # the wording of the illustration rests on these orders: at sigma = 1 every model flips; at sigma = .5 the full tensor still does
+    assert all(r["evidence"]["cd"] < r["evidence"]["eu"] and r["posterior"]["eu"] < r["posterior"]["cd"] and r["marginal"]["eu"] < r["marginal"]["cd"] for r in fl if r["tau"] == 1.0)
+    assert all(r["evidence"]["cd"] < r["evidence"]["eu"] and r["posterior"]["eu"] < r["posterior"]["cd"] and r["marginal"]["eu"] < r["marginal"]["cd"] for r in fl if r["tau"] == 0.5 and r["model"] == "full")
+    assert all(r["min_d"] > 0 for r in fl)
+    put("sem.flip.mind.lo", f(min(r["min_d"] for r in fl), 2))
+    put("sem.flip.mind.hi", f(max(r["min_d"] for r in fl), 2))
+    weak = [r for r in fl if r["tau"] == 0.5 and r["model"] == "triple" and r["k"] >= 4]
+    put("sem.flip.weak.hi", f(max(abs(r[s_]["cd"] - r[s_]["eu"]) for r in weak for s_ in ("posterior", "marginal")), 3))
     for r in Sm["missing"]:
         put(f"sem.miss.cd.{r['rho']}", f(r["cd"]))
         put(f"sem.miss.eu.{r['rho']}", f(r["eu"]))
@@ -639,17 +657,21 @@ def theory(ph, H):
                          (f(t["corner"]) if t and t["corner"] else DASH), (f(t["measured"]) if t else DASH)])
         if m != 6:
             rows.append("MID")
-    table("onset_all", "rrrrrrrrr", rows, "& & \\multicolumn{5}{c}{pair} & \\multicolumn{2}{c}{triple} \\\\ \\cmidrule(lr){3-7}\\cmidrule(l){8-9}\n$m$ & $k$ & closed & convex & search & measured & $k\\rho^*$ & corner & measured", "\\footnotesize", thin=1)
+    table("onset_all", "rrrrrrrrr", rows, "& & \\multicolumn{5}{c}{pair} & \\multicolumn{2}{c}{triple} \\\\ \\cmidrule(lr){3-7}\\cmidrule(l){8-9}\n$m$ & $k$ & first & convex & search & measured & $k\\rho^*$ & corner & measured", "\\footnotesize", thin=1)
     rows = []
     for k in KS:
         r = [x for x in P if x["m"] == 4 and x["k"] == k][0]
         t = tr.get((4, k))
         rows.append([k, f(r["crude"]), f(r["lower"]), f(r["measured"]), (f(t["corner"]) if t and t["corner"] else DASH), (f(t["measured"]) if t else DASH)])
-    table("onset", "rrrrrr", rows, "& \\multicolumn{3}{c}{pair basis} & \\multicolumn{2}{c}{triple basis} \\\\ \\cmidrule(lr){2-4}\\cmidrule(l){5-6}\n$k$ & closed & convex & measured & corner & measured", "\\footnotesize")
+    table("onset", "rrrrrr", rows, "& \\multicolumn{3}{c}{pair basis} & \\multicolumn{2}{c}{triple basis} \\\\ \\cmidrule(lr){2-4}\\cmidrule(l){5-6}\n$k$ & first & convex & measured & corner & measured", "\\footnotesize")
     for r in P:
         if r["m"] == 4:
             put(f"on.pair.{r['k']}.lower", f(r["lower"]))
             put(f"on.pair.{r['k']}.meas", f(r["measured"]))
+    for k in (KS[0], KS[-1]):  # the explicit sufficient condition of Proposition 8(a), m = 4: Theta = m (m + 2)
+        put(f"on.arc.{k}", f(6 / math.pi * math.asin(1 / (k * 24)), 4))
+    for r in T["pair_onset_large"]:
+        put(f"on.conv.kr.{r['k']}", f(r["k_rho"], 3))
     g = T["pair_onset_gap"]
     put("on.gap", pc(g["max_rel_measured"], 1))
     put("on.gap4", pc(g["max_rel_measured_m4"], 1))
@@ -735,7 +757,16 @@ def theory(ph, H):
     put("sel.cv", f(Se["max_cv"], 2))
     put("sel.dmax", f(Se["max_d_denom"], 2))
     put("sel.q99", f(Se["q99_d_denom"], 3))
+    put("sel.cv.all", f(Se["all_m"]["max_cv"], 3))
+    put("sel.dmax.all", f(Se["all_m"]["max_d_denom"], 3))
     put("sel.k32.pair", pc(Se["s2_share_defined"]["pair_32"]))
+    cut = ph["support_cut"]
+    in32 = [v for k_, v in cut["inside"].items() if k_.endswith("_32")]
+    put("cut.in.lo", f(min(in32), 2))
+    put("cut.in.hi", f(max(in32), 2))
+    put("cut.drop", sci(cut["max_dropped"], 0))
+    put("cut.sign.2", pc(cut["sign_change"]["2"]))
+    put("cut.sign.32", pc(cut["sign_change"]["32"]))
     put("sel.d5.s2", Se["d5"]["S2"]["reached"])
     put("sel.d5.s2n", Se["d5"]["S2"]["cells"])
     put("sel.d5.all", sum(v["reached"] for v in Se["d5"].values()))
@@ -746,7 +777,75 @@ def theory(ph, H):
     put("narrow.triple2", f(ph["narrow_by_basis"]["triple_2"], 4))
     # the e2e loss sums (c_i - t_i)^2 over rows 1..m and three beliefs, with targets from 2^16 samples: its noise level
     put("e2e.noise", sci(3 * 4 / 2 ** 16, 1))
+    put("e2e.targets", 3 * 4)
+    coefs = lambda k, o: sum(math.comb(k + 1, r) * 4 ** r for r in range(o + 1))  # noqa: E731
+    put("e2e.coef.lo", coefs(2, 2))  # pair, k = 2, L = 1
+    put("e2e.coef.hi", thou(coefs(8, 3) + 3 * coefs(2, 3)))  # triple, k = 8, then three triple neurons with k = 2
+    for h in ("H1a", "H2a", "H2b_population"):  # D does not see the output coupling, so SUM and CONTRAST cells coincide for negativity
+        put(f"{h}.distinct", int(V[f"{h}.n"]) // 2)
     put("e2e.L4", sci(ph["training"]["e2e4_adam"]["median_val_loss_before"], 1))
+
+
+def regression():
+    """The denominator-free message (paper/regression.py): post hoc."""
+    R = pd.DataFrame(json.load(open(os.path.join(HERE, "regression.json")))["rows"])
+    med = R.groupby("k")[["cd", "eu", "reg1", "reg2"]].median()
+    table("reg", "rrrrr", [[k] + [f(v) for v in r] for k, r in zip(med.index, med.values)], ["$k$", "$p_{\\mathrm{CD}}$", "$p_{\\mathrm{EU}}$", "additive features", "pair features"], "\\footnotesize")
+    put("reg.n", len(R))
+    put("reg.share", pc((R.reg2 < R[["cd", "eu"]].min(axis=1)).mean(), 1))
+    put("reg.logn", "2^{20}")
+    assert (med.reg2 < med[["cd", "eu"]].min(axis=1)).all()
+    assert ((med.reg1 / med.cd - 1).abs() < 0.15).all()  # "additive features do no better than p_CD"
+
+
+def pilot():
+    """The real-data pilot (paper/pilot.py): exploratory, read from its JSON so the build needs no scikit-learn."""
+    J = json.load(open(os.path.join(HERE, "pilot.json")))
+    d = pd.DataFrame(J["rows"])
+    for key, v in (("seeds", J["seeds"]), ("train", thou(J["n_train"])), ("test", thou(J["n_test"])), ("inputs", J["inputs"]), ("tau", J["tau"]), ("samples", J["samples"]), ("floor", J["floor"])):
+        put(f"pilot.{key}", v)
+    put("pilot.rho.max", f(J["spearman_max"], 2))
+    put("pilot.rho.med", f(J["spearman_median"], 2))
+    put("pilot.sklearn", J["versions"]["sklearn"])
+    fam = d[d.form.isin(["cd", "eu", "reg"])].groupby(["scenario", "form", "basis", "m"])[["mse_clip", "logs", "low_share", "eqd_nonpos"]].mean().reset_index()
+    sc = (("full", "all inputs seen"), ("missing", "half missing"), ("noisy", "noisy"))
+    span = lambda v, nd=3: f"{f(v.min(), nd)}--{f(v.max(), nd)}"  # noqa: E731
+    rows, rows2 = [], []
+    for s_, name in sc:
+        x = fam[fam.scenario == s_]
+        y = {c: x[x.form == c] for c in ("cd", "eu", "reg")}
+        boost = d[(d.scenario == s_) & (d.form == "boost")].mse_clip.mean()
+        marg = d[(d.scenario == s_) & (d.form == "marginal")].mse_clip.mean()
+        rows.append([name] + [span(y[c].mse_clip) for c in ("cd", "eu", "reg")] + [f(boost), f(marg)] + [span(y[c].logs, 2) for c in ("cd", "eu", "reg")])
+        for c in y:
+            put(f"pilot.{s_}.{c}.lo", f(y[c].mse_clip.min()))
+            put(f"pilot.{s_}.{c}.hi", f(y[c].mse_clip.max()))
+            put(f"pilot.{s_}.{c}.logs.lo", f(y[c].logs.min(), 2))
+            put(f"pilot.{s_}.{c}.logs.hi", f(y[c].logs.max(), 2))
+        put(f"pilot.{s_}.boost", f(boost))
+        w = d[(d.scenario == s_) & d.form.isin(["cd", "eu"])].pivot_table(index=["seed", "basis", "m"], columns="form", values="mse_clip")
+        put(f"pilot.{s_}.win", int((w.cd < w.eu).sum()))
+        put("pilot.win.n" if s_ == "full" else f"pilot.{s_}.win.n", len(w))
+        c = d[(d.scenario == s_) & (d.form == "cd")]
+        rows2.append([name, span(y["cd"].low_share * 100, 1) + "\\,\\%", span(y["cd"].eqd_nonpos * 100, 1) + "\\,\\%", f"{int((w.cd < w.eu).sum())}/{len(w)}", sci(c.mse.max(), 0)])
+        put(f"pilot.{s_}.low.lo", pc(y["cd"].low_share.min(), 1))
+        put(f"pilot.{s_}.low.hi", pc(y["cd"].low_share.max(), 1))
+        put(f"pilot.{s_}.eqd.lo", pc(y["cd"].eqd_nonpos.min(), 1))
+        put(f"pilot.{s_}.eqd.hi", pc(y["cd"].eqd_nonpos.max(), 1))
+        # worded in the appendix: on average over seeds p_CD leads p_EU in each family exactly when the belief is evidence-type
+        m = x.pivot_table(index=["basis", "m"], columns="form", values="mse_clip")
+        assert (m.cd < m.eu).all() if s_ != "full" else (m.eu < m.cd).all()
+        assert boost < min(y[c_].mse_clip.min() for c_ in y) and marg > max(y[c_].mse_clip.max() for c_ in y)
+        # worded in the appendix: REG leads both forms on clipped-mean error except with half missing, on log density only with all seen
+        best = lambda col: min(y["cd"][col].min(), y["eu"][col].min()) if col == "mse_clip" else max(y["cd"][col].max(), y["eu"][col].max())  # noqa: E731
+        assert (y["reg"].mse_clip.max() < best("mse_clip")) == (s_ != "missing")
+        assert (y["reg"].logs.min() > best("logs")) == (s_ == "full")
+    M, L = "\\multicolumn{5}{c}{MSE of the clipped mean}", "\\multicolumn{3}{c}{mean clipped log density}"
+    table("pilot", "l" * 9, rows, f"& {M} & {L} \\\\ \\cmidrule(lr){{2-6}}\\cmidrule(l){{7-9}}\nscenario & CD & EU & REG & boosting & marginal & CD & EU & REG", "\\scriptsize\\setlength{\\tabcolsep}{3.5pt}")
+    table("pilot_fail", "lllrr", rows2, ["scenario", "below the floor", "rows with $\\mathrm{E}_q[D]\\leq0$", "CD ahead of EU", "largest raw MSE of CD"], "\\footnotesize")
+    put("pilot.marg", f(d[d.form == "marginal"].mse_clip.mean()))
+    put("pilot.sd", f(d.groupby(["scenario", "form", "basis", "m"], dropna=False).mse_clip.std().max()))
+    put("pilot.rawmax", sci(d[d.form == "cd"].mse.max(), 0))
 
 
 def main():
@@ -759,6 +858,8 @@ def main():
     decomposition(cg)
     posthoc(ph, H)
     theory(ph, H)
+    regression()
+    pilot()
     energy()
     validation()
     d3()

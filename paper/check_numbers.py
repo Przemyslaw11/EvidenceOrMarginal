@@ -9,9 +9,11 @@
 5. Scans main.tex: every \\V key exists, and no decimal or percentage is typed outside the whitelist of design constants.
 6. Confirms PREREGISTRATION.md is byte-identical to the frozen commit.
 7. Scans main.tex and every generated file it includes for repository detail: the paper must not name files, commits or code.
+8. Recomputes the headline numbers of the post hoc additions (flip, regression message, pilot, support cut, convex bound) by a separate route.
 """
 import glob
 import json
+import math
 import os
 import re
 import subprocess
@@ -191,6 +193,56 @@ def parquet():
     check(len(v) == n("H4b.viol") and (v.k == 8).sum() == n("H4b.k8") and (v.k == 32).sum() == n("H4b.k32"), "H4b violations")
 
 
+def additions():
+    V = make_numbers.V
+    Sm = json.load(open(os.path.join(HERE, "semantics.json")))
+    fl = Sm["flip"]
+    check(len(fl) == 10 and {(r["model"], r["k"]) for r in fl} == {("full", 3), ("full", 4), ("triple", 3), ("triple", 4), ("triple", 8)}, "flip settings")
+    check(all(r["min_d"] > 0 for r in fl), "flip rows are below the onset")
+    for r in fl:
+        if r["tau"] == 1.0:
+            check(r["evidence"]["cd"] < r["evidence"]["eu"] and r["posterior"]["cd"] > r["posterior"]["eu"] and r["marginal"]["cd"] > r["marginal"]["eu"], f"flip at sigma 1: {r['model']} {r['k']}")
+            check(V[f"sem.flip.{r['model']}.{r['k']}.1.0.evidence.cd"] == f"{r['evidence']['cd']:.3f}", "flip macro")
+    R = json.load(open(os.path.join(HERE, "regression.json")))["rows"]
+    check(len(R) == 64 and int(V["reg.n"]) == 64, "regression settings")
+    best = sum(r["reg2"] < min(r["cd"], r["eu"]) for r in R)
+    check(V["reg.share"] == f"{100 * best / len(R):.1f}\\,\\%", "regression share")
+    rows = {int(x[0]): x[1:] for x in tex_rows("reg")}
+    for k in (2, 4, 8, 16):
+        for i, c in enumerate(("cd", "eu", "reg1", "reg2")):
+            v = sorted(r[c] for r in R if r["k"] == k)
+            check(f"{(v[7] + v[8]) / 2:.3f}" == rows[k][i], f"regression median k = {k} {c}")
+    J = json.load(open(os.path.join(HERE, "pilot.json")))
+    P = J["rows"]
+    check(J["seeds"] == 10 and len({r["seed"] for r in P}) == 10, "pilot seeds")
+    mean = lambda v: sum(v) / len(v)  # noqa: E731
+    for sc in ("full", "missing", "noisy"):
+        for form in ("cd", "eu", "reg"):
+            fam = [mean([r["mse_clip"] for r in P if r["scenario"] == sc and r["form"] == form and (r["basis"], r["m"]) == b]) for b in (("pair", 2), ("pair", 3), ("triple", 2), ("triple", 3))]
+            check(V[f"pilot.{sc}.{form}.lo"] == f"{min(fam):.3f}" and V[f"pilot.{sc}.{form}.hi"] == f"{max(fam):.3f}", f"pilot {sc} {form}")
+        check(V[f"pilot.{sc}.boost"] == f"{mean([r['mse_clip'] for r in P if r['scenario'] == sc and r['form'] == 'boost']):.3f}", f"pilot {sc} boosting")
+        cd = {(r["seed"], r["basis"], r["m"]): r["mse_clip"] for r in P if r["scenario"] == sc and r["form"] == "cd"}
+        eu = {(r["seed"], r["basis"], r["m"]): r["mse_clip"] for r in P if r["scenario"] == sc and r["form"] == "eu"}
+        check(int(V[f"pilot.{sc}.win"]) == sum(cd[x] < eu[x] for x in cd), f"pilot {sc} wins")
+    for k, want in ((2, 6 / math.pi * math.asin(1 / 48)), (32, 6 / math.pi * math.asin(1 / 768))):
+        check(V[f"on.arc.{k}"] == f"{want:.4f}", "explicit condition of the first bound")
+    Tj = json.load(open(os.path.join(HERE, "theory.json")))["pair_onset_large"]
+    check([r["k"] for r in Tj] == [8, 32, 128, 512, 2048] and all(a["k_rho"] < b["k_rho"] for a, b in zip(Tj, Tj[1:])), "convex bound rises")
+    check(all(V[f"on.conv.kr.{r['k']}"] == f"{r['k_rho']:.3f}" for r in Tj), "convex bound macros")
+    p = os.path.join(ROOT, "results2", "merged", "gauss.parquet")
+    if os.path.exists(p):
+        G = pd.read_parquet(p, columns=["k", "basis", "belief", "m", "rho_S", "defined", "d_denom", "d_total", "d_model_cal", "E_q_D", "sd_q_D", "minD", "n_drop", "M"], filters=[("eps", "==", 0.01)])
+        G = G[G.belief != "S1"]
+        a = G[(G.rho_S > 0) & (G.defined == 1)]
+        check(f"{(a.sd_q_D / a.E_q_D.abs()).max():.3f}" == V["sel.cv.all"] and f"{a.d_denom.max():.3f}" == V["sel.dmax.all"], "selection over all m")
+        u = G[(G.m == 4) & (G.defined != 1) & (G.basis == "pair")]
+        check(f"{100 * (u.d_total < u.d_model_cal).mean():.0f}\\,\\%" == V["ph.closer.undef.pair"], "past the onset, pair alone")
+        b = a[(a.m == 4) & a.belief.str.startswith("S3")]
+        c = b[(b.belief == "S3d") & (b.k == 32)]
+        check(f"{100 * (c.minD < 0).mean():.0f}\\,\\%" == V["cut.sign.32"], "sign change among defined evaluations")
+        check((b.n_drop / b.M).max() < 4e-4, "dropped samples")
+
+
 ALLOWED = {  # design constants and mathematics, never results
     "0", "0.01", "0.02", "0.03", "0.05", "0.075", "0.1", "0.15", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "0.001", "0.003", "0.005", "0.0001",
     "1", "1.5", "2", "4", "5", "10", "1%", "5%", "50%", "80%", "90%", "95%", "10%", "97.5", "97.5%", "2.5", "2.5%", "1.0", "4.0",
@@ -232,7 +284,7 @@ def frozen():
 
 
 def main():
-    for f in (regenerate, hypotheses, reports, parquet, scan, repo_detail, frozen):
+    for f in (regenerate, hypotheses, reports, parquet, additions, scan, repo_detail, frozen):
         f()
     print(f"{n_ok} checks passed, {len(bad)} failed")
     for b in bad:
