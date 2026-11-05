@@ -84,38 +84,46 @@ Persi Diaconis and Sandy~L. Zabell.
 \bibitem[Duda(2017)]{duda2017rapid}
 Jarek Duda.
 \newblock Rapid parametric density estimation.
-\newblock \emph{arXiv preprint arXiv:1702.02144}, 2017.
+\newblock \emph{arXiv preprint
+  \href{https://arxiv.org/abs/1702.02144}{arXiv:1702.02144}}, 2017.
 
 \bibitem[Duda(2018{\natexlab{a}})]{duda2018exploiting}
 Jarek Duda.
 \newblock Exploiting statistical dependencies of time series with
   {H}ierarchical {C}orrelation {R}econstruction.
-\newblock \emph{arXiv preprint arXiv:1807.04119}, 2018{\natexlab{a}}.
+\newblock \emph{arXiv preprint
+  \href{https://arxiv.org/abs/1807.04119}{arXiv:1807.04119}},
+  2018{\natexlab{a}}.
 
 \bibitem[Duda(2018{\natexlab{b}})]{duda2018hierarchical}
 Jarek Duda.
 \newblock {H}ierarchical {C}orrelation {R}econstruction with missing data, for
   example for biology-inspired neuron.
-\newblock \emph{arXiv preprint arXiv:1804.06218}, 2018{\natexlab{b}}.
+\newblock \emph{arXiv preprint
+  \href{https://arxiv.org/abs/1804.06218}{arXiv:1804.06218}},
+  2018{\natexlab{b}}.
 
 \bibitem[Duda(2024)]{duda2024biology}
 Jarek Duda.
 \newblock Biology-inspired joint distribution neurons based on {H}ierarchical
   {C}orrelation {R}econstruction allowing for multidirectional propagation of
   values and densities.
-\newblock \emph{arXiv preprint arXiv:2405.05097}, 2024.
+\newblock \emph{arXiv preprint
+  \href{https://arxiv.org/abs/2405.05097}{arXiv:2405.05097}}, 2024.
 \newblock Version 9, 4 June 2026.
 
 \bibitem[Duda and Snarska(2018)]{duda2018modeling}
 Jarek Duda and Ma{\l}gorzata Snarska.
 \newblock Modeling joint probability distribution of yield curve parameters.
-\newblock \emph{arXiv preprint arXiv:1807.11743}, 2018.
+\newblock \emph{arXiv preprint
+  \href{https://arxiv.org/abs/1807.11743}{arXiv:1807.11743}}, 2018.
 
 \bibitem[Duda and Szulc(2018)]{duda2018credibility}
 Jarek Duda and Adam Szulc.
 \newblock Credibility evaluation of income data with {H}ierarchical
   {C}orrelation {R}econstruction.
-\newblock \emph{arXiv preprint arXiv:1812.08040}, 2018.
+\newblock \emph{arXiv preprint
+  \href{https://arxiv.org/abs/1812.08040}{arXiv:1812.08040}}, 2018.
 
 \bibitem[Duda and Bhatta(2024)]{duda2024predicting}
 Jaroslaw Duda and Gopal Bhatta.
@@ -158,7 +166,8 @@ Bradley Efron and R.~J. Tibshirani.
 \bibitem[Forde and Paganini(2019)]{forde2019scientific}
 Jessica~Zosa Forde and Michela Paganini.
 \newblock The scientific method in the science of machine learning.
-\newblock \emph{arXiv preprint arXiv:1904.10922}, 2019.
+\newblock \emph{arXiv preprint
+  \href{https://arxiv.org/abs/1904.10922}{arXiv:1904.10922}}, 2019.
 \newblock Presented at the ICLR 2019 Debugging Machine Learning Models
   workshop.
 
@@ -310,7 +319,7 @@ Zachary~C. Lipton and Jacob Steinhardt.
 \bibitem[Liu and Nocedal(1989)]{liu1989limited}
 Dong~C. Liu and Jorge Nocedal.
 \newblock On the limited memory {BFGS} method for large scale optimization.
-\newblock \emph{Mathematical Programming}, 45\penalty0 (1-3):\penalty0
+\newblock \emph{Mathematical Programming}, 45\penalty0 (1--3):\penalty0
   503--528, 1989.
 \newblock \doi{10.1007/BF01589116}.
 
@@ -500,13 +509,14 @@ Victoria Stodden, Marcia McNutt, David~H. Bailey, Ewa Deelman, Yolanda Gil,
 \bibitem[Strawa and Duda(2025)]{strawa2025improving}
 Jakub Strawa and Jarek Duda.
 \newblock Improving {KAN} with {CDF} normalization to quantiles.
-\newblock \emph{arXiv preprint arXiv:2507.13393}, 2025.
+\newblock \emph{arXiv preprint
+  \href{https://arxiv.org/abs/2507.13393}{arXiv:2507.13393}}, 2025.
 
 \bibitem[{The mpmath development team}(2026)]{mpmath2026}
 {The mpmath development team}.
 \newblock \emph{mpmath: a {P}ython library for arbitrary-precision
   floating-point arithmetic}, 2026.
-\newblock \url{https://mpmath.org/}.
+\newblock URL \url{https://mpmath.org/}.
 
 \bibitem[Tsuchida et~al.(2023)Tsuchida, Ong, and
   Sejdinovic]{tsuchida2023squared}
@@ -574,6 +584,7 @@ Zeyu Yang, Karel Adamek, and Wesley Armour.
 \bibitem[Yu(2020)]{yu2020soft}
 Edward Yu.
 \newblock {B}ayesian neural networks with soft evidence.
-\newblock \emph{arXiv preprint arXiv:2010.09570}, 2020.
+\newblock \emph{arXiv preprint
+  \href{https://arxiv.org/abs/2010.09570}{arXiv:2010.09570}}, 2020.
 
 \end{thebibliography}

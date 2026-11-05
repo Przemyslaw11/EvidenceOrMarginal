@@ -17,10 +17,12 @@
 \usepackage{float}
 \usepackage{placeins}
 \usepackage{titlesec}
+\usepackage{needspace}
+\usepackage{etoolbox}
 \usepackage{hyperref}
 \definecolor{linkblue}{rgb}{0.10,0.20,0.42}
-\hypersetup{colorlinks,linkcolor=linkblue,citecolor=linkblue,urlcolor=linkblue,
-  pdftitle={Evidence or Marginal? What Moment-Vector Propagation Computes in Polynomial Density Neurons},pdfauthor={Przemyslaw Spyra}}
+\hypersetup{colorlinks,linkcolor=linkblue,citecolor=linkblue,urlcolor=linkblue,bookmarksnumbered,
+  pdftitle={Evidence or Marginal? What Moment-Vector Propagation Computes in Polynomial Density Neurons},pdfauthor={Przemys\l aw Spyra}}
 \captionsetup{font=small,labelfont=bf,skip=5pt}
 \setlist{itemsep=1.5pt,topsep=3pt,parsep=0pt}
 \titleformat{\section}{\large\bfseries}{\thesection}{0.7em}{}
@@ -36,6 +38,17 @@
 \renewcommand{\bottomfraction}{0.6}
 \renewcommand{\textfraction}{0.08}
 \renewcommand{\floatpagefraction}{0.8}
+\setcounter{topnumber}{4}
+\setcounter{totalnumber}{6}
+% float pages start at the top of the text area, with fixed gaps
+\makeatletter
+\setlength{\@fptop}{0pt}
+\setlength{\@fpsep}{14pt plus 4pt}
+\setlength{\@fpbot}{0pt plus 1fil}
+\makeatother
+% a heading stays with at least three lines of its text
+\preto\section{\Needspace{5.3\baselineskip}}
+\preto\subsection{\Needspace{4.8\baselineskip}}
 \emergencystretch=1.5em
 \clubpenalty=10000
 \widowpenalty=10000
@@ -43,6 +56,10 @@
 \graphicspath{{figures/}}
 \setlength{\bibsep}{2.5pt plus 1pt}
 \renewcommand{\bibfont}{\small}
+\renewcommand{\bibsection}{\section*{\refname}\pdfbookmark[1]{References}{references}}
+\urlstyle{same}
+\makeatletter\def\NAT@spacechar{~}\makeatother % no line break before a numeric citation after a name
+\newcommand{\doi}[1]{doi: \href{https://doi.org/#1}{\nolinkurl{#1}}}
 
 \input{generated/numbers.tex}
 % \V{key}: a number from generated/numbers.tex; an unknown key stops the build
@@ -101,7 +118,7 @@ A neuron with two inputs loses one of them at test time. If the neuron stores th
 
 This is not a numerical accident. Normalising after averaging looks like a cheap approximation to normalising before. This paper shows that the two are \emph{exact answers to different questions}. In a density model, $\pcd=\Eq[N]/\Eq[D]$ is Bayesian updating with the belief as evidence (Pearl's virtual evidence, one sum-product message), and $\peu=\Eq[N/D]$ installs the belief as a new marginal (Jeffrey's rule). Which is right depends on where the belief came from.
 
-The question arises in density neurons, which store the joint density of inputs and output as coefficients of a polynomial basis. Hierarchical Correlation Reconstruction (HCR) is one such model \citep{duda2024biology,duda2018hierarchical}. Holding a density, not only a function, such a neuron can take a density over its inputs and return one over its output. The natural formula integrates the conditional against the belief, an integral of a ratio of polynomials. HCR's Eq.~10 \citep{duda2024biology} instead averages numerator and denominator separately; the belief then enters only through its moment vector, and propagation is one matrix--vector product. The source paper states the integral of the conditional as the density to propagate, and presents this step as an approximation with a constant denominator. We ask what that step computes, how far it lies from the integral, and when either exists.
+The question arises in density neurons, which store the joint density of inputs and output as coefficients of a polynomial basis. Hierarchical Correlation Reconstruction (HCR) is one such model~\citep{duda2024biology,duda2018hierarchical}. Holding a density, not only a function, such a neuron can take a density over its inputs and return one over its output. The natural formula integrates the conditional against the belief, an integral of a ratio of polynomials. HCR's Eq.~10~\citep{duda2024biology} instead averages numerator and denominator separately; the belief then enters only through its moment vector, and propagation is one matrix--vector product. The source paper states the integral of the conditional as the density to propagate, and presents this step as an approximation with a constant denominator. We ask what that step computes, how far it lies from the integral, and when either exists.
 
 \begin{figure}[t]
 \centering
@@ -112,7 +129,7 @@ The question arises in density neurons, which store the joint density of inputs 
 
 \paragraph{Contributions.}
 \begin{itemize}
-\item \textbf{Meaning} (Section~\ref{sec:semantics}). We identify HCR's Eq.~10 as virtual evidence and its target as Jeffrey's rule, and draw the consequence for missing inputs. The mathematics of uncertain evidence is classical \citep{jeffrey1965logic,pearl1988probabilistic,chan2005revision}, and any model that normalises after averaging has the same structure; what we add is this identification, not a new update.
+\item \textbf{Meaning} (Section~\ref{sec:semantics}). We identify HCR's Eq.~10 as virtual evidence and its target as Jeffrey's rule, and draw the consequence for missing inputs. The mathematics of uncertain evidence is classical~\citep{jeffrey1965logic,pearl1988probabilistic,chan2005revision}, and any model that normalises after averaging has the same structure; what we add is this identification, not a new~update.
 \item \textbf{Size} (Section~\ref{sec:gap}). An exact expansion explains why the gap is second order in the pair basis and first order in the triple basis, and closed forms explain why the pre-registered single power law fits only one of its four cells (H1c, \emph{inconclusive}).
 \item \textbf{Existence} (Section~\ref{sec:fail}). A positive semidefinite form of the pair denominator gives a convex bound on the negativity onset, an exact corner formula covers the triple basis, a formula for $\Eq[D]$ explains why pair messages survive where triple messages do not, and we give the sample size needed under noise.
 \item \textbf{Measurement} (Section~\ref{sec:study}). All \V{hyp.total} pre-registered outcomes are in Table~\ref{tab:hyp}, many of them unfavourable. Post hoc analyses of the same data show that where $\peu$ is defined, in pair neurons under Beta beliefs, truncation and not the denominator usually sets the error; triple neurons under flat and data beliefs are the exceptions.
@@ -122,11 +139,11 @@ We do not claim that either form is right in general, nor that the contrast of F
 
 \section{Setting}\label{sec:setting}
 
-\paragraph{The neuron.} HCR works on variables normalised to $[0,1]$, for instance by their marginal distribution functions, so the object modelled is a copula density \citep{sklar1959fonctions,nelsen2006introduction}. Let $f_0\equiv 1$ and $f_p(u)=\sqrt{2p+1}\,P_p(2u-1)$ be the orthonormal shifted Legendre polynomials on $[0,1]$, and $f_{\mathbf{j}}(y)=\prod_l f_{j_l}(y_l)$ for a multi-index $\mathbf{j}$. A neuron with output $x$ and inputs $y=(y_1,\dots,y_k)$ models
+\paragraph{The neuron.} HCR works on variables normalised to $[0,1]$, for instance by their marginal distribution functions, so the object modelled is a copula density~\citep{sklar1959fonctions,nelsen2006introduction}. Let $f_0\equiv 1$ and $f_p(u)=\sqrt{2p+1}\,P_p(2u-1)$ be the orthonormal shifted Legendre polynomials on $[0,1]$, and $f_{\mathbf{j}}(y)=\prod_l f_{j_l}(y_l)$ for a multi-index $\mathbf{j}$. A neuron with output $x$ and inputs $y=(y_1,\dots,y_k)$ models
 \begin{equation}\label{eq:neuron}
 N(x,y)=\sum_{i=0}^{m} f_i(x)\,A_i(y),\qquad A_i(y)=\sum_{\mathbf{j}} a_{i\mathbf{j}}\,f_{\mathbf{j}}(y),
 \end{equation}
-with degree at most $m$ per variable and $a_{00}=1$. The coefficients are mixed moments, estimated by $\hat a_{i\mathbf{j}}=\frac1n\sum_t f_i(x_t)f_{\mathbf{j}}(y_t)$ \citep{duda2024biology}. A full tensor is too large for big $k$, so a neuron keeps only multi-indices with few nonzero entries among the $k+1$ variables: at most two (\emph{pair}) or three (\emph{triple}). For $k=32$, $m=4$ this gives \V{coef.pair} and \V{coef.triple} coefficients. Integrating over $x$ removes all rows $i>0$, so $D(y):=\int_0^1 N(x,y)\,dx=A_0(y)$ is the neuron's model of the input density, and $h_x(y)=N(x,y)/D(y)$ its conditional of $x$ given $y$.
+with degree at most $m$ per variable and $a_{00}=1$. The coefficients are mixed moments, estimated by $\hat a_{i\mathbf{j}}=\frac1n\sum_t f_i(x_t)f_{\mathbf{j}}(y_t)$~\citep{duda2024biology}. A full tensor is too large for big $k$, so a neuron keeps only multi-indices with few nonzero entries among the $k+1$ variables: at most two (\emph{pair}) or three (\emph{triple}). For $k=32$, $m=4$ this gives \V{coef.pair} and \V{coef.triple} coefficients. Integrating over $x$ removes all rows $i>0$, so $D(y):=\int_0^1 N(x,y)\,dx=A_0(y)$ is the neuron's model of the input density, and $h_x(y)=N(x,y)/D(y)$ its conditional of $x$ given $y$.
 
 \paragraph{Two updates.} Given a belief $q$ on the inputs, define
 \begin{equation}\label{eq:exact}
@@ -134,9 +151,9 @@ with degree at most $m$ per variable and $a_{00}=1$. The coefficients are mixed 
 \qquad
 \pcd(x)=\frac{\Eq[N(x,y)]}{\Eq[D(y)]}=\frac{\sum_i f_i(x)\sum_{\mathbf{j}} a_{i\mathbf{j}} b_{\mathbf{j}}}{\sum_{\mathbf{j}} a_{0\mathbf{j}} b_{\mathbf{j}}},\quad b_{\mathbf{j}}=\Eq[f_{\mathbf{j}}(y)].
 \end{equation}
-$\pcd$ is Eq.~10 of \citep{duda2024biology}. It sees $q$ only through the moments $b_{\mathbf{j}}$, costs one matrix--vector product, and integrates to $1$ whenever $\Eq[D]\neq0$. $\peu$ needs $N/D$ to be integrable under $q$, which is more than $D\neq0$: at a regular sign change of $D$ inside the support, $\Eq|N/D|=\infty$. For a general belief it needs an integral over $y$. If the density of $q$ lies in the span of the basis, $\peu$ is also linear in the moments, with output coefficients $c_i=\sum_{\mathbf{j}}M_{i\mathbf{j}}b_{\mathbf{j}}$ and $M_{i\mathbf{j}}=\int f_{\mathbf{j}}A_i/D\,dy$, but $M$ is a $k$-dimensional integral that needs $D>0$ on the cube. So the difference in cost lies in obtaining the matrix, not in applying it. The label EU abbreviates \emph{exact, uncalibrated}, the protocol's name for this form, where ``exact'' means only that the integral is evaluated without replacing the denominator. We keep it as a label; in the text $\peu$ is the \emph{marginal-preserving} form, for the reason given by Theorem~\ref{thm:sem}.
+$\pcd$ is Eq.~10 of~\citep{duda2024biology}. It sees $q$ only through the moments $b_{\mathbf{j}}$, costs one matrix--vector product, and integrates to $1$ whenever $\Eq[D]\neq0$. $\peu$ needs $N/D$ to be integrable under $q$, which is more than $D\neq0$: at a regular sign change of $D$ inside the support, $\Eq|N/D|=\infty$. For a general belief it needs an integral over $y$. If the density of $q$ lies in the span of the basis, $\peu$ is also linear in the moments, with output coefficients $c_i=\sum_{\mathbf{j}}M_{i\mathbf{j}}b_{\mathbf{j}}$ and $M_{i\mathbf{j}}=\int f_{\mathbf{j}}A_i/D\,dy$, but $M$ is a $k$-dimensional integral that needs $D>0$ on the cube. So the difference in cost lies in obtaining the matrix, not in applying it. The label EU abbreviates \emph{exact, uncalibrated}, the protocol's name for this form, where ``exact'' means only that the integral is evaluated without replacing the denominator. We keep it as a label; in the text $\peu$ is the \emph{marginal-preserving} form, for the reason given by Theorem~\ref{thm:sem}.
 
-\paragraph{Negativity and calibration.} A truncated orthogonal expansion of a density need not be nonnegative. Orthogonal-series density estimation has a long history \citep{cencov1962evaluation,schwartz1967estimation,kronmal1968estimation,efromovich2010orthogonal}, and corrections that turn an estimator into a bona fide density are known \citep{gajek1986improving,glad2003correction}. The HCR paper proposes a calibration, for example $\max(\rho,0.1)$ or a softplus followed by normalisation, and says that in neural use it is mostly neglected, as the resulting approximations should be compensated during training; likelihood evaluation needs a positive density \citep[Secs.~II-A, IV]{duda2024biology}. This is separate from the constant denominator. The same paper states that step as an approximation \citep[Sec.~II-C]{duda2024biology}, and notes that the denominator of its prediction formula can be removed given further inter-layer normalisation \citep[Sec.~II-B]{duda2024biology}. We keep the two issues apart throughout.
+\paragraph{Negativity and calibration.} A truncated orthogonal expansion of a density need not be nonnegative. Orthogonal-series density estimation has a long history~\citep{cencov1962evaluation,schwartz1967estimation,kronmal1968estimation,efromovich2010orthogonal}, and corrections that turn an estimator into a bona fide density are known~\citep{gajek1986improving,glad2003correction}. The HCR paper proposes a calibration, for example $\max(\rho,0.1)$ or a softplus followed by normalisation, and says that in neural use it is mostly neglected, as the resulting approximations should be compensated during training; likelihood evaluation needs a positive density~\citep[Secs.~II-A, IV]{duda2024biology}. This is separate from the constant denominator. The same paper states that step as an approximation~\citep[Sec.~II-C]{duda2024biology}, and notes that the denominator of its prediction formula can be removed given further inter-layer normalisation~\citep[Sec.~II-B]{duda2024biology}. We keep the two issues apart throughout.
 
 \section{What the two forms compute}\label{sec:semantics}
 
@@ -154,7 +171,7 @@ Write $\tilde q=qD/\Eq[D]$.
 \end{enumerate}
 \end{theorem}
 
-Part (a) is Pearl's virtual evidence \citep{pearl1988probabilistic}: $q$ acts as a likelihood, $D$ as the prior, and $\tilde q$ as the posterior. Its numerator $\Eq[N]=\int N q\,dy$ is the sum-product message \citep{kschischang2001factor} from the factor $N$ to $x$ when the incoming message on $y$ is $q$. Part (b) is Jeffrey's rule \citep{jeffrey1965logic,diaconis1982updating}. Both obey probability kinematics, as (c) shows, and differ only in how the evidence is specified \citep{chan2003revision}. Part (d) is the classical translation between them (Theorem~5 of \citep{chan2005revision}, as described in \citep{peng2010uncertain}). So the question ``how accurate is $\pcd$?'' has no answer until one says what $q$ means.
+Part (a) is Pearl's virtual evidence~\citep{pearl1988probabilistic}: $q$ acts as a likelihood, $D$ as the prior, and $\tilde q$ as the posterior. Its numerator $\Eq[N]=\int N q\,dy$ is the sum-product message~\citep{kschischang2001factor} from the factor $N$ to $x$ when the incoming message on $y$ is $q$. Part (b) is Jeffrey's rule~\citep{jeffrey1965logic,diaconis1982updating}. Both obey probability kinematics, as (c) shows, and differ only in how the evidence is specified~\citep{chan2003revision}. Part (d) is the classical translation between them (Theorem~5 of~\citep{chan2005revision}, as described in~\citep{peng2010uncertain}). So the question ``how accurate is $\pcd$?'' has no answer until one says what $q$ means.
 
 \paragraph{Signed models.} Without $N\geq0$ the identities in (c), (d) remain algebraically true wherever the denominators are nonzero, but $\tilde q$ is a signed measure and the probabilistic reading is lost. This matters from Section~\ref{sec:fail} on.
 
@@ -169,7 +186,7 @@ Let the model have uniform one-dimensional input marginals.
 \end{enumerate}
 \end{proposition}
 
-Part (c) is the source paper's rule for missing variables, which uses only coefficients with zero index for them \citep[Sec.~II-A]{duda2024biology}. So the source's stated target for Eq.~10 is the marginal-preserving form, while its missing-data rule is the evidence form, and the same contraction serves both. Part (b) has a consequence for depth: a density passed forward through a chain is a predictive marginal of a hidden variable, which already contains that variable's prior. The matching form at the next layer is then $\peu$, and the study's ground truth takes that view.
+Part (c) is the source paper's rule for missing variables, which uses only coefficients with zero index for them~\citep[Sec.~II-A]{duda2024biology}. So the source's stated target for Eq.~10 is the marginal-preserving form, while its missing-data rule is the evidence form, and the same contraction serves both. Part (b) has a consequence for depth: a density passed forward through a chain is a predictive marginal of a hidden variable, which already contains that variable's prior. The matching form at the next layer is then $\peu$, and the study's ground truth takes that view.
 
 None of this needs polynomials. Any model that averages before normalising tilts its belief the same way.
 
@@ -178,9 +195,9 @@ Let $\pi\geq0$ on $\mathcal X\times\mathcal Y$ and $Z(y)=\int \pi\,dx>0$. Then
 $\Eq[\pi]/\Eq[Z]=\int (\pi/Z)\,d\tilde q$ with $d\tilde q\propto Z\,dq$. If $\pi$ is integrable, this is virtual evidence in the joint model $p\propto \pi$, whose input density is proportional to $Z$.
 \end{proposition}
 
-So a softmax classifier whose exponentiated logits are averaged before normalising implicitly tilts the belief by $Z=\sum_x\exp(\text{logit}_x)$, the unnormalised input density of the energy-based reading of \citet{grathwohl2020classifier}; squared density models \citep{rudi2021psd,tsuchida2023squared} behave the same way. Linearity of $N$ in the coefficients adds only one thing, the closed-form contraction with the moment vector.
+So a softmax classifier whose exponentiated logits are averaged before normalising implicitly tilts the belief by $Z=\sum_x\exp(\text{logit}_x)$, the unnormalised input density of the energy-based reading of \citet{grathwohl2020classifier}; squared density models~\citep{rudi2021psd,tsuchida2023squared} behave the same way. Linearity of $N$ in the coefficients adds only one thing, the closed-form contraction with the moment vector.
 
-\paragraph{The gap.} How far apart are the two answers? They differ by how much the tilt moves the conditional, which is a covariance. Let $\CV(D)=\sd_q(D)/\Eq[D]$. The first equality below is the classical covariance identity for a ratio of means \citep{hartley1954unbiased,schochet2022design}, applied pointwise in $x$.
+\paragraph{The gap.} How far apart are the two answers? They differ by how much the tilt moves the conditional, which is a covariance. Let $\CV(D)=\sd_q(D)/\Eq[D]$. The first equality below is the classical covariance identity for a ratio of means~\citep{hartley1954unbiased,schochet2022design}, applied pointwise in $x$.
 
 \begin{proposition}[Gap]\label{prop:gap}
 Assume $\Eq[D]>0$ and $D\neq0$ $q$-a.s., and let $C_h=\sup_y\int|h_x(y)|\,dx$ over the support of $q$. If $h_x$ is integrable under $q$, then for every $x$,
@@ -202,7 +219,7 @@ Does the contrast show in a real polynomial model? It does where the model's row
 
 At $k=2$, $\rs=0.4$, $\sobs=1$ the median TV to the truth is \V{sem.evidence.cd.0.4.1.0} for $\pcd$ against \V{sem.evidence.eu.0.4.1.0} for $\peu$ in the evidence problem, \V{sem.posterior.cd.0.4.1.0} against \V{sem.posterior.eu.0.4.1.0} in the posterior problem, and \V{sem.marginal.cd.0.4.1.0} against \V{sem.marginal.eu.0.4.1.0} in the marginal problem (Figure~\ref{fig:idea}, Table~\ref{tab:sem}). The order flips as Theorem~\ref{thm:sem} says, more weakly at $\sobs=0.5$, where the belief is narrower. With a missing input at the same correlation the medians are \V{sem.miss.cd.0.4} against \V{sem.miss.eu.0.4}.
 
-Beyond $k=2$ the outcome depends on the family (post hoc, all settings below the onset; Tables~\ref{tab:sembig} and \ref{tab:semflip}). In the triple family at $k=8$, $\sobs=1$ the medians are \V{sem.flip.triple.8.1.0.evidence.cd} against \V{sem.flip.triple.8.1.0.evidence.eu}, \V{sem.flip.triple.8.1.0.posterior.cd} against \V{sem.flip.triple.8.1.0.posterior.eu}, and \V{sem.flip.triple.8.1.0.marginal.cd} against \V{sem.flip.triple.8.1.0.marginal.eu}: the same flip, and the full tensor at $k=3,4$ and the triple family at $k=3,4$ show it too. In the pair family at $k=4$ and $8$ it is gone: errors of \V{sem.big.lo} to \V{sem.big.hi} swamp the contrast, and $\pcd$ is closer than $\peu$ under all three semantics in most observations, including \V{sem.big.marg.closer.lo} to \V{sem.big.marg.closer.hi} of observations in the marginal problem. The reason is structural. Pair rows $i\geq1$ are additive in $y$, so they cannot carry the conditional, and the contrast is lost to that model error. A narrower belief also shrinks the contrast: at $\sobs=0.5$ the full tensor keeps the flip, while in the triple family at $k=4,8$ the two forms differ by at most \V{sem.flip.weak.hi} on the posterior and marginal problems. So the flip is proved for a model without truncation error, and it is visible in truncated models that keep the conditional, up to $k=8$, the largest case we tried. We make no claim for larger $k$, and the semantic reading has no pre-registered test.
+Beyond $k=2$ the outcome depends on the family (post hoc, all settings below the onset; Tables~\ref{tab:sembig} and~\ref{tab:semflip}). In the triple family at $k=8$, $\sobs=1$ the medians are \V{sem.flip.triple.8.1.0.evidence.cd} against \V{sem.flip.triple.8.1.0.evidence.eu}, \V{sem.flip.triple.8.1.0.posterior.cd} against \V{sem.flip.triple.8.1.0.posterior.eu}, and \V{sem.flip.triple.8.1.0.marginal.cd} against \V{sem.flip.triple.8.1.0.marginal.eu}: the same flip, and the full tensor at $k=3,4$ and the triple family at $k=3,4$ show it too. In the pair family at $k=4$ and $8$ it is gone: errors of \V{sem.big.lo} to \V{sem.big.hi} swamp the contrast, and $\pcd$ is closer than $\peu$ under all three semantics in most observations, including \V{sem.big.marg.closer.lo} to \V{sem.big.marg.closer.hi} of observations in the marginal problem. The reason is structural. Pair rows $i\geq1$ are additive in $y$, so they cannot carry the conditional, and the contrast is lost to that model error. A narrower belief also shrinks the contrast: at $\sobs=0.5$ the full tensor keeps the flip, while in the triple family at $k=4,8$ the two forms differ by at most \V{sem.flip.weak.hi} on the posterior and marginal problems. So the flip is proved for a model without truncation error, and it is visible in truncated models that keep the conditional, up to $k=8$, the largest case we tried. We make no claim for larger $k$, and the semantic reading has no pre-registered test.
 
 An exploratory pilot on one real data set, run after the study's results were seen, points the same way for the evidence side: $\pcd$ beat $\peu$ with missing and with noisy inputs, while the neuron trailed gradient boosting by a wide margin and unguarded $\pcd$ failed where $\Eq[D]$ was small or negative (Appendix~\ref{app:pilot}). It has no Jeffrey-type arm, so it shows one side of the flip only.
 
@@ -313,7 +330,7 @@ Let $q$ be a product belief with $b_l=\mathrm{E}_{q_l}[f]$, and $\bar\xi_l(w)=g(
 and $\Eq[D]\geq1$ if all $q_l$ are equal. In the triple basis with equal $q_l$, $\Eq[D]=1+\binom k2\EW\bar\xi^2+\binom k3\EW\bar\xi^3$.
 \end{proposition}
 
-This explains an asymmetry in the study. The formula matches \V{eqd.n} sampled population evaluations within \V{eqd.rel}. For a central belief the degree-2 moment is negative and $g_2$ is right-skewed, so $\EW\bar\xi^3<0$ and the cubic term drives $\Eq[D]$ negative at large $k$ (this last step is a heuristic reading). In the study $\Eq[D]\leq0$ occurred in \V{ph.eqd.nonpos} of \V{ph.eqd.rows} evaluations, all triple, at $k\geq\V{ph.eqd.mink}$, under Beta beliefs; with population coefficients it occurred too (\V{ph.eqd.pop.nonpos} of \V{ph.eqd.pop.rows}), so it is structural. The pair basis stayed at $\Eq[D]\geq\V{ph.eqd.pairmin}$ (population S3c minimum \V{eqd.s3c}). Pair safety is not universal: a point belief on a negative value of $D$ gives $\Eq[D]<0$ in any basis, and the bound in \eqref{eq:masspair} is vacuous for narrow beliefs. The statement ``$\pcd$ stays defined past the onset'' holds for pair neurons with the beliefs tested, and not for triple neurons.
+This explains an asymmetry in the study. The formula matches \V{eqd.n} sampled population evaluations within \V{eqd.rel}. For a central belief the degree-2 moment is negative and $g_2$ is right-skewed, so $\EW\bar\xi^3<0$ and the cubic term drives $\Eq[D]$ negative at large $k$ (this last step is a heuristic reading). In the study $\Eq[D]\leq0$ occurred in \V{ph.eqd.nonpos} of \V{ph.eqd.rows} evaluations, all triple, at $k\geq\V{ph.eqd.mink}$, under Beta beliefs; with population coefficients it occurred too (\V{ph.eqd.pop.nonpos} of \V{ph.eqd.pop.rows}), so it is structural. The pair basis stayed at $\Eq[D]\geq\V{ph.eqd.pairmin}$ (population S3c minimum \V{eqd.s3c}). Pair safety is not universal: a point belief on a negative value of $D$ gives $\Eq[D]<0$ in any basis, and the bound in~\eqref{eq:masspair} is vacuous for narrow beliefs. The statement ``$\pcd$ stays defined past the onset'' holds for pair neurons with the beliefs tested, and not for triple neurons.
 
 \paragraph{Noise.} Estimated coefficients move all of this, and the sample size needed for a positive $\hat D$ grows polynomially in $k$.
 
@@ -326,6 +343,13 @@ This turns the rule of thumb $n\gtrsim z^2K$ into a statement on how $z$ grows. 
 \section{A reliability atlas: the pre-registered study}\label{sec:study}
 
 The theory above came after the data. The study itself asked plainer questions, fixed in advance: how large is the gap, where does the reference vanish, do the numbers transfer, and do depth and training change them? It cannot test the thesis of Section~\ref{sec:semantics}: its truth is the Jeffrey answer, so it measures distance to one of the two answers and never asks which form suits which belief. What it can give is an atlas of polynomial neurons, showing when the reference exists and what limits accuracy. Table~\ref{tab:hyp} gives every answer. In short: the reference vanishes early, as predicted; thresholds do not transfer; depth and training did not show the expected effects; and where $\peu$ is defined, in pair neurons under Beta beliefs, the gap is rarely the largest error.
+
+\begin{table}[t]
+\centering
+\input{generated/tab_hyp.tex}
+\caption{All pre-registered outcomes, with the verdict words of the protocol. H2b has two pre-registered evaluations, so \V{hyp.total} hypotheses occupy \V{hyp.rows} lines. Fractions count significant cells among evaluable cells; ``opposite'' counts cells whose confidence interval lies entirely on the unpredicted side. H1c cells are shares of points within a factor 2, and its overall label is discussed in Section~\ref{sec:gapres}. H4b is also test M13 of the validation suite (Appendix~\ref{app:validation}). $D$ does not depend on the output coupling, so SUM and CONTRAST population cells coincide for negativity: the \V{H1a.n} cells of H1a are \V{H1a.distinct} distinct ones, the \V{H2a.n} of H2a are \V{H2a.distinct}, and the \V{H2b_population.n} of H2b (population) are \V{H2b_population.distinct}.}
+\label{tab:hyp}
+\end{table}
 
 \subsection{Design}\label{sec:design}
 
@@ -342,24 +366,17 @@ The design, hypotheses, decision rules, grids and budget rule were set out in a 
 \dden&=\TV(\pcd,\peu), & \dneg&=\TV(\peu,\pec), & \dmu&=\TV(\peu,\pg),\\
 \dmc&=\TV(\pec,\pg), & \dtot&=\TV(\pcd,\pg), & \ddc&=\TV(\pcd,\pec).
 \end{align*}
-Densities can be signed, so TV here is an $L^1$ distance with a factor $\frac12$ and can exceed $1$. We also record variance and mean errors, $P(D<0)$ under uniform $y$, $\chi_D$, and $\min D$ from a multi-start projected optimiser with $\V{cfg.starts}$ starts. This $\min D$ is an upper bound on the true minimum, so measured onsets are conservative: true onsets can only be earlier.
+Densities can be signed, so TV here is an $L^1$ distance with a factor $\frac12$ and can exceed $1$. We also record variance and mean errors, $P(D<0)$ under uniform $y$, $\chi_D$, and $\min D$ from a multi-start projected optimiser with $\V{cfg.starts}$ starts. This $\min D$ is an upper bound on the true minimum, so measured onsets are conservative: true onsets can only be earlier.\looseness=-1 % layout: removes a one-word last line
 
-\paragraph{Thresholds and verdicts.} A \emph{cell} is a combination of design factors (such as type, basis and $k$), a \emph{point} adds a value of $\rs$, and an \emph{evaluation} is one seed at one point; each seed re-estimates all coefficients. A threshold is the first crossing of a level by the seed-median curve, over the run of defined points from $\rs=0$. If the curve becomes undefined first, or the level is not reached by $\rs=0.9$, the entry is ``---''. The negativity onset is the first zero crossing of seed-median $\min D$, and $0$ if negative at $\rs=0$. Confidence intervals are percentile bootstraps over seeds \citep{efron1979bootstrap,efron1993introduction}; they reflect estimation noise only, so very tight ones do not mean that the quantity is known beyond this design. A hypothesis over cells is \emph{supported} if at least $2/3$ of evaluable cells are significant in the predicted direction, \emph{not supported} if at least $2/3$ are not, and \emph{inconclusive} otherwise or with fewer than three evaluable cells. Some hypotheses have their own rule (Appendix~\ref{app:hyp}). ``Significant'' is used only in this pre-registered sense.
+\paragraph{Thresholds and verdicts.} A \emph{cell} is a combination of design factors (such as type, basis and $k$), a \emph{point} adds a value of $\rs$, and an \emph{evaluation} is one seed at one point; each seed re-estimates all coefficients. A threshold is the first crossing of a level by the seed-median curve, over the run of defined points from $\rs=0$. If the curve becomes undefined first, or the level is not reached by $\rs=0.9$, the entry is ``---''. The negativity onset is the first zero crossing of seed-median $\min D$, and $0$ if negative at $\rs=0$. Confidence intervals are percentile bootstraps over seeds~\citep{efron1979bootstrap,efron1993introduction}; they reflect estimation noise only, so very tight ones do not mean that the quantity is known beyond this design. A hypothesis over cells is \emph{supported} if at least $2/3$ of evaluable cells are significant in the predicted direction, \emph{not supported} if at least $2/3$ are not, and \emph{inconclusive} otherwise or with fewer than three evaluable cells. Some hypotheses have their own rule (Appendix~\ref{app:hyp}). ``Significant'' is used only in this pre-registered sense.
 
 \paragraph{Experiments.} The Gaussian sweep crosses $k\in\{2,4,8,16,32\}$, both types, both bases, $m\in\{2,4,6\}$, $n=10^7$, 50 seeds and 19 values of $\rs$ from 0 to 0.9. The population sweep repeats these cells with exact coefficients. The convergence study doubles $M$, $n$ and two grid sizes on a subset. The copula-family and LKJ experiments ($k\leq8$) vary the ground truth. The chain experiment builds up to $L=4$ neurons, a neuron of the sweep followed by neurons with two independent inputs, on a Gaussian Markov ground truth with correlation $\alpha=\V{cfg.a}$ per layer, trained under three losses and two optimisers at fixed, untuned settings (Appendix~\ref{app:chains}). Altogether \V{jobs} runs finished with \V{failed} failures on NVIDIA A100-SXM4-40GB GPUs in float64, with TF32 disabled and deterministic algorithms, using \V{gpuh.jobs} GPU-hours of run time (\V{gpuh.billed} GPU-hours billed for everything, including validation and benchmarks).
-
-\begin{table}[t]
-\centering
-\input{generated/tab_hyp.tex}
-\caption{All pre-registered outcomes, with the verdict words of the protocol. H2b has two pre-registered evaluations, so \V{hyp.total} hypotheses occupy \V{hyp.rows} lines. Fractions count significant cells among evaluable cells; ``opposite'' counts cells whose confidence interval lies entirely on the unpredicted side. H1c cells are shares of points within a factor 2, and its overall label is discussed in Section~\ref{sec:gapres}. H4b is also test M13 of the validation suite (Appendix~\ref{app:validation}). $D$ does not depend on the output coupling, so SUM and CONTRAST population cells coincide for negativity: the \V{H1a.n} cells of H1a are \V{H1a.distinct} distinct ones, the \V{H2a.n} of H2a are \V{H2a.distinct}, and the \V{H2b_population.n} of H2b (population) are \V{H2b_population.distinct}.}
-\label{tab:hyp}
-\end{table}
 
 \subsection{In pair neurons truncation, not the denominator, usually sets the error}\label{sec:trunc}
 
 We begin with a post hoc reading of metrics that were all pre-registered, because it answers the practical question: would replacing $\pcd$ with $\peu$ help? Mostly not. Table~\ref{tab:trunc} sets the gap $\dden$ against the error of the truncated model $\dmu=\TV(\peu,\pg)$, where both exist, under the semantics that favours $\peu$. In the pair basis the model error exceeds the gap by a median factor of \V{tr.S4.pair.ratio} (S4) to \V{tr.S3d.pair.ratio} (S3d), and both forms sit at nearly the same distance from the truth, for example \V{tr.S3a.pair.cd} and \V{tr.S3a.pair.eu} under S3a. $\peu$ is closer in \V{tr.S3c.pair.euc} (S3c) to \V{tr.S3b.pair.euc} (S3b) of evaluations. A pair model with few coefficients cannot represent the conditional well enough for the difference to count.
 
-There are two exceptions, both explained by Section~\ref{sec:gap}. Triple neurons under S2 and S4 have model error far below the gap, with ratios \V{tr.S2.triple.ratio} and \V{tr.S4.triple.ratio}, and $\peu$ closer in \V{tr.S2.triple.euc} of evaluations: here $T_1$ is first order and it is the whole error of $\pcd$. Under the Beta beliefs the triple ratio is \V{tr.S3b.triple.ratio} to \V{tr.S3d.triple.ratio}. The illustration of Section~\ref{sec:illus} sends the same message for the pair family with the evidence truth at $k=4,8$, where model error of \V{sem.big.lo} to \V{sem.big.hi} hides the choice of form. These results are for $m=4$, $\varepsilon=0.01$, $\rs>0$ and defined evaluations only, and the filter that defines them also caps the gap (Section~\ref{sec:gapres}), so they say nothing about the region past the onset, where $\peu$ does not exist. They concern synthetic ground truths, where the truncated part of the density is known, and a task could weigh the error differently.
+There are two exceptions, both explained by Section~\ref{sec:gap}. Triple neurons under S2 and S4 have model error far below the gap, with ratios \V{tr.S2.triple.ratio} and \V{tr.S4.triple.ratio}, and $\peu$ closer in \V{tr.S2.triple.euc} of evaluations: here $T_1$ is first order and it is the whole error of $\pcd$. Under the Beta beliefs the triple ratio is \V{tr.S3b.triple.ratio} to \V{tr.S3d.triple.ratio}. The illustration of Section~\ref{sec:illus} sends the same message for the pair family with the evidence truth at $k=4,8$, where model error of \V{sem.big.lo} to \V{sem.big.hi} hides the choice of form. These results are for $m=4$, $\varepsilon=0.01$, $\rs>0$ and defined evaluations only, and the filter that defines them also caps the gap (Section~\ref{sec:gapres}), so they say nothing about the region past the onset, where $\peu$ does not exist. They concern synthetic ground truths, where the truncated part of the density is known, and a task could weigh the error differently.\looseness=-1 % layout: removes a one-word last line
 
 \begin{table}[t]
 \centering
@@ -389,7 +406,7 @@ What the gap moves is mostly spread. Among \V{ph.mv.n} points of the pair basis 
 
 \subsection{The reference vanishes early, and noise brings it forward}\label{sec:onset}
 
-Here the expectations held. \textbf{H1a, H1b (\verdict{\V{H1a.verdict}}, \verdict{\V{H1b.verdict}}).} The onset falls strictly with $k$ in all \V{H1a.n} population cells, and at $n=10^7$ the difference between $k=32$ and $k=2$ has a confidence interval below zero in all \V{H1b.n} cells. For SUM in the pair basis it falls from \V{H1b.sp.k2} to \V{H1b.sp.k32}, a difference with $95\,\%$ CI $[\V{H1b.sp.lo},\V{H1b.sp.hi}]$. \textbf{H2a (\verdict{\V{H2a.verdict}}).} A higher degree gives an earlier onset in \V{H2a.sig} of \V{H2a.n} population cells (Table~\ref{tab:onsetm}). \textbf{H2b (\verdict{\V{H2b_population.verdict}} with population coefficients, \verdict{\V{H2b_gauss.verdict}} at $n=10^7$).} The triple basis is earlier than pair in \V{H2b_population.sig} of \V{H2b_population.n} and \V{H2b_gauss.sig} of \V{H2b_gauss.n} cells. These outcomes are what one would expect as terms are added, and Propositions~\ref{prop:pair} and \ref{prop:corner} now give their mechanism.
+Here the expectations held. \textbf{H1a, H1b (\verdict{\V{H1a.verdict}}, \verdict{\V{H1b.verdict}}).} The onset falls strictly with $k$ in all \V{H1a.n} population cells, and at $n=10^7$ the difference between $k=32$ and $k=2$ has a confidence interval below zero in all \V{H1b.n} cells. For SUM in the pair basis it falls from \V{H1b.sp.k2} to \V{H1b.sp.k32}, a difference with $95\,\%$ CI $[\V{H1b.sp.lo},\V{H1b.sp.hi}]$. \textbf{H2a (\verdict{\V{H2a.verdict}}).} A higher degree gives an earlier onset in \V{H2a.sig} of \V{H2a.n} population cells (Table~\ref{tab:onsetm}). \textbf{H2b (\verdict{\V{H2b_population.verdict}} with population coefficients, \verdict{\V{H2b_gauss.verdict}} at $n=10^7$).} The triple basis is earlier than pair in \V{H2b_population.sig} of \V{H2b_population.n} and \V{H2b_gauss.sig} of \V{H2b_gauss.n} cells. These outcomes are what one would expect as terms are added, and Propositions~\ref{prop:pair} and~\ref{prop:corner} now give their mechanism.
 
 Noise moves the onset at large $k$: \V{thr.SUM.pair.32.on} against \V{thr.SUM.pair.32.pop} (pair, $k=32$), and \V{thr.SUM.triple.16.on} against \V{thr.SUM.triple.16.pop} (triple, $k=16$), in line with Proposition~\ref{prop:noise}. Moving the floor on $D$ from $0$ to $0.05$ changes the share of S2 evaluations with $\min D$ above it by at most \V{floor.shift} of evaluations in any cell (post hoc reanalysis), so the pre-registered floor decides little.
 
@@ -411,15 +428,15 @@ Negativity removes $\peu$; it does not remove pair $\pcd$. Past the onset, pair 
 
 \section{Related work}\label{sec:related}
 
-\paragraph{Uncertain evidence.} Jeffrey's rule \citep{jeffrey1965logic,diaconis1982updating} and virtual evidence \citep{pearl1988probabilistic} are the two classical updates, and \citet{chan2003revision,chan2005revision} show that both obey probability kinematics and translate into each other; \citet{peng2010uncertain} develop the Bayesian-network case. \citet{munk2022uncertain} show in modern probabilistic models how results depend on which interpretation of uncertain evidence is chosen, and \citet{yu2020soft} train Bayesian neural networks on soft evidence with approximations of Jeffrey conditionalisation. We add no new update rule. Our point is that a moment-vector message in a polynomial density neuron is one of these two rules, and that a formula presented as an approximation of one is exactly the other.
+\paragraph{Uncertain evidence.} Jeffrey's rule~\citep{jeffrey1965logic,diaconis1982updating} and virtual evidence~\citep{pearl1988probabilistic} are the two classical updates, and \citet{chan2003revision,chan2005revision} show that both obey probability kinematics and translate into each other; \citet{peng2010uncertain} develop the Bayesian-network case. \citet{munk2022uncertain} show in modern probabilistic models how results depend on which interpretation of uncertain evidence is chosen, and \citet{yu2020soft} train Bayesian neural networks on soft evidence with approximations of Jeffrey conditionalisation. We add no new update rule. Our point is that a moment-vector message in a polynomial density neuron is one of these two rules, and that a formula presented as an approximation of one is exactly the other.
 
-\paragraph{Messages and embeddings.} $\Eq[N]$ is one sum-product message \citep{kschischang2001factor}, and a series message of this kind is sum-product by construction. The closest work on truncated series messages with estimated coefficients is the stochastic orthogonal-series message passing of \citet{noorshams2013belief}. Kernel mean embeddings use the same pattern of linear operators on moment-like vectors: the kernel sum and Bayes rules \citep{fukumizu2013kernel} and kernel belief propagation \citep{song2011kernel}, where estimated weights may also be negative. The kernel sum rule (Theorem~2 of \citep{fukumizu2013kernel}) reads $m_{Q_Y}=C_{YX}C_{XX}^{-1}m_\Pi$, with $X$ the input and $Y$ the output in their notation. Since $C_{XX}$ applied to a function $f$ gives the embedding of the input density times $f$, the inverse acts as division by the input density. At population level the rule therefore corresponds to feeding the message $q/D$, that is Theorem~\ref{thm:sem}(d), the Jeffrey form; applying $C_{YX}$ with no inverse gives the evidence form. This is a correspondence, not a theorem, and the conversion is implicit in that literature. Expected predictions \citep{khosravi2019expected} compute $\Eq$ of a model output under a generative input distribution in closed form, a different target from a normalised output density.
+\paragraph{Messages and embeddings.} $\Eq[N]$ is one sum-product message~\citep{kschischang2001factor}, and a series message of this kind is sum-product by construction. The closest work on truncated series messages with estimated coefficients is the stochastic orthogonal-series message passing of \citet{noorshams2013belief}. Kernel mean embeddings use the same pattern of linear operators on moment-like vectors: the kernel sum and Bayes rules~\citep{fukumizu2013kernel} and kernel belief propagation~\citep{song2011kernel}, where estimated weights may also be negative. The kernel sum rule (Theorem~2 of~\citep{fukumizu2013kernel}) reads $m_{Q_Y}=C_{YX}C_{XX}^{-1}m_\Pi$, with $X$ the input and $Y$ the output in their notation. Since $C_{XX}$ applied to a function $f$ gives the embedding of the input density times $f$, the inverse acts as division by the input density. At population level the rule therefore corresponds to feeding the message $q/D$, that is Theorem~\ref{thm:sem}(d), the Jeffrey form; applying $C_{YX}$ with no inverse gives the evidence form. This is a correspondence, not a theorem, and the conversion is implicit in that literature. Expected predictions~\citep{khosravi2019expected} compute $\Eq$ of a model output under a generative input distribution in closed form, a different target from a normalised output density.
 
-\paragraph{Positive and squared density models.} Squared expansions give nonnegativity by construction: \citet{gallant1987semi} in econometrics, and PSD models \citep{rudi2021psd}, squared neural families \citep{tsuchida2023squared} and subtractive mixtures via squaring \citep{loconte2024subtractive} in machine learning. Some of these classes have closed forms for marginals, conditioning, or sum and product rules. The negativity of Section~\ref{sec:fail} is what those constructions avoid, at the cost of a quadratic form in place of a linear contraction. On corrections of series estimators see \citep{gajek1986improving,glad2003correction}; on copula projection estimators see \citep{ngounoubakam2025nonparametric,chatrabgoun2017legendre}.
+\paragraph{Positive and squared density models.} Squared expansions give nonnegativity by construction: \citet{gallant1987semi} in econometrics, and PSD models~\citep{rudi2021psd}, squared neural families~\citep{tsuchida2023squared} and subtractive mixtures via squaring~\citep{loconte2024subtractive} in machine learning. Some of these classes have closed forms for marginals, conditioning, or sum and product rules. The negativity of Section~\ref{sec:fail} is what those constructions avoid, at the cost of a quadratic form in place of a linear contraction. On corrections of series estimators see~\citep{gajek1986improving,glad2003correction}; on copula projection estimators see~\citep{ngounoubakam2025nonparametric,chatrabgoun2017legendre}.
 
-\paragraph{Ratios and propagation.} The identity \eqref{eq:identity} is classical in sampling theory \citep{hartley1954unbiased,schochet2022design,cochran1977sampling,meng1993absolute}, the same structure appears in self-normalised importance sampling \citep{owen2013monte,cardoso2022brsnis}, and delta-method expansions of a mean of a ratio are standard \citep{oehlert1992note}. Most methods that push distributions through networks keep a parametric form: probabilistic backpropagation \citep{hernandezlobato2015probabilistic}, natural-parameter networks \citep{wang2016natural}, assumed density filtering \citep{gast2018lightweight}, deterministic moment approximation \citep{wu2019deterministic}, Gaussian inference \citep{goulet2021tractable}, covariance propagation \citep{wright2024analytic}; see also \citep{julier2004unscented,minka2001expectation}. HCR keeps a polynomial density, less restrictive in shape but possibly negative.
+\paragraph{Ratios and propagation.} The identity~\eqref{eq:identity} is classical in sampling theory~\citep{hartley1954unbiased,schochet2022design,cochran1977sampling,meng1993absolute}, the same structure appears in self-normalised importance sampling~\citep{owen2013monte,cardoso2022brsnis}, and delta-method expansions of a mean of a ratio are standard~\citep{oehlert1992note}. Most methods that push distributions through networks keep a parametric form: probabilistic backpropagation~\citep{hernandezlobato2015probabilistic}, natural-parameter networks~\citep{wang2016natural}, assumed density filtering~\citep{gast2018lightweight}, deterministic moment approximation~\citep{wu2019deterministic}, Gaussian inference~\citep{goulet2021tractable}, covariance propagation~\citep{wright2024analytic}; see also~\citep{julier2004unscented,minka2001expectation}. HCR keeps a polynomial density, less restrictive in shape but possibly negative.
 
-\paragraph{HCR and pre-registration.} HCR grew out of polynomial density fitting \citep{duda2017rapid,duda2018hierarchical} and has been applied to time series \citep{duda2018exploiting}, yield curves \citep{duda2018modeling}, spreads \citep{duda2020modelling}, income data \citep{duda2018credibility} and redshifts \citep{duda2024predicting}; Legendre KAN layers with an HCR reading are in \citep{strawa2025improving}. We found no prior numerical study of the constant-denominator step. On pre-registration in machine learning see \citep{nosek2018preregistration,forde2019scientific,bertinetto2021preface,lipton2019troubling,pineau2021improving,sandve2013ten,stodden2016enhancing}.
+\paragraph{HCR and pre-registration.} HCR grew out of polynomial density fitting~\citep{duda2017rapid,duda2018hierarchical} and has been applied to time series~\citep{duda2018exploiting}, yield curves~\citep{duda2018modeling}, spreads~\citep{duda2020modelling}, income data~\citep{duda2018credibility} and redshifts~\citep{duda2024predicting}; Legendre KAN layers with an HCR reading are in~\citep{strawa2025improving}. We found no prior numerical study of the constant-denominator step. On pre-registration in machine learning see~\citep{nosek2018preregistration,forde2019scientific,bertinetto2021preface,lipton2019troubling,pineau2021improving,sandve2013ten,stodden2016enhancing}.
 
 \section{Discussion}\label{sec:discussion}
 
@@ -427,36 +444,38 @@ Negativity removes $\peu$; it does not remove pair $\pcd$. Past the onset, pair 
 \begin{enumerate}
 \item \emph{Decide what the belief is} (Theorem~\ref{thm:sem}). Per-input evidence and missing inputs call for $\pcd$. A distribution the inputs really follow, or a posterior or predictive marginal that already contains the prior, calls for $\peu$. To obtain the Jeffrey answer when $D>0$, feed the message $q/D$, which costs the moments of $q/D$; the practical route is the regression message of Section~\ref{sec:trunc}, within its limits.
 \item \emph{Read a flat belief correctly.} Under flat $q$, $\pcd$ is the model's output marginal in any basis. It is the answer to ``no information'', not the conditional averaged over a uniform input.
-\item \emph{Check $\Eq[D]$ and $\CV(D)$} (Propositions~\ref{prop:gap}, \ref{prop:mass}). Both are cheap. A nonpositive or small $\Eq[D]$ should stop propagation.
+\item \emph{Check $\Eq[D]$ and $\CV(D)$} (Propositions~\ref{prop:gap},~\ref{prop:mass}). Both are cheap. A nonpositive or small $\Eq[D]$ should stop~propagation.
 \item \emph{Do not spend effort on the denominator in pair neurons} under Beta-like beliefs where $\peu$ is defined (Table~\ref{tab:trunc}): truncation dominates. In triple neurons under flat and data beliefs it can matter.
 \item \emph{Check negativity.} For Gaussian-like dependence use the convex bound of Proposition~\ref{prop:pair} or the corners of Proposition~\ref{prop:corner}. Expect an onset near $\rs\sim1/k$, and earlier with degree or a triple basis. Do not transfer the numbers to heavy-tailed or asymmetric dependence (H3a--c).
 \item \emph{Size $n$ with $z^2K_{\mathrm c}$} (Proposition~\ref{prop:noise}). Prefer the pair basis with low degree at large $k$, or select coefficients, as the source paper suggests.
-\item \emph{Be careful with clipping.} Clipping $N$ at each value of $y$ moved outputs away from the truth in most defined evaluations.
+\item \emph{Be careful with clipping.} Clipping $N$ at each value of $y$ moved outputs away from the truth in most defined~evaluations.
 \end{enumerate}
 
 \paragraph{Limitations.}
 \begin{itemize}
-\item \emph{Scope.} One neuron family, a Legendre basis, $m\leq6$ and, in the study, synthetic copulas only. The only real data are an exploratory pilot with one data set and one untrained neuron (Appendix~\ref{app:pilot}), so we cannot say in general how much a TV of a given size matters on a task. The basis keeps all coefficients of its family, and coefficient selection was not tested. The source paper's value-propagation mode does not use Eq.~10 and is outside this study.
+\item \emph{Scope.} One neuron family, a Legendre basis, $m\leq6$ and, in the study, synthetic copulas only. The only real data are an exploratory pilot with one data set and one untrained neuron (Appendix~\ref{app:pilot}), so we cannot say in general how much a TV of a given size matters on a task. The basis keeps all coefficients of its family, and coefficient selection was not tested. The source paper's value-propagation mode does not use Eq.~10 and is outside this study.\looseness=-1 % layout: one line less, so that the Conclusion fits this page
 \item \emph{The semantic reading} is post hoc and has no pre-registered test: the study's truth is the Jeffrey answer, and the evidence semantics is only illustrated, in full and triple models up to $k=8$, with the pair family losing the contrast to model error. The pilot has no Jeffrey-type arm. Explanations offered for tail dependence and mixing are consistent with the data but untested.
-\item \emph{Theory.} Sections~\ref{sec:gap} and \ref{sec:fail} assume population coefficients, uniform marginals and, for closed forms, equicorrelated Gaussian dependence; rates are at fixed $m$, the Gaussian limit in Proposition~\ref{prop:noise} is assumed, not proved uniformly in $k$, and the convex bound is computed on a grid.
+\item \emph{Theory.} Sections~\ref{sec:gap} and~\ref{sec:fail} assume population coefficients, uniform marginals and, for closed forms, equicorrelated Gaussian dependence; rates are at fixed $m$, the Gaussian limit in Proposition~\ref{prop:noise} is assumed, not proved uniformly in $k$, and the convex bound is computed on a grid.
 \item \emph{Design.} The main sweep's equicorrelation favours large pair sums, the coupling $c$ is a design choice, and marginals are exactly uniform, whereas real pipelines use estimated quantiles. The chain has independent inputs after layer one, a fixed contractive kernel and no re-normalisation to quantiles, and training used one fixed setting per optimiser. The end-to-end objective fits \V{e2e.targets} numbers on the beliefs also used for validation, so H5d says little about whether training can absorb the denominator.
-\item \emph{Measurement.} Measured onsets are upper bounds on a grid; TV on signed densities is an $L^1$ distance, not a probability bound. Confidence intervals are per cell with no multiplicity correction; verdicts rest on the counting rules.
+\item \emph{Measurement.} Measured onsets are upper bounds on a grid; TV on signed densities is an $L^1$ distance, not a probability bound. Confidence intervals are per cell with no multiplicity correction; verdicts rest on the counting rules.\looseness=-1 % layout: removes a one-word last line
 \item \emph{Pre-registration.} The protocol was not entered in a public registry, and the project's own records are the only evidence of its timing.
 \end{itemize}
 
 \paragraph{Broader impact.} This is foundational work on a density model: a synthetic study and a small pilot on public census data aggregated to block groups, with no individual-level data. The practical risk is misuse of $\pcd$ or $\peu$ as calibrated uncertainty when the belief's meaning has not been considered; the guidance above is aimed at that.
 
+% layout: keeps the Conclusion on one page
+\Needspace{12.4\baselineskip}
 \section{Conclusion}
 
-A reader who propagates beliefs through a density model should ask first what the belief is, because the choice between normalising after and normalising before is a choice of question, not of accuracy. For polynomial neurons the rest is arithmetic: the gap is second order in the dependence for pair bases and first order for triple bases, the reference disappears near $\rs\sim1/k$, and where $\peu$ is defined, in pair neurons under Beta beliefs truncation usually outweighs the gap, while in triple neurons under flat and data beliefs it does not. Thresholds did not transfer beyond the Gaussian sweep, and whether training can compensate for any of this remains open. The study is entirely synthetic; an exploratory pilot on one real data set agrees with the evidence side of the thesis and leaves the neuron well behind a standard baseline. Three experiments would settle most of what we leave unsettled: a pre-registered test of the two semantics, a pre-registered real task with missing or noisy inputs, and chains whose inputs stay correlated.
+A reader who propagates beliefs through a density model should ask first what the belief is, because the choice between normalising after and normalising before is a choice of question, not of accuracy. For polynomial neurons the rest is arithmetic: the gap is second order in the dependence for pair bases and first order for triple bases, the reference disappears near $\rs\sim1/k$, and where $\peu$ is defined, in pair neurons under Beta beliefs truncation usually outweighs the gap, while in triple neurons under flat and data beliefs it does not. Thresholds did not transfer beyond the Gaussian sweep, and whether training can compensate for any of this remains open. The study is entirely synthetic; an exploratory pilot on one real data set agrees with the evidence side of the thesis and leaves the neuron well behind a standard baseline. Three experiments would settle most of what we leave unsettled: a pre-registered test of the two semantics, a pre-registered real task with missing or noisy inputs, and chains whose inputs stay correlated.\looseness=-1 % layout: removes a one-word last line
 
-\section*{Acknowledgements}
+\section*{Acknowledgements}\pdfbookmark[1]{Acknowledgements}{acknowledgements}
 \TODO{acknowledgements, subject to consent of those named; funding}
 \TODO{PLGrid grant acknowledgement}
 
-\section*{Code and data availability}
+\section*{Code and data availability}\pdfbookmark[1]{Code and data availability}{availability}
 \TODO{code URL / DOI}
-Appendix~\ref{app:repro} gives batches, seeds, hardware and software. All data in the study are synthetic and generated by the code; the pilot of Appendix~\ref{app:pilot} uses the public California housing data \citep{pace1997sparse}.
+Appendix~\ref{app:repro} gives batches, seeds, hardware and software. All data in the study are synthetic and generated by the code; the pilot of Appendix~\ref{app:pilot} uses the public California housing data~\citep{pace1997sparse}.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}
@@ -466,7 +485,7 @@ Appendix~\ref{app:repro} gives batches, seeds, hardware and software. All data i
 
 This appendix collects the symbols used across sections (Table~\ref{tab:notation}) and states, claim by claim, what kind of evidence stands behind each (Table~\ref{tab:claims}).
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering\footnotesize
 \begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.30\linewidth}l>{\raggedright\arraybackslash}p{0.33\linewidth}@{}}
 \toprule
@@ -488,21 +507,21 @@ $\alpha,\ \gamma,\ L$ & chain correlations and depth & $j$ & coordinates at $1$ 
 \label{tab:notation}
 \end{table}
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering\footnotesize
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.43\linewidth}>{\raggedright\arraybackslash}p{0.54\linewidth}@{}}
 \toprule
 Claim & Status \\
 \midrule
-Semantics, tilt, conversion (Thm.~\ref{thm:sem}, Props.~\ref{prop:chan}, \ref{prop:any}) & Proved; classical mathematics, applied here. Post hoc. No pre-registered test. Illustrated in full and triple models up to $k=8$; the pair family loses the contrast. \\
+Semantics, tilt, conversion (Thm.~\ref{thm:sem}, Props.~\ref{prop:chan},~\ref{prop:any}) & Proved; classical mathematics, applied here. Post hoc. No pre-registered test. Illustrated in full and triple models up to $k=8$; the pair family loses the contrast. \\
 Kernel sum rule as the Jeffrey form (Sec.~\ref{sec:related}) & Population-level correspondence, not a theorem. Post hoc. \\
 Gap identity and bounds (Prop.~\ref{prop:gap}) & Proved; identity classical; bound checked on population cases. \\
 Order of the gap, closed forms (Prop.~\ref{prop:flat}, Cor.~\ref{cor:closed}) & Proved under stated assumptions; the $k,\rs$ scaling is a leading-order reading; compared post hoc with H1c points. \\
 Data belief and pair structure (Prop.~\ref{prop:data}) & Proved; checked post hoc on population evaluations. \\
-Onset bounds, corners (Props.~\ref{prop:pair}, \ref{prop:corner}) & Proved for the equicorrelated Gaussian copula; convex value computed on a grid; closeness to the measured onset is numerical. The value of $k\rs^\ast$ at large $k$ is a post hoc computation, with no limit theorem. \\
+Onset bounds, corners (Props.~\ref{prop:pair},~\ref{prop:corner}) & Proved for the equicorrelated Gaussian copula; convex value computed on a grid; closeness to the measured onset is numerical. The value of $k\rs^\ast$ at large $k$ is a post hoc computation, with no limit theorem. \\
 Mass of the message (Prop.~\ref{prop:mass}) & Formula proved; sign reading for central beliefs heuristic. \\
 Noise scaling (Prop.~\ref{prop:noise}) & Moments proved; extremes proved in the Gaussian limit, which is assumed; surrogate numerics. \\
-Truncation against gap; clipping (Secs.~\ref{sec:trunc}, \ref{sec:clip}) & Post hoc analysis of pre-registered metrics; pair-basis, Beta-belief statement on defined evaluations, with named exceptions. \\
+Truncation against gap; clipping (Secs.~\ref{sec:trunc},~\ref{sec:clip}) & Post hoc analysis of pre-registered metrics; pair-basis, Beta-belief statement on defined evaluations, with named exceptions. \\
 Regression message (Table~\ref{tab:reg}) & Post hoc computation on a Gaussian teacher, not part of the study; targets the Jeffrey answer only. \\
 Real-data pilot (Appendix~\ref{app:pilot}) & Exploratory, not pre-registered, run after the results were seen; one data set, one untrained neuron, no tuning, no Jeffrey-type arm. \\
 Onset and gap outcomes, H1--H5 & Pre-registered; verdicts in Table~\ref{tab:hyp}. \\
@@ -525,7 +544,7 @@ All statements of Sections~\ref{sec:semantics}--\ref{sec:fail} are proved here, 
 \end{proof}
 
 \begin{proof}[Proof of Proposition~\ref{prop:chan}]
-(a) Under the model $p(x\mid o)\propto\int N(x,y)\prod_l\lambda_l(y_l)\,dy$, since $o$ is independent of $x$ given $y$. With uniform one-dimensional marginals $q_l=\lambda_l/\int\lambda_l$ is the posterior of $y_l$ given $o_l$ alone, and $\prod_l\lambda_l\propto q$. So $p(x\mid o)\propto\Eq[N]$, and $\int\Eq[N]\,dx=\Eq[D]$ normalises. In general $\peu[q]=\Eq[h_x]$ differs by \eqref{eq:identity}.
+(a) Under the model $p(x\mid o)\propto\int N(x,y)\prod_l\lambda_l(y_l)\,dy$, since $o$ is independent of $x$ given $y$. With uniform one-dimensional marginals $q_l=\lambda_l/\int\lambda_l$ is the posterior of $y_l$ given $o_l$ alone, and $\prod_l\lambda_l\propto q$. So $p(x\mid o)\propto\Eq[N]$, and $\int\Eq[N]\,dx=\Eq[D]$ normalises. In general $\peu[q]=\Eq[h_x]$ differs by~\eqref{eq:identity}.
 (b) $q^\ast\propto D\prod_l\lambda_l$. Then $\peu[q^\ast]\propto\int h_xD\prod\lambda_l\,dy=\int N\prod\lambda_l\,dy$. While $\pcd[q^\ast]\propto\int ND\prod\lambda_l\,dy$ contains $D$ as well as the prior already in $N$.
 (c) The belief has moments $b_{\mathbf{j}}=f_{\mathbf{j}}(\yo)$ if $\mathbf{j}$ is zero on the missing inputs, and $b_{\mathbf{j}}=0$ otherwise. So $\Eq[N]=\int N(x,\yo,\ym)\,d\ym=p(x,\yo)$ and $\Eq[D]=p(\yo)$. The ratio is $p(x\mid \yo)=\int p(x\mid \yo,\ym)\,p(\ym\mid \yo)\,d\ym$, which equals the integral against the flat density when $\ym$ is independent of $\yo$ under the model, and in general not otherwise.
 \end{proof}
@@ -535,7 +554,7 @@ $\int(\pi/Z)\,d\tilde q=\Eq[(\pi/Z)Z]/\Eq[Z]=\Eq[\pi]/\Eq[Z]$. If $\iint \pi<\in
 \end{proof}
 
 \begin{proof}[Proof of Proposition~\ref{prop:gap}]
-$N=h_xD$ gives $\Eq[N]=\Eq[h_x]\Eq[D]+\Cov_q(h_x,D)$; divide by $\Eq[D]$. ($D$ is bounded and $h_x$ is $q$-integrable by assumption, so the covariance exists. Square-integrability makes the standard deviations below finite.) Writing the covariance as correlation times standard deviations and integrating over $x$ gives the equality in \eqref{eq:tvbound}. For the inequality use $|\mathrm{corr}|\leq1$ and Cauchy--Schwarz on $[0,1]$: $\int\sd_q(h_x)\,dx\leq(\int\Var_q(h_x)\,dx)^{1/2}$. Since $h_x=\sum_if_i(x)A_i/D$, Parseval gives $\int\Var_q(h_x)\,dx=\sum_i\Var_q(A_i/D)$, and the term $i=0$ vanishes as $A_0/D=1$. For the second bound, $\pcd-\peu=\int h_x\,(\tilde q-q)\,dy$ by Theorem~\ref{thm:sem}(c), whose proof needs only $\Eq[D]\neq0$; then $\int|\pcd-\peu|\,dx\leq\int\!\int|h_x|\,dx\,|\tilde q-q|\,dy\leq2C_h\TV(\tilde q,q)$, and $\TV(\tilde q,q)=\frac12\Eq|D/\Eq[D]-1|\leq\frac12\CV(D)$ by Jensen. If $x$ and $y$ are independent, $h_x$ is constant in $y$; if $D$ is constant, so is the second argument.
+$N=h_xD$ gives $\Eq[N]=\Eq[h_x]\Eq[D]+\Cov_q(h_x,D)$; divide by $\Eq[D]$. ($D$ is bounded and $h_x$ is $q$-integrable by assumption, so the covariance exists. Square-integrability makes the standard deviations below finite.) Writing the covariance as correlation times standard deviations and integrating over $x$ gives the equality in~\eqref{eq:tvbound}. For the inequality use $|\mathrm{corr}|\leq1$ and Cauchy--Schwarz on $[0,1]$: $\int\sd_q(h_x)\,dx\leq(\int\Var_q(h_x)\,dx)^{1/2}$. Since $h_x=\sum_if_i(x)A_i/D$, Parseval gives $\int\Var_q(h_x)\,dx=\sum_i\Var_q(A_i/D)$, and the term $i=0$ vanishes as $A_0/D=1$. For the second bound, $\pcd-\peu=\int h_x\,(\tilde q-q)\,dy$ by Theorem~\ref{thm:sem}(c), whose proof needs only $\Eq[D]\neq0$; then $\int|\pcd-\peu|\,dx\leq\int\!\int|h_x|\,dx\,|\tilde q-q|\,dy\leq2C_h\TV(\tilde q,q)$, and $\TV(\tilde q,q)=\frac12\Eq|D/\Eq[D]-1|\leq\frac12\CV(D)$ by Jensen. If $x$ and $y$ are independent, $h_x$ is constant in $y$; if $D$ is constant, so is the second argument.
 \end{proof}
 
 \begin{proof}[Proof of Proposition~\ref{prop:flat}]
@@ -543,9 +562,9 @@ $\Eu[D]=a_{00}=1$, so $\pcd=\Eu[h_xD]=\peu+\Eu[h_xG]$, and $\Eu[h_xG]=\Eu[(h_x-1
 \begin{equation}\label{eq:rec}
 h_x-1=V-G(h_x-1).
 \end{equation}
-Substituting gives \eqref{eq:flat}. For the bound, $\int|\Eu[G^2(h_x-1)]|\,dx\leq\Eu[G^2\int|h_x-1|\,dx]\leq2\chi_D^2\delta_h$, and $|\TV(\pcd,\peu)-\frac12\|T_1\|_1|$ is at most half of that by the triangle inequality.
+Substituting gives~\eqref{eq:flat}. For the bound, $\int|\Eu[G^2(h_x-1)]|\,dx\leq\Eu[G^2\int|h_x-1|\,dx]\leq2\chi_D^2\delta_h$, and $|\TV(\pcd,\peu)-\frac12\|T_1\|_1|$ is at most half of that by the triangle inequality.
 
-(a) In the pair basis $A_i$, $i\geq1$, is a constant plus single-input terms, and with flat input marginals $G$ is a sum of two-input terms. These are orthogonal under $u$, and $\Eu G=0$ removes the constant, so $T_1\equiv0$. Applying \eqref{eq:rec} once more in $\Eu[G^2(h_x-1)]$ gives $\pcd-\peu=-T_2+\Eu[G^3(h_x-1)]$, and $\int|\Eu[G^3(h_x-1)]|\,dx\leq\|G\|_\infty\Eu[G^2\int|h_x-1|\,dx]\leq2\delta_h\|G\|_\infty\chi_D^2$.
+(a) In the pair basis $A_i$, $i\geq1$, is a constant plus single-input terms, and with flat input marginals $G$ is a sum of two-input terms. These are orthogonal under $u$, and $\Eu G=0$ removes the constant, so $T_1\equiv0$. Applying~\eqref{eq:rec} once more in $\Eu[G^2(h_x-1)]$ gives $\pcd-\peu=-T_2+\Eu[G^3(h_x-1)]$, and $\int|\Eu[G^3(h_x-1)]|\,dx\leq\|G\|_\infty\Eu[G^2\int|h_x-1|\,dx]\leq2\delta_h\|G\|_\infty\chi_D^2$.
 
 (b) By orthonormality $\Eu[GA_i]=\sum_{\mathbf{j}\neq0}a_{0\mathbf{j}}a_{i\mathbf{j}}$ over common indices. With flat marginals only two-input indices are common.
 \end{proof}
@@ -557,11 +576,11 @@ Symmetry. Since $(y\mapsto1-y)$ preserves the equicorrelated law and $f_p(1-u)=(
 \end{proof}
 
 \begin{proof}[Proof of Proposition~\ref{prop:data}]
-$\Eq[D]=\sum_{\mathbf{j}}a_{0\mathbf{j}}\Eq[f_{\mathbf{j}}]=\sum_{\mathbf{j}}a_{0\mathbf{j}}^2=1+\chi_D^2$, as $\Eq[f_{\mathbf{j}}]=a_{0\mathbf{j}}$ for population coefficients. The true propagated density is the marginal of $x$, which is uniform. For \eqref{eq:pairstruct}: in the pair basis $\Eq[A_i]=a_{i0}+\sum_{l,p}a_{i,(l,p)}\mathrm{E}_{q_l}[f_p]$ with $a_{i0}=0$, and $\Eq[A_0]=\Eq[D]$, so $\pcd=1+\sum_{i\geq1}f_i\Eq[A_i]/\Eq[D]$. Under the data belief $\mathrm{E}_{q_l}[f_p]=0$, so $\pcd\equiv1$. In the triple basis $\Eq[A_i]$ gains $\sum a_{i\mathbf{j}}\Eq[f_{\mathbf{j}}]=\sum a_{i\mathbf{j}}a_{0\mathbf{j}}$ over two-input $\mathbf{j}$, which is the $f_i$ coefficient of $T_1$.
+$\Eq[D]=\sum_{\mathbf{j}}a_{0\mathbf{j}}\Eq[f_{\mathbf{j}}]=\sum_{\mathbf{j}}a_{0\mathbf{j}}^2=1+\chi_D^2$, as $\Eq[f_{\mathbf{j}}]=a_{0\mathbf{j}}$ for population coefficients. The true propagated density is the marginal of $x$, which is uniform. For~\eqref{eq:pairstruct}: in the pair basis $\Eq[A_i]=a_{i0}+\sum_{l,p}a_{i,(l,p)}\mathrm{E}_{q_l}[f_p]$ with $a_{i0}=0$, and $\Eq[A_0]=\Eq[D]$, so $\pcd=1+\sum_{i\geq1}f_i\Eq[A_i]/\Eq[D]$. Under the data belief $\mathrm{E}_{q_l}[f_p]=0$, so $\pcd\equiv1$. In the triple basis $\Eq[A_i]$ gains $\sum a_{i\mathbf{j}}\Eq[f_{\mathbf{j}}]=\sum a_{i\mathbf{j}}a_{0\mathbf{j}}$ over two-input $\mathbf{j}$, which is the $f_i$ coefficient of $T_1$.
 \end{proof}
 
 \begin{proof}[Proof of Equation~\eqref{eq:latent} and Proposition~\ref{prop:pair}]
-Given $W=w$ the $y_l$ are independent, each with density $1+\sum_{p\geq1}g_p(w)f_p(y_l)$ in the full basis. So for an index $\mathbf{j}$ with active degrees $p_1,\dots,p_d\geq1$, we have $a_{0\mathbf{j}}=\EW\prod_tg_{p_t}$. Since $\EW g_p=\mathrm{E}f_p(y)=0$, single-input terms vanish, and summing the two- and three-input terms gives \eqref{eq:latent}. With $\xi_l=g^\top f(y_l)$, $\EW e_2(\xi)=\sum_{l<l'}f(y_l)^\top \Gamma f(y_{l'})=\frac12(F^\top \Gamma F-\sum_l\varphi(y_l))$, which is \eqref{eq:quad}.
+Given $W=w$ the $y_l$ are independent, each with density $1+\sum_{p\geq1}g_p(w)f_p(y_l)$ in the full basis. So for an index $\mathbf{j}$ with active degrees $p_1,\dots,p_d\geq1$, we have $a_{0\mathbf{j}}=\EW\prod_tg_{p_t}$. Since $\EW g_p=\mathrm{E}f_p(y)=0$, single-input terms vanish, and summing the two- and three-input terms gives~\eqref{eq:latent}. With $\xi_l=g^\top f(y_l)$, $\EW e_2(\xi)=\sum_{l<l'}f(y_l)^\top \Gamma f(y_{l'})=\frac12(F^\top \Gamma F-\sum_l\varphi(y_l))$, which is~\eqref{eq:quad}.
 
 $\Gamma\succeq0$ as a second-moment matrix. For $\Gamma\preceq rI$, let $v\in\mathbb R^m$ and $U=v^\top f(y)$, a mean-zero function of $s=\sqrt rW+\sqrt{1-r}\nu$ with variance $|v|^2$. Expand $U=\sum_{n\geq1}\gamma_n\mathrm{He}_n(s)/\sqrt{n!}$. Then $\mathrm{E}[\mathrm{He}_n(s)\mid W]=r^{n/2}\mathrm{He}_n(W)$, so $v^\top \Gamma v=\mathrm{E}[(\mathrm{E}[U\mid W])^2]=\sum_{n\geq1}r^n\gamma_n^2\leq r|v|^2$.
 
@@ -570,11 +589,11 @@ $\Gamma\succeq0$ as a second-moment matrix. For $\Gamma\preceq rI$, let $v\in\ma
 \end{proof}
 
 \begin{proof}[Proof of Proposition~\ref{prop:corner}]
-At a corner $\xi$ has $j$ entries $\xi_+$ and $k-j$ entries $\xi_-$, so $e_2=\binom j2\xi_+^2+\binom{k-j}2\xi_-^2+j(k-j)\xi_+\xi_-$, and $e_3$ likewise. The map $y\mapsto1-y$, $w\mapsto-w$ gives $g_p(-w)=(-1)^pg_p(w)$, hence $\xi_-(w)=\xi_+(-w)$. As $W$ is symmetric, $\EW\xi_-^2=\kappa_{20}$, $\EW\xi_-^3=\kappa_{30}$, $\EW\xi_+\xi_-^2=\kappa_{21}$. This gives \eqref{eq:cornerp} and \eqref{eq:cornert}. Writing $\xi_\pm=\xe\pm\xo$ with $\xe$ even and $\xo$ odd in $w$, $\se^2=\EW\xe^2$, $\so^2=\EW\xo^2$, $\kappa_{20}=\se^2+\so^2$ and $\kappa_{11}=\se^2-\so^2$, and algebra gives the stated form. For the triple remark, $\kappa_{30}=\EW\xe^3+3\EW\xe\xo^2$ and $\kappa_{21}=\EW\xe^3-\EW\xe\xo^2$; put $j=k/2$. A corner lies in the cube, so a negative corner value means $\min D<0$ at that $\rs$.
+At a corner $\xi$ has $j$ entries $\xi_+$ and $k-j$ entries $\xi_-$, so $e_2=\binom j2\xi_+^2+\binom{k-j}2\xi_-^2+j(k-j)\xi_+\xi_-$, and $e_3$ likewise. The map $y\mapsto1-y$, $w\mapsto-w$ gives $g_p(-w)=(-1)^pg_p(w)$, hence $\xi_-(w)=\xi_+(-w)$. As $W$ is symmetric, $\EW\xi_-^2=\kappa_{20}$, $\EW\xi_-^3=\kappa_{30}$, $\EW\xi_+\xi_-^2=\kappa_{21}$. This gives~\eqref{eq:cornerp} and~\eqref{eq:cornert}. Writing $\xi_\pm=\xe\pm\xo$ with $\xe$ even and $\xo$ odd in $w$, $\se^2=\EW\xe^2$, $\so^2=\EW\xo^2$, $\kappa_{20}=\se^2+\so^2$ and $\kappa_{11}=\se^2-\so^2$, and algebra gives the stated form. For the triple remark, $\kappa_{30}=\EW\xe^3+3\EW\xe\xo^2$ and $\kappa_{21}=\EW\xe^3-\EW\xe\xo^2$; put $j=k/2$. A corner lies in the cube, so a negative corner value means $\min D<0$ at that $\rs$.
 \end{proof}
 
 \begin{proof}[Proof of Proposition~\ref{prop:mass}]
-$D$ is affine in each $f(y_l)$ by \eqref{eq:latent}, and $q$ is a product, so $\Eq$ replaces $f(y_l)$ by $b_l$, which gives the first formula. \eqref{eq:masspair} follows as in \eqref{eq:quad}, with $\Gamma\succeq0$ and $\Gamma\preceq rI$. If $b_l=b$, then $\Eq[D]=1+\binom k2b^\top \Gamma b\geq1$. The triple formula follows from $e_2$ and $e_3$ at equal arguments.
+$D$ is affine in each $f(y_l)$ by~\eqref{eq:latent}, and $q$ is a product, so $\Eq$ replaces $f(y_l)$ by $b_l$, which gives the first formula. \eqref{eq:masspair} follows as in~\eqref{eq:quad}, with $\Gamma\succeq0$ and $\Gamma\preceq rI$. If $b_l=b$, then $\Eq[D]=1+\binom k2b^\top \Gamma b\geq1$. The triple formula follows from $e_2$ and $e_3$ at equal arguments.
 \end{proof}
 
 \begin{proof}[Proof of Proposition~\ref{prop:noise}]
@@ -584,58 +603,56 @@ Let $\zeta_{\mathbf{j}}$ be i.i.d.\ standard normal and $P(y)=K_{\mathrm c}^{-1/
 
 \emph{Corners.} The maximum of $2^k$ unit normals has mean at most $\sqrt{2k\ln2}$.
 
-\emph{Upper bound on the cube.} Write $P=\sum_{d\leq d_{\max}}P_d$ with $P_d$ the part with $d$ active inputs, $d_{\max}\leq3$. Let $v_l=f(y_l)$ in the ball $\mathbb B$ of radius $\sqrt\Theta$ of $\mathbb R^m$, and regard $P_d$ as a function on $\mathbb B^k$. It is affine in each $v_l$ and homogeneous of degree $d$. Let $\mathcal N$ be a $\frac12\sqrt\Theta$-net of $\mathbb B$ with $|\mathcal N|\leq5^m$, so $\frac12\mathbb B\subset\mathrm{conv}\,\mathcal N$ \citep{vershynin2018high}. A function affine in each block attains its maximum over a product of convex hulls at a product of vertices, so $\sup_{\mathbb B^k}P_d=2^d\sup_{(\mathbb B/2)^k}P_d\leq2^d\max_{\mathcal N^k}P_d$. Each value is a centred normal with variance at most $1$, so $\mathrm{E}\max_{\mathcal N^k}P_d\leq\sqrt{2km\ln5}$. Summing over $d$ gives $\mathrm{E}z\leq C\sqrt{km}$.
+\emph{Upper bound on the cube.} Write $P=\sum_{d\leq d_{\max}}P_d$ with $P_d$ the part with $d$ active inputs, $d_{\max}\leq3$. Let $v_l=f(y_l)$ in the ball $\mathbb B$ of radius $\sqrt\Theta$ of $\mathbb R^m$, and regard $P_d$ as a function on $\mathbb B^k$. It is affine in each $v_l$ and homogeneous of degree $d$. Let $\mathcal N$ be a $\frac12\sqrt\Theta$-net of $\mathbb B$ with $|\mathcal N|\leq5^m$, so $\frac12\mathbb B\subset\mathrm{conv}\,\mathcal N$~\citep{vershynin2018high}. A function affine in each block attains its maximum over a product of convex hulls at a product of vertices, so $\sup_{\mathbb B^k}P_d=2^d\sup_{(\mathbb B/2)^k}P_d\leq2^d\max_{\mathcal N^k}P_d$. Each value is a centred normal with variance at most $1$, so $\mathrm{E}\max_{\mathcal N^k}P_d\leq\sqrt{2km\ln5}$. Summing over $d$ gives $\mathrm{E}z\leq C\sqrt{km}$.
 
-\emph{Lower bound.} Let $m$ be even and take corners $y,y'$ that differ in a fraction $\delta$ of coordinates. Each coordinate gives $\langle f(y_l),f(y_l')\rangle=\Theta$ if equal, and $\sum_{p=1}^m(-1)^p(2p+1)=m$ if different, a ratio $1/(m+2)$. The covariance of $P$ at $y,y'$ is thus $\sum_d e_d(\text{inner products})/K_{\mathrm c}$, which for large $k$ tends to the top-degree value $(1-\delta+\delta/(m+2))^{d_{\max}}$. By the Gilbert--Varshamov bound there are $2^{c_1k}$ corners at pairwise distance at least $k/4$, so their pairwise correlations are at most a constant below $1$ for large $k$, and their pairwise $L^2$ distances at least a constant. Sudakov's minoration \citep{vershynin2018high} gives $\mathrm{E}z\geq c\sqrt k$.
+\emph{Lower bound.} Let $m$ be even and take corners $y,y'$ that differ in a fraction $\delta$ of coordinates. Each coordinate gives $\langle f(y_l),f(y_l')\rangle=\Theta$ if equal, and $\sum_{p=1}^m(-1)^p(2p+1)=m$ if different, a ratio $1/(m+2)$. The covariance of $P$ at $y,y'$ is thus $\sum_d e_d(\text{inner products})/K_{\mathrm c}$, which for large $k$ tends to the top-degree value $(1-\delta+\delta/(m+2))^{d_{\max}}$. By the Gilbert--Varshamov bound there are $2^{c_1k}$ corners at pairwise distance at least $k/4$, so their pairwise correlations are at most a constant below $1$ for large $k$, and their pairwise $L^2$ distances at least a constant. Sudakov's minoration~\citep{vershynin2018high} gives $\mathrm{E}z\geq c\sqrt k$.
 
-\emph{Concentration.} $z$ is a supremum of a Gaussian process with variance at most $1$, so by the Borell--TIS inequality \citep{vershynin2018high} it has sub-Gaussian fluctuations of order $1$ around its mean. Then $\min\hat D>0$ is the event $z\sqrt{K_{\mathrm c}/n}<1$, which gives the stated order with $K_{\mathrm c}\sim\frac12k^2\Theta^2$ or $\frac16k^3\Theta^3$ and $z^2\asymp k$ up to $m$.
+\emph{Concentration.} $z$ is a supremum of a Gaussian process with variance at most $1$, so by the Borell--TIS inequality~\citep{vershynin2018high} it has sub-Gaussian fluctuations of order $1$ around its mean. Then $\min\hat D>0$ is the event $z\sqrt{K_{\mathrm c}/n}<1$, which gives the stated order with $K_{\mathrm c}\sim\frac12k^2\Theta^2$ or $\frac16k^3\Theta^3$ and $z^2\asymp k$ up to $m$.
 \end{proof}
 
-\FloatBarrier
 \section{The illustration of Section~\ref{sec:illus}}\label{app:illus}
 
 The tables below give the full grid behind Figure~\ref{fig:idea} and the same comparison at larger $k$: in the pair family, which loses the flip, and in the full and triple models, which keep it. All are post hoc illustrations, not study results.
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_sem.tex}
 \caption{Illustration at $k=2$: median TV to the truth over 200 observations, for the three problems of Section~\ref{sec:illus}.}
 \label{tab:sem}
 \end{table}
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_sem_big.tex}
 \caption{Illustration at $k=4,8$, pair basis, below the onset, 60 observations; ``closer'' is the share of observations with $\pcd$ nearer the truth than $\peu$. Pair rows $i\geq1$ are additive in $y$, so they cannot carry the conditional, and this model error hides the flip of Table~\ref{tab:sem}.}
 \label{tab:sembig}
 \end{table}
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_sem_flip.tex}
 \caption{Post hoc illustration beyond the pair family, below the onset ($\min D$ over the cube between \V{sem.flip.mind.lo} and \V{sem.flip.mind.hi}), 60 observations; ``closer'' as in Table~\ref{tab:sembig}. At $\sobs=1$ every model flips as in Table~\ref{tab:sem}. At $\sobs=0.5$ the belief is narrower and the full tensor still flips, while the triple family at $k=4,8$ shows almost no difference on the posterior and marginal problems. The median of 60 observations carries a Monte Carlo error of a few thousandths. $k=8$ is the largest case tried.}
 \label{tab:semflip}
 \end{table}
 
-\FloatBarrier
 \section{An exploratory real-data pilot}\label{app:pilot}
 
 This pilot is exploratory. It was not pre-registered, it was run after the study's results were seen, it uses one data set and one untrained, directly estimated neuron with no tuning, and it is not a statement about trained HCR networks. It enters no verdict.
 
-\paragraph{Data and neuron.} California housing \citep{pace1997sparse} has \V{pilot.inputs} inputs and the median house value as target. All variables are mapped to $[0,1]$ by their empirical distribution functions on the training split, with \V{pilot.train} training and \V{pilot.test} test rows; \V{pilot.seeds} seeds redraw the split. In the first split the inputs' Spearman correlations have median magnitude \V{pilot.rho.med} and maximum \V{pilot.rho.max}, so the data lie well past the onset of Section~\ref{sec:fail}. The neuron uses direct moment estimates in the pair and triple families with $m=2,3$.
+\paragraph{Data and neuron.} California housing~\citep{pace1997sparse} has \V{pilot.inputs} inputs and the median house value as target. All variables are mapped to $[0,1]$ by their empirical distribution functions on the training split, with \V{pilot.train} training and \V{pilot.test} test rows; \V{pilot.seeds} seeds redraw the split. In the first split the inputs' Spearman correlations have median magnitude \V{pilot.rho.med} and maximum \V{pilot.rho.max}, so the data lie well past the onset of Section~\ref{sec:fail}. The neuron uses direct moment estimates in the pair and triple families with $m=2,3$.
 
 \paragraph{Scenarios.} \emph{All seen}: the belief is a point. \emph{Half missing}: each test input is lost with probability $\frac12$, and the belief is a point on the rest and flat on the lost ones, the case of Proposition~\ref{prop:chan}(c). \emph{Noisy}: each input's normal score is seen with noise $\tau=\V{pilot.tau}$. Marginals are uniform, so the per-input posterior is the normalised likelihood, and Proposition~\ref{prop:chan}(a) makes $\pcd$ the right form here too. Both of the last two scenarios are of evidence type. No Jeffrey-type arm was run, so the pilot shows one side of the flip only.
 
 \paragraph{Forms and scores.} $\pcd$ is computed exactly from per-input moments. $\peu$ uses \V{pilot.samples} belief samples per row and drops those with $D<\V{pilot.floor}$; a row with no sample left returns the marginal. REG is the regression message of Section~\ref{sec:trunc} with ridge regression on the neuron's features. Boosting is gradient boosting on trees with default settings, trained on inputs corrupted in the same way. We report the mean squared error of the predicted mean clipped to $[0,1]$, and the mean log density with the density clipped at $\V{pilot.floor}$ and renormalised.
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_pilot.tex}
 \caption{Exploratory pilot, means over \V{pilot.seeds} seeds; ranges run over the four families. The largest standard deviation over seeds of any entry is \V{pilot.sd}. The marginal has log density $0$ by construction.}
 \label{tab:pilot}
 \end{table}
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_pilot_fail.tex}
 \caption{Where the neuron fails in the pilot; ranges run over the four families. ``below the floor'': share of test points (all seen) or belief samples (other scenarios) with $D<\V{pilot.floor}$. ``CD ahead of EU'': seed and family pairs with lower clipped-mean error for $\pcd$. ``largest raw MSE of CD'': worst seed and family with no clipping of the predicted mean.}
@@ -644,7 +661,6 @@ This pilot is exploratory. It was not pre-registered, it was run after the study
 
 \paragraph{Results.} Table~\ref{tab:pilot} reads in both directions. $\pcd$ beats $\peu$ in the two evidence-type scenarios, as Proposition~\ref{prop:chan} predicts, in \V{pilot.missing.win} of \V{pilot.missing.win.n} seed and family pairs with half the inputs missing and \V{pilot.noisy.win} of \V{pilot.noisy.win.n} with noise, and the log density agrees. With all inputs seen the belief is a point, so the two forms coincide wherever $D$ is not small; the difference in that line comes from rows below the floor, where $\peu$ returns the marginal. The neuron trails boosting by a wide margin in every scenario. In clipped-mean error the regression message is ahead of both forms with all inputs seen and with noise, and level with $\pcd$ with half missing, despite its semantics; in log density it leads only with all inputs seen. Unguarded $\pcd$ fails on rows where $\Eq[D]$ is small or negative (Table~\ref{tab:pilotfail}): such rows are few, yet the raw mean squared error reaches \V{pilot.rawmax}, against a marginal baseline of \V{pilot.marg}. This is why Rule~3 of Section~\ref{sec:discussion} matters. So on this one data set the choice of form has a visible effect in the predicted direction, and the neuron as estimated here is not competitive.
 
-\FloatBarrier
 \section{Full definitions, grids and numerics}\label{app:defs}
 
 This appendix completes Section~\ref{sec:design}: exact definitions of each measured quantity, the grids and ground truths of each experiment, and the numerical settings.
@@ -659,128 +675,126 @@ This appendix completes Section~\ref{sec:design}: exact definitions of each meas
 
 \paragraph{Seed-median curve.} Undefined seed values count as $+\infty$; a grid point is defined if at least $50\,\%$ of seeds are defined. ``Undefined from'' is the first grid point at which at least $50\,\%$ of seeds have $\peu$ undefined. Thresholds are per seed too, and bootstrap CIs ($2000$ resamples) resample seeds, paired where conditions share seeds; ``not reached'' counts as $+\infty$ in the percentile.
 
-\paragraph{Grids and ground truths.}\label{app:grids} Besides the Gaussian sweep the study uses $t_3$ and $t_{10}$ copulas \citep{demarta2005t} in SUM, CONTRAST and exchangeable (EXCH) forms, and exchangeable Clayton and Gumbel copulas \citep{mcneil2009multivariate}, all at matched Kendall's $\tau$ of the inputs \citep{lindskog2003kendall}. Archimedean samples use the mixture representation of Marshall and Olkin \citep{marshall1988families}, with Kanter's method \citep{kanter1975stable} for the positive stable variables. Random correlation matrices come from the LKJ distribution \citep{lewandowski2009generating}.
+\paragraph{Grids and ground truths.}\label{app:grids} Besides the Gaussian sweep the study uses $t_3$ and $t_{10}$ copulas~\citep{demarta2005t} in SUM, CONTRAST and exchangeable (EXCH) forms, and exchangeable Clayton and Gumbel copulas~\citep{mcneil2009multivariate}, all at matched Kendall's $\tau$ of the inputs~\citep{lindskog2003kendall}. Archimedean samples use the mixture representation of Marshall and Olkin~\citep{marshall1988families}, with Kanter's method~\citep{kanter1975stable} for the positive stable variables. Random correlation matrices come from the LKJ distribution~\citep{lewandowski2009generating}.
 
 $\rs\in\{0,0.01,0.02,0.03,0.05,0.075,0.1,0.15,0.2,\dots,0.5\text{ step }0.05,0.6,0.7,0.8,0.9\}$; $m\in\{2,4,6\}$; $\varepsilon\in\{0.1,0.01,0.001\}$; $M=\V{cfg.M}$; $R=\V{cfg.R}$. Gaussian sweep: 50 seeds. Population sweep: exact coefficients, 5 belief seeds. Copula families: $k\in\{2,4,8\}$, 20 seeds. LKJ matrices: $k\in\{2,4,8\}$, $\eta\in\{1,4\}$, 200 matrices. Convergence study: $k\in\{2,8,32\}$, 5 seeds. Chains: Appendix~\ref{app:chains}. The budget rule for removing seeds was not triggered.
 
 \paragraph{Numerics.}\label{app:numerics} $\min D$ uses \V{cfg.starts} starts (corners, edge midpoints, the 256 lowest-$D$ Monte Carlo samples of S2 and S4, and uniform random points), projected Adam for 400 steps, cosine learning rate from $0.005$ to $0.0001$, projected onto the support for Beta beliefs, and takes the minimum with the Monte Carlo minimum. These settings were chosen on $d=3$ coefficients against brute-force grids, not on the study's data. Random numbers come from the PCG64 generator, seeded from a fixed root seed and the indices of each condition, with common random numbers across conditions. Bootstraps use a fixed seed.
 
-\FloatBarrier
 \section{Negativity and noise: further results}\label{app:neg}
 
-Tables~\ref{tab:onsetall}--\ref{tab:noise} extend Section~\ref{sec:fail} to all degrees and to the noise scale; Figures~\ref{fig:neg} and \ref{fig:undef} show the measured negativity and where $\dden$ cannot be measured.
+Tables~\ref{tab:onsetall}--\ref{tab:noise} extend Section~\ref{sec:fail} to all degrees and to the noise scale; Figures~\ref{fig:neg} and~\ref{fig:undef} show the measured negativity and where $\dden$ cannot be measured.
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_onset_all.tex}
 \caption{Onsets for all degrees (population, SUM, S2; post hoc for the bounds). ``first'' and ``convex'' as in Table~\ref{tab:onset}. ``search'': best upper value found by coordinate descent, capped by ``measured''. ``---'': no corner goes negative, or $k=2$, where the triple family equals the pair family for $D$.}
 \label{tab:onsetall}
 \end{table}
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_noise_z.tex}
 \caption{$z=(1-\min D)/\sigma_{\mathrm c}$ at $\rs=0$, $m=4$ (post hoc). ``measured'': from the study at $n=10^7$. ``corners'' and ``cube'': Gaussian surrogate of Proposition~\ref{prop:noise} by coordinate descent, medians over a few draws. ``on the boundary'': share of coordinates on the boundary in the cube minimiser.}
 \label{tab:noisez}
 \end{table}
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_noise.tex}
 \caption{Noise scale at $\rs=0$, $m=4$, $n=10^7$, type SUM, S2 (post hoc). $\sigma_{\mathrm c}=\sqrt{K_{\mathrm c}/n}$ from Proposition~\ref{prop:noise}; $|B_D|$ is the number of nonzero multi-indices of $D$; ``ratio'' is $(1-\min D)/\sigma_{\mathrm c}$. The triple basis at $k=2$ is omitted because it equals the pair basis for $D$.}
 \label{tab:noise}
 \end{table}
 
-\begin{figure}[ht]
+\begin{figure}[htbp]
 \centering
 \includegraphics{G3_negativity.pdf}
 \caption{Negativity of $D$ for type SUM, $m=4$, $n=10^7$, seed medians. (a, b) $\min D$ over $[0,1]^k$ on a symmetric logarithmic axis; the value is an upper bound on the true minimum. (c, d) $P(D<0)$ under uniform $y$ on a logarithmic axis; points with zero observed probability are not drawn.}
 \label{fig:neg}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}[htbp]
 \centering
 \includegraphics{G4_undefined_share.pdf}
 \caption{Share of seeds with $\peu$ undefined under S2, $m=4$, $n=10^7$. The $\rs$ axis is categorical (grid values, unevenly spaced). Dark regions are where $\dden$ cannot be measured.}
 \label{fig:undef}
 \end{figure}
 
-\FloatBarrier
 \section{The gap and the errors: further results}\label{app:thr}
 
-This appendix holds the threshold tables and error components behind Sections~\ref{sec:trunc}, \ref{sec:gapres} and \ref{sec:clip}. Table~\ref{tab:thr} is the summary; Tables~\ref{tab:thrfull}--\ref{tab:bel} add CONTRAST, confidence intervals, variance thresholds and all beliefs; the last tables and figures show what happens past the onset and how the error splits.
+This appendix holds the threshold tables and error components behind Sections~\ref{sec:trunc},~\ref{sec:gapres} and~\ref{sec:clip}. Table~\ref{tab:thr} is the summary; Tables~\ref{tab:thrfull}--\ref{tab:bel} add CONTRAST, confidence intervals, variance thresholds and all beliefs; the last tables and figures show what happens past the onset and how the error splits.
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_thr_main.tex}
 \caption{Thresholds in $\rs$ for type SUM, flat belief S2, $m=4$, seed-median curves, $n=10^7$ except the population onset. ``---'' means the level was not reached before $\peu$ became undefined; it never means that the error is small. ``undefined from'' is the first grid value at which most seeds have $\peu$ undefined. Onsets are upper bounds.}
 \label{tab:thr}
 \end{table}
 
-\begin{figure}[ht]
+\begin{figure}[htbp]
 \centering
 \includegraphics{G1_d_denom_vs_rho.pdf}
 \caption{$\dden$ against input Spearman correlation $\rs$ for the pair basis, $m=4$, $n=10^7$, $\varepsilon=0.01$, beliefs S2, S3c and S4. Lines are seed medians and bands $2.5$--$97.5\,\%$ seed intervals. A curve ends where most seeds have $\peu$ undefined; the gap carries no information about the error. Hollow markers are below three times the Monte Carlo noise floor. Dotted and dashed lines mark $1\,\%$ and $5\,\%$.}
 \label{fig:d}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}[htbp]
 \centering
 \includegraphics{G2_thresholds_vs_k.pdf}
 \caption{Negativity onsets for both bases, at $n=10^7$ (solid) and with population coefficients (dashed), and the $1\,\%$ threshold of $\dden$ (S2, pair), against $k$, for $m=4$. Error bars are $95\,\%$ bootstrap CIs and are often smaller than the markers. Missing points mean the level was not reached before $\peu$ became undefined.}
 \label{fig:thr}
 \end{figure}
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_thr_full.tex}
 \caption{All thresholds for S2, $m=4$, with $95\,\%$ bootstrap CIs. ``---'' as in Table~\ref{tab:thr}.}
 \label{tab:thrfull}
 \end{table}
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_thr_relvar.tex}
 \caption{Thresholds of the relative variance error (S2, $m=4$) and $\min D$ at $\rs=0$. ``---'' as in Table~\ref{tab:thr}.}
 \label{tab:relvar}
 \end{table}
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_beliefs.tex}
 \caption{$1\,\%$ threshold of $\dden$ and undefined onset (shown as threshold / onset) for all beliefs, pair basis, $m=4$. ``---'' in the onset means $\peu$ stayed defined up to $\rs=0.9$; only then does ``---'' in the threshold mean that the level was not reached in the range. ``Defined'' is relative to the protocol's support cut, whose reach changes with $k$ (Appendix~\ref{app:defs}), so do not read defined share or undefined onsets under Beta beliefs at $k\geq16$ as a trend.}
 \label{tab:bel}
 \end{table}
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_past.tex}
 \caption{Past the onset: evaluations with $\peu$ undefined, $\rs>0$, $m=4$, $\varepsilon=0.01$, medians (post hoc). ``CD closer than EC'': share with $\pcd$ nearer to $\pg$ than $\pec$. Here truth is the Jeffrey answer.}
 \label{tab:past}
 \end{table}
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_decomp.tex}
 \caption{Error components at $k=2$, pair basis, $m=4$, $n=10^7$, $\varepsilon=0.01$, seed medians.}
 \label{tab:decomp}
 \end{table}
 
-\begin{figure}[ht]
+\begin{figure}[htbp]
 \centering
 \includegraphics{G7_decomposition.pdf}
 \caption{Error components under the flat belief S2, pair basis, $m=4$, $n=10^7$, $\varepsilon=0.01$; seed medians at three correlations and three values of $k$. ``n/d'' marks quantities not defined because $\peu$ is undefined, not values near zero. $\dtot$ under S2 is dominated by the mismatch between the flat belief and the truth.}
 \label{fig:dec}
 \end{figure}
 
-\FloatBarrier
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
 \includegraphics{G6_mean_vs_variance.pdf}
 \caption{Absolute relative variance error against standardised mean error, both relative to $\peu$, pair basis, $m=4$, $\varepsilon=0.01$, all $k$, types and $\rs>0$ where defined; seed medians. Points above the dashed line have larger variance error than mean error.}
 \label{fig:mv}
 \end{figure}
 
+\FloatBarrier
 \section{Decision rules and hypothesis details}\label{app:hyp}
 
 The decision rules below are given in substance from the protocol. The tables and the figure that follow hold the detail behind H1c, H2a, H3a--c and H4b.
@@ -789,65 +803,64 @@ H1a, H2a, H2b (population): deterministic inequality per cell. H1b, H2b ($n=10^7
 
 \paragraph{Transfer in detail.}\label{app:transfer} None of the three transfer hypotheses was supported. \textbf{H3a (\verdict{\V{H3a.verdict}}).} The rule requires every onset difference from the Gaussian to have a CI inside $\pm0.05$. Of \V{H3a.n} comparisons, \V{H3a.in} were inside and \V{H3a.out} entirely outside (Table~\ref{tab:fam}, Figure~\ref{fig:fam}). Onsets were mostly earlier, with differences as low as \V{fam.t3.min} for $t_3$ and \V{fam.clayton.min} for Clayton. \textbf{H3b (\verdict{\V{H3b.verdict}}).} $\dden$ under S2 at matched Kendall's $\tau$ fell within a factor 2 of the Gaussian, with its CI, at \V{H3b.in} of \V{H3b.n} points and entirely outside at \V{H3b.out}; median ratios were \V{fam.t10.ratio} ($t_{10}$), \V{fam.clayton.ratio} (Clayton), \V{fam.t3.ratio} ($t_3$) and \V{fam.gumbel.ratio} (Gumbel). \textbf{H3c (\verdict{\V{H3c.verdict}}).} For LKJ matrices the Gaussian power law predicted $\dden$ within a factor 2 for \V{H3c.pair} (pair) and \V{H3c.triple} (triple) of \V{H3c.n} defined matrices. This rests on $k=2$: at $k=4$ and $8$ the numbers of defined matrices were \V{lkj.defined.k4} and \V{lkj.defined.k8} (Table~\ref{tab:lkj}). Part of the $t$ result is consistent with structure: a $t$ copula is dependent at zero correlation, so $\rs=0$ is not independence. At $k=2$ in the pair basis $\chi_D$ at $\rs=0$ is \V{ph.t3.chi} for $t_3$ and \V{ph.t10.chi} for $t_{10}$, against \V{ph.g.chi} for the Gaussian, and $t_3$ already has $\min D={}$\V{ph.t3.minD4} at $k=4$ (post hoc). We did not test this further.
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_h1c.tex}
 \caption{H1c fits $\dden=C\chi_D^\beta$ on population coefficients, S2, $m=4$. Cell verdicts follow the H1c rule.}
 \label{tab:h1c}
 \end{table}
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_lead.tex}
 \caption{H1c points against the pre-registered power law and the closed forms (post hoc). ``power law'' and ``closed form'' give the share of points within a factor 2 of the fit and of the formula; ``ratio'' is measured $\dden$ over the formula.}
 \label{tab:lead}
 \end{table}
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_onset_m.tex}
 \caption{Population negativity onset by degree (H2a), type SUM. At $k=2$ the two bases coincide for $D$.}
 \label{tab:onsetm}
 \end{table}
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_families.tex}
 \caption{Comparison with the Gaussian copula at matched Kendall's $\tau$ ($m=4$, pair and triple, $k\in\{2,4,8\}$, $n=10^7$, 20 seeds). Columns: smallest and largest onset difference from the Gaussian; number of $95\,\%$ CIs inside and entirely outside $\pm0.05$; median ratio of $\dden$ to Gaussian under S2.}
 \label{tab:fam}
 \end{table}
 
-\begin{figure}[ht]
+\begin{figure}[htbp]
 \centering
 \includegraphics{G5_copula_families.pdf}
 \caption{Negativity onset by copula family at matched Kendall's $\tau$, expressed in $\rs$ units, $m=4$, $n=10^7$, 20 seeds, with $95\,\%$ bootstrap CIs (mostly smaller than the markers). Points are shifted slightly in $k$ for legibility. EXCH families and the $t$ SUM forms are shown; $t$ CONTRAST is in Table~\ref{tab:fam}. An onset of $0$ means $\min D<0$ at $\rs=0$.}
 \label{fig:fam}
 \end{figure}
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_lkj.tex}
 \caption{H3c by $k$ and $\eta$. ``defined'' counts matrices with $\peu$ defined (pair basis, S2, $m=4$). Shares are among defined matrices. The rule is at least $80\,\%$ for \emph{supported} and below $50\,\%$ for \emph{not supported}.}
 \label{tab:lkj}
 \end{table}
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_conv.tex}
 \caption{Convergence test H4b on the subset of the convergence study ($k\in\{2,8,32\}$, 5 seeds). Paired values are reported TVs before and after doubling one setting; a violation is a change of at least $\max(3\,\mathrm{SE},10^{-3})$. The final column is the largest ratio of change to tolerance.}
 \label{tab:conv}
 \end{table}
 
-\FloatBarrier
 \section{Chains and training}\label{app:chains}\label{app:train}
 
 This appendix defines the chain experiment and gives the detail behind Section~\ref{sec:depth}.
 
-\paragraph{Ground truth.} The ground truth is a Markov chain in normal scores. The first hidden variable depends on $y$ through a Gaussian-copula neuron of the sweep; for $l\geq 2$, $s_{h_l}=\alpha\,s_{h_{l-1}}+\gamma\,s_{w_l}+\sqrt{1-\alpha^2-\gamma^2}\,\nu_l$ with $\alpha=\V{cfg.a}$, $\gamma=\V{cfg.b}$, fresh independent side inputs $w_l$ and noise $\nu_l$. Neuron $l\geq2$ is a triple-basis model of $(h_l;h_{l-1},w_l)$, that is $k=2$. Neuron 1 uses pair or triple. Depth is $L\leq 4$, with $k\in\{2,4,8\}$, $\rs\in\{0,0.2,0.4,0.6\}$, $m=4$ and 10 seeds. Estimation uses $n=10^6$; training, validation and test splits have $2\cdot10^5$, $10^5$ and $10^5$ samples. Between layers the only normalisation is $c_0=1$, the first coefficient of the propagated polynomial; there is no re-mapping of variables to quantiles.
+\paragraph{Ground truth.} The ground truth is a Markov chain in normal scores. The first hidden variable depends on $y$ through a Gaussian-copula neuron of the sweep; for $l\geq 2$, $s_{h_l}=\alpha\,s_{h_{l-1}}+\gamma\,s_{w_l}+\sqrt{1-\alpha^2-\gamma^2}\,\nu_l$ with $\alpha=\V{cfg.a}$, $\gamma=\V{cfg.b}$, fresh independent side inputs $w_l$ and noise $\nu_l$. Neuron $l\geq2$ is a triple-basis model of $(h_l;h_{l-1},w_l)$, that is $k=2$. Neuron 1 uses pair or triple. Depth is $L\leq 4$, with $k\in\{2,4,8\}$, $\rs\in\{0,0.2,0.4,0.6\}$, $m=4$ and 10 seeds. Estimation uses $n=10^6$; training, validation and test splits have $2\cdot10^5$, $10^5$ and $10^5$ samples. Between layers the only normalisation is $c_0=1$, the first coefficient of the propagated polynomial; there is no re-mapping of variables to quantiles.\looseness=-1 % layout: removes a one-word last line
 
-\paragraph{Training.} Training uses three losses: value MSE as in Eq.~7 of \citep{duda2024biology}, calibrated negative log-likelihood (NLL), and end-to-end squared $L^2$ distance between the $\pcd$ output and the projected target, summed over S2, S3c and S4. It uses two optimisers, Adam \citep{kingma2015adam} and L-BFGS \citep{liu1989limited}, each with fixed, untuned settings. Adam: learning rate $0.003$, cosine decay to 0, at most 2000 full-batch steps, validation every 50 steps, patience 10. L-BFGS: strong Wolfe line search, learning rate 1, 20 iterations per step, history 20, at most 50 steps, validation every step, patience 10. The best validation state is kept. $\varepsilon=0.01$ in the likelihood loss. The value loss uses rows $i\in\{0,1\}$; an all-rows variant is identical because its extra gradients vanish exactly (test M14). The end-to-end loss uses $2^{16}$ samples per belief per split. The end-to-end run for depth $L$ trains the first $L$ neurons and evaluates them followed by the untrained remainder. A flat-$D$ control starts from $a_{0\mathbf{j}}=0$ for $\mathbf{j}\neq0$.
+\paragraph{Training.} Training uses three losses: value MSE as in Eq.~7 of~\citep{duda2024biology}, calibrated negative log-likelihood (NLL), and end-to-end squared $L^2$ distance between the $\pcd$ output and the projected target, summed over S2, S3c and S4. It uses two optimisers, Adam~\citep{kingma2015adam} and L-BFGS~\citep{liu1989limited}, each with fixed, untuned settings. Adam: learning rate $0.003$, cosine decay to 0, at most 2000 full-batch steps, validation every 50 steps, patience 10. L-BFGS: strong Wolfe line search, learning rate 1, 20 iterations per step, history 20, at most 50 steps, validation every step, patience 10. The best validation state is kept. $\varepsilon=0.01$ in the likelihood loss. The value loss uses rows $i\in\{0,1\}$; an all-rows variant is identical because its extra gradients vanish exactly (test M14). The end-to-end loss uses $2^{16}$ samples per belief per split. The end-to-end run for depth $L$ trains the first $L$ neurons and evaluates them followed by the untrained remainder. A flat-$D$ control starts from $a_{0\mathbf{j}}=0$ for $\mathbf{j}\neq0$.
 
-\paragraph{Results in detail.} \textbf{H5a (\verdict{\V{H5a.verdict}}).} The ratio $\dtot(L=4)/\dtot(L=1)$ exceeded 1 significantly in \V{H5a.sig} of \V{H5a.n} cells and was significantly below 1 in \V{H5a.opp}. Median ratios are \V{H5a.ratio.S2} (S2), \V{H5a.ratio.S3c} (S3c) and \V{H5a.ratio.S4} (S4) (Table~\ref{tab:depth}, Figure~\ref{fig:depth}). This is not good news by itself, because the target moves: under S2 the variance of $\pg$ rises towards the uniform value $1/12$ (from \V{ph.depth.var.S2.pair.1} to \V{ph.depth.var.S2.pair.4}), and $\dtot$ falls because the true output forgets the belief. A variance-type deviation shrinks by $\alpha^6=\V{ph.a6}$ over three layers, close to the S2 ratio, which is consistent with contraction under a mixing kernel \citep{boyen1998tractable}, not something we tested. S4 rises, with pair at \V{ph.h5a.S4.pair.ratio} (\V{ph.h5a.S4.pair.sig} of \V{ph.h5a.S4.pair.n} cells significant) and triple at \V{ph.h5a.S4.triple.ratio}, though the significant cells all have tiny errors: $\dtot(L=4)\leq\V{ph.h5a.sig.maxL4}$ (post hoc). Inputs of later neurons are independent, so their $D$ is nearly flat (median $\min D$ \V{ph.layer.minD}): H5a does not test compounding of denominator error over correlated inputs. \textbf{H5b (\verdict{\V{H5b.verdict}}), H5c (\verdict{\V{H5c.verdict}}), H5d (\verdict{\V{H5d.verdict}}).} Training reduced $\dden$ of neuron 1 significantly in \V{H5b.sig} of \V{H5b.n} evaluable cells (\V{H5b.opp} opposite), and only $k=2$ is evaluable. It reduced $P(D<0)$ in \V{H5c.sig} of \V{H5c.n} cells (\V{H5c.opp} opposite), and held-out $\dtot$ in \V{H5d.sig} of \V{H5d.n} cells (\V{H5d.opp} opposite). Three facts limit these verdicts. About half of the end-to-end runs at $L=4$ kept the initial state (\V{ph.tr.e2e4.adam.kept} with Adam, \V{ph.tr.e2e4.lbfgs.kept} with L-BFGS), and their loss before training, \V{e2e.L4}, is already near the noise level of the target, \V{e2e.noise}, so those runs could not show learning; they supply \V{ph.H5b.e2e.n} of the \V{H5b.n} H5b cells and \V{ph.H5c.e2e.n} of the \V{H5c.n} H5c cells. Optimiser settings were fixed and untuned. And $\dden$ can be evaluated only at $k=2$. We conclude that training did not reduce these errors under these settings. The data do not show that training cannot compensate for the approximations, and the source paper's expectation that training compensates for neglected calibration remains untested.
+\paragraph{Results in detail.} \textbf{H5a (\verdict{\V{H5a.verdict}}).} The ratio $\dtot(L=4)/\dtot(L=1)$ exceeded 1 significantly in \V{H5a.sig} of \V{H5a.n} cells and was significantly below 1 in \V{H5a.opp}. Median ratios are \V{H5a.ratio.S2} (S2), \V{H5a.ratio.S3c} (S3c) and \V{H5a.ratio.S4} (S4) (Table~\ref{tab:depth}, Figure~\ref{fig:depth}). This is not good news by itself, because the target moves: under S2 the variance of $\pg$ rises towards the uniform value $1/12$ (from \V{ph.depth.var.S2.pair.1} to \V{ph.depth.var.S2.pair.4}), and $\dtot$ falls because the true output forgets the belief. A variance-type deviation shrinks by $\alpha^6=\V{ph.a6}$ over three layers, close to the S2 ratio, which is consistent with contraction under a mixing kernel~\citep{boyen1998tractable}, not something we tested. S4 rises, with pair at \V{ph.h5a.S4.pair.ratio} (\V{ph.h5a.S4.pair.sig} of \V{ph.h5a.S4.pair.n} cells significant) and triple at \V{ph.h5a.S4.triple.ratio}, though the significant cells all have tiny errors: $\dtot(L=4)\leq\V{ph.h5a.sig.maxL4}$ (post hoc). Inputs of later neurons are independent, so their $D$ is nearly flat (median $\min D$ \V{ph.layer.minD}): H5a does not test compounding of denominator error over correlated inputs. \textbf{H5b (\verdict{\V{H5b.verdict}}), H5c (\verdict{\V{H5c.verdict}}), H5d (\verdict{\V{H5d.verdict}}).} Training reduced $\dden$ of neuron 1 significantly in \V{H5b.sig} of \V{H5b.n} evaluable cells (\V{H5b.opp} opposite), and only $k=2$ is evaluable. It reduced $P(D<0)$ in \V{H5c.sig} of \V{H5c.n} cells (\V{H5c.opp} opposite), and held-out $\dtot$ in \V{H5d.sig} of \V{H5d.n} cells (\V{H5d.opp} opposite). Three facts limit these verdicts. About half of the end-to-end runs at $L=4$ kept the initial state (\V{ph.tr.e2e4.adam.kept} with Adam, \V{ph.tr.e2e4.lbfgs.kept} with L-BFGS), and their loss before training, \V{e2e.L4}, is already near the noise level of the target, \V{e2e.noise}, so those runs could not show learning; they supply \V{ph.H5b.e2e.n} of the \V{H5b.n} H5b cells and \V{ph.H5c.e2e.n} of the \V{H5c.n} H5c cells. Optimiser settings were fixed and untuned. And $\dden$ can be evaluated only at $k=2$. We conclude that training did not reduce these errors under these settings. The data do not show that training cannot compensate for the approximations, and the source paper's expectation that training compensates for neglected calibration remains untested.
 
 \paragraph{H5a.} The significant H5a cells all have tiny errors: $\dtot(L=4)\leq\V{ph.h5a.sig.maxL4}$, at most \V{ph.h5a.sig.floor} times the noise floor (so below the flagging level), and \V{ph.h5a.sig.rho0} are at $\rs=0$ (post hoc). Lowest $\min D$ of later layers is \V{ph.layer.minDlow}.
 
@@ -859,40 +872,39 @@ This appendix defines the chain experiment and gives the detail behind Section~\
 
 There were no non-finite losses in the \V{ph.tr.runs} training runs from direct estimates. The flat-$D$ control starts with $\dden=0$; after NLL training it has median $P(D<0)=\V{ph.flat.nll.P}$ and $\chi_D=\V{ph.flat.nll.chi}$, so likelihood training moves a flat model into the negative regime.
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_depth.tex}
 \caption{Depth results by belief and neuron-1 basis, medians over $k$, $\rs>0$ and seeds. Columns: $\dtot$ at each layer; variance of $\pg$ at $L=1$ and $L=4$; median H5a ratio over cells including $\rs=0$; numbers of H5a cells significantly above 1, significantly below 1, and total. The breakdown is post hoc; the verdict uses all \V{H5a.n} cells.}
 \label{tab:depth}
 \end{table}
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_training.tex}
 \caption{Training runs from direct estimates, medians over runs (post hoc). ``kept initial'': share of runs whose best validation state is the initial one. ``coef.\ dist.'': coefficient distance moved. ``test loss'': relative change of the training loss on the test split, and the share of runs with a decrease. $\Delta P(D<0)$ is taken where $P(D<0)$ was positive. $\Delta\min D$ is the change in $\min D$.}
 \label{tab:training}
 \end{table}
 
-\begin{figure}[ht]
+\begin{figure}[htbp]
 \centering
 \includegraphics{G8_depth.pdf}
 \caption{$\dtot$ by layer for chains with direct estimates: seed medians over 10 seeds, neuron 1 in the pair basis, $m=4$, $n=10^6$, for $k\in\{2,4,8\}$ and $\rs\in\{0,0.2,0.4,0.6\}$. The decline under S2 and S3c reflects the target approaching the uniform density, not improved accuracy. Values near $10^{-3}$ are at Monte Carlo noise level.}
 \label{fig:depth}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}[htbp]
 \centering
 \includegraphics{G9_training.pdf}
 \caption{Effect of training on neuron 1 under S2. (a) Change of $\ddc=\TV(\pcd,\pec)$, shown because it exists everywhere; this is not the pre-registered $\dden$ of H5b. (b) Change of $P(D<0)$. Points are medians and bars $10$--$90\,\%$ ranges over all $k$, $\rs$, bases and seeds, from direct estimates and from the flat-$D$ control. End-to-end runs are those with $L=4$.}
 \label{fig:train}
 \end{figure}
 
-\FloatBarrier
 \section{Validation}\label{app:validation}
 
 Fourteen tests guard the code. All code-validation tests (M1--M12, M14) pass on an A100 with a single version of the code. M13 is not a code test: it is hypothesis H4b on the study's data and appears in Section~\ref{sec:conv} as \verdict{\V{H4b.verdict}}.
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_validation.tex}
 \caption{Validation tests. M13 ``fail'' is the H4b outcome.}
@@ -901,14 +913,13 @@ Fourteen tests guard the code. All code-validation tests (M1--M12, M14) pass on 
 
 For instance, M6 checks Eq.~\eqref{eq:identity} in sample: the maximum residual is $\V{val.M6}$ over \V{val.M6.n} defined cases. M9 finds a largest difference of $\V{val.M9}$ between the optimiser and reference minima. M4 reproduces \V{val.M4.n} TV values of the $d=3$ study, with worst difference over tolerance \V{val.M4.worst}.
 
-\paragraph{Note on M7.} The Student-$t$ part of M7 was rewritten after the main runs. The earlier check compared $1-F$ with SciPy \citep{virtanen2020scipy} and could not resolve tails near $F=1$; it failed on CPU and GPU alike with SciPy \V{sw.scipy}. The reference is now 50-digit mpmath \citep{mpmath2026}, whose version was not pinned: relative error $\V{val.M7.low}$ in the lower tail, absolute error $\V{val.M7.up}$ on the upper side, and relative error $\V{val.M7.q}$ for the quantile's tail probability. The study's code did not change; the test changed.
+\paragraph{Note on M7.} The Student-$t$ part of M7 was rewritten after the main runs. The earlier check compared $1-F$ with SciPy~\citep{virtanen2020scipy} and could not resolve tails near $F=1$; it failed on CPU and GPU alike with SciPy \V{sw.scipy}. The reference is now 50-digit mpmath~\citep{mpmath2026}, whose version was not pinned: relative error $\V{val.M7.low}$ in the lower tail, absolute error $\V{val.M7.up}$ on the upper side, and relative error $\V{val.M7.q}$ for the quantile's tail probability. The study's code did not change; the test changed.
 
-\FloatBarrier
 \section{Time and energy}\label{app:energy}
 
-This separate descriptive benchmark never enters the error tables. It gives the cost of what the moment contraction avoids. It compares one forward pass of four parameter-matched layers of width 64: HCR-CD (Eq.~\ref{eq:exact}, pair, $m=4$), HCR-CAL (calibrated conditional, $S=64$ samples per belief, \V{cfg.gl} $x$-nodes), an MLP layer with GELU, and a KAN layer \citep{liu2025kan} (grid 5, order 3). Settings are $k\in\{2,8,32\}$ and batch size $16384$ or $256$, in \V{en.runs} runs (\V{en.runs.dtype} per precision) of 30 repeats of about 2\,s, with NVML power sampling at 10\,ms on one A100 type.
+This separate descriptive benchmark never enters the error tables. It gives the cost of what the moment contraction avoids. It compares one forward pass of four parameter-matched layers of width 64: HCR-CD (Eq.~\eqref{eq:exact}, pair, $m=4$), HCR-CAL (calibrated conditional, $S=64$ samples per belief, \V{cfg.gl} $x$-nodes), an MLP layer with GELU, and a KAN layer~\citep{liu2025kan} (grid 5, order 3). Settings are $k\in\{2,8,32\}$ and batch size $16384$ or $256$, in \V{en.runs} runs (\V{en.runs.dtype} per precision) of 30 repeats of about 2\,s, with NVML power sampling at 10\,ms on one A100 type.
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_energy_main.tex}
 \caption{One forward pass at $k=8$, batch size $16384$, median over the \V{en.row.repeats} repeats of \V{en.runs.dtype} runs per precision, energy including idle power. A descriptive microbenchmark of unoptimised code; see the caveats in the text. The layers do different jobs, and HCR-CAL uses $S=64$ samples per belief, so the lines are not like-for-like.}
@@ -917,40 +928,40 @@ This separate descriptive benchmark never enters the error tables. It gives the 
 
 At this setting HCR-CD uses \V{en.cd.over.mlp.32} times the energy of the MLP layer in float32 and \V{en.cd.over.mlp.64} times in float64, KAN uses \V{en.kan.over.cd.32} and \V{en.kan.over.cd.64} times that of HCR-CD, and HCR-CAL uses \V{en.cal.over.cd.32} and \V{en.cal.over.cd.64} times. We draw no general claim that HCR is more or less efficient than the other layers. The comparison is parameter-matched, forward only and inference-shaped, on one GPU type with clocks not locked, and all implementations are unoptimised. The layers compute different things: an MLP returns values, and HCR-CD returns a density. The factor for HCR-CAL reflects $S=64$ samples and many $x$-nodes per belief, a design choice, and not a like-for-like cost.
 
-Measurement quality was acceptable for this purpose. The energy counter agrees with integrated sampled power at median ratio \V{en.counter.med} (1st--99th percentile \V{en.counter.lo}--\V{en.counter.hi}) over \V{en.repeats} repeats, which matters because built-in sensors have known sampling problems \citep{burtscher2014measuring}, including readings on the A100 that cover only part of the runtime \citep{yang2024accurate}. Idle power dominates \V{en.idle.n} of \V{en.idle.of} configurations. Run-to-run differences follow the physical GPU, with one GPU \V{en.rel.hi1}--\V{en.rel.hi2}\,\% above the others, in two runs only. The float64 MLP at $k=32$, batch size $16384$, draws \V{en.mlp.limit.W}\,W, at the 400\,W power limit, so \V{en.limit.repeats} repeats ran at $97.5\,\%$ of the limit or above. Also, float64 is faster than float32 for the MLP at $k=2$, batch size $16384$ (\V{en.mlpfast.64}\,ms against \V{en.mlpfast.32}\,ms), an effect of cuBLAS kernel selection that a separate probe confirmed. On reporting energy in machine learning, see \citep{henderson2020towards}.
+Measurement quality was acceptable for this purpose. The energy counter agrees with integrated sampled power at median ratio \V{en.counter.med} (1st--99th percentile \V{en.counter.lo}--\V{en.counter.hi}) over \V{en.repeats} repeats, which matters because built-in sensors have known sampling problems~\citep{burtscher2014measuring}, including readings on the A100 that cover only part of the runtime~\citep{yang2024accurate}. Idle power dominates \V{en.idle.n} of \V{en.idle.of} configurations. Run-to-run differences follow the physical GPU, with one GPU \V{en.rel.hi1}--\V{en.rel.hi2}\,\% above the others, in two runs only. The float64 MLP at $k=32$, batch size $16384$, draws \V{en.mlp.limit.W}\,W, at the 400\,W power limit, so \V{en.limit.repeats} repeats ran at $97.5\,\%$ of the limit or above. Also, float64 is faster than float32 for the MLP at $k=2$, batch size $16384$ (\V{en.mlpfast.64}\,ms against \V{en.mlpfast.32}\,ms), an effect of cuBLAS kernel selection that a separate probe confirmed. On reporting energy in machine learning, see~\citep{henderson2020towards}.
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_energy_float32.tex}
 \caption{Float32 forward pass: median over \V{en.row.repeats} repeats (\V{en.runs.dtype} runs) of time, energy, energy net of idle, power, SM clock, and the ratio of the energy counter to sampled energy.}
 \label{tab:e32}
 \end{table}
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_energy_float64.tex}
 \caption{Float64, as Table~\ref{tab:e32}.}
 \label{tab:e64}
 \end{table}
 
-\FloatBarrier
+% layout: keeps this short appendix on one page
+\Needspace{9.5\baselineskip}
 \section{The earlier three-input study}\label{app:d3}
 
 This separate study is not pre-registered and motivated the present design; it uses $d=3$ variables, that is $k=2$, with $m=4$. With a flat belief at $\rs=0.2$, $\dden$ was \V{d3.flat.sum} (SUM) and \V{d3.flat.con} (CONTRAST), and for a narrow belief at $\rs=0.3$ it was \V{d3.narrow.sum} and \V{d3.narrow.con}. Over \V{d3.closer.n} evaluations where $\peu$ was undefined, $\pcd$ was closer to $\pg$ than $\pec$ in \V{d3.closer}. A Taylor-corrected denominator with $0$, $1$ or $2$ terms (SUM, S2) gave TV to $\peu$ of \V{d3.taylor.r1k0}, \V{d3.taylor.r1k1}, \V{d3.taylor.r1k2} at $\rs=0.1$, and \V{d3.taylor.r4k0}, \V{d3.taylor.r4k1}, \V{d3.taylor.r4k2} at $\rs=0.4$: it helps at small $\rs$ and hurts once the series condition fails. These values come from a different setup and should not be compared directly with the main results.
 
-\FloatBarrier
 \section{Reproducibility}\label{app:repro}
 
-\paragraph{Batches.} The study ran in \V{batches.n} batches (Table~\ref{tab:batches}). The only computational change between them was that the Student-$t$ distribution came to be evaluated on the device; the other changes concerned scheduling and cost accounting. All $t$ runs came after that change. Validation and the energy benchmark ran on later versions of the code than the main runs.
+\paragraph{Batches.} The study ran in \V{batches.n} batches (Table~\ref{tab:batches}). The only computational change between them was that the Student-$t$ distribution came to be evaluated on the device; the other changes concerned scheduling and cost accounting. All $t$ runs came after that change. Validation and the energy benchmark ran on later versions of the code than the main runs.\looseness=-1 % layout: removes a one-word last line
 
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \input{generated/tab_batches.tex}
 \caption{Runs and GPU-hours by experiment, and runs by batch.}
 \label{tab:batches}
 \end{table}
 
-\paragraph{Seeds.} Listed in Section~\ref{sec:design} and Appendix~\ref{app:defs}; the pilot seed index 1000 is excluded. \textbf{Hardware.} NVIDIA A100-SXM4-40GB, driver \V{sw.driver}, float64, TF32 disabled, deterministic algorithms; the computations of Sections~\ref{sec:semantics}--\ref{sec:fail}, the regression message and the pilot run on a CPU in minutes. \textbf{Software.} PyTorch \citep{paszke2019pytorch} \V{sw.torch}, NumPy \V{sw.numpy}, SciPy \V{sw.scipy}, all under BSD-style licences. The study uses no external dataset. The pilot uses California housing through scikit-learn \V{pilot.sklearn}, in a separate environment.
+\paragraph{Seeds.} Listed in Section~\ref{sec:design} and Appendix~\ref{app:defs}; the pilot seed index 1000 is excluded. \textbf{Hardware.} NVIDIA A100-SXM4-40GB, driver \V{sw.driver}, float64, TF32 disabled, deterministic algorithms; the computations of Sections~\ref{sec:semantics}--\ref{sec:fail}, the regression message and the pilot run on a CPU in minutes. \textbf{Software.} PyTorch~\citep{paszke2019pytorch} \V{sw.torch}, NumPy \V{sw.numpy}, SciPy \V{sw.scipy}, all under BSD-style licences. The study uses no external dataset. The pilot uses California housing through scikit-learn \V{pilot.sklearn}, in a separate environment.
 
 \paragraph{Regeneration.} The released code identifies each version and regenerates every number, table and figure. Every result in the text comes from generated macros and tables, and a separate pass re-derives them from the study's outputs.
 
