@@ -12,21 +12,20 @@ Luca Bertinetto, Jo{\~a}o~F. Henriques, Samuel Albanie, Michela Paganini, and
 \newblock Preface.
 \newblock In \emph{NeurIPS 2020 Workshop on Pre-registration in Machine
   Learning}, volume 148 of \emph{Proceedings of Machine Learning Research},
-  pages i--i. PMLR, 2021.
-\newblock URL \url{https://proceedings.mlr.press/v148/bertinetto21a.html}.
+  2021.
 
 \bibitem[Boyen and Koller(1998)]{boyen1998tractable}
 Xavier Boyen and Daphne Koller.
 \newblock Tractable inference for complex stochastic processes.
 \newblock In \emph{Proceedings of the Fourteenth Conference on Uncertainty in
-  Artificial Intelligence (UAI1998)}, pages 33--42, 1998.
+  Artificial Intelligence}, pages 33--42, 1998.
 
 \bibitem[Burtscher et~al.(2014)Burtscher, Zecena, and
   Zong]{burtscher2014measuring}
 Martin Burtscher, Ivan Zecena, and Ziliang Zong.
 \newblock Measuring {GPU} power with the {K20} built-in sensor.
-\newblock In \emph{Proceedings of Workshop on General Purpose Processing Using
-  GPUs}, pages 28--36. ACM, 2014.
+\newblock In \emph{Proceedings of the Workshop on General Purpose Processing
+  Using GPUs}, pages 28--36. ACM, 2014.
 \newblock \doi{10.1145/2588768.2576783}.
 
 \bibitem[Cardoso et~al.(2022)Cardoso, Samsonov, Thin, Moulines, and
@@ -65,13 +64,12 @@ O.~Chatrabgoun, G.~Parham, and R.~Chinipardaz.
 \bibitem[Cochran(1977)]{cochran1977sampling}
 William~G. Cochran.
 \newblock \emph{Sampling Techniques}.
-\newblock Wiley Series in Probability and Mathematical Statistics. Wiley, 3
+\newblock Wiley Series in Probability and Mathematical Statistics. Wiley, third
   edition, 1977.
-\newblock ISBN 0-471-16240-X.
 
 \bibitem[Demarta and McNeil(2005)]{demarta2005t}
 Stefano Demarta and Alexander~J. McNeil.
-\newblock The t copula and related copulas.
+\newblock The $t$ copula and related copulas.
 \newblock \emph{International Statistical Review}, 73\penalty0 (1):\penalty0
   111--129, 2005.
 \newblock \doi{10.1111/j.1751-5823.2005.tb00254.x}.
@@ -85,47 +83,53 @@ Persi Diaconis and Sandy~L. Zabell.
 
 \bibitem[Duda(2017)]{duda2017rapid}
 Jarek Duda.
-\newblock Rapid parametric density estimation, 2017.
+\newblock Rapid parametric density estimation.
+\newblock \emph{arXiv preprint arXiv:1702.02144}, 2017.
 
 \bibitem[Duda(2018{\natexlab{a}})]{duda2018exploiting}
 Jarek Duda.
-\newblock Exploiting statistical dependencies of time series with hierarchical
-  correlation reconstruction, 2018{\natexlab{a}}.
+\newblock Exploiting statistical dependencies of time series with
+  {H}ierarchical {C}orrelation {R}econstruction.
+\newblock \emph{arXiv preprint arXiv:1807.04119}, 2018{\natexlab{a}}.
 
 \bibitem[Duda(2018{\natexlab{b}})]{duda2018hierarchical}
 Jarek Duda.
-\newblock Hierarchical correlation reconstruction with missing data, for
-  example for biology-inspired neuron, 2018{\natexlab{b}}.
+\newblock {H}ierarchical {C}orrelation {R}econstruction with missing data, for
+  example for biology-inspired neuron.
+\newblock \emph{arXiv preprint arXiv:1804.06218}, 2018{\natexlab{b}}.
 
 \bibitem[Duda(2024)]{duda2024biology}
 Jarek Duda.
 \newblock Biology-inspired joint distribution neurons based on {H}ierarchical
   {C}orrelation {R}econstruction allowing for multidirectional propagation of
-  values and densities, 2024.
+  values and densities.
+\newblock \emph{arXiv preprint arXiv:2405.05097}, 2024.
 \newblock Version 9, 4 June 2026.
 
 \bibitem[Duda and Snarska(2018)]{duda2018modeling}
 Jarek Duda and Ma{\l}gorzata Snarska.
-\newblock Modeling joint probability distribution of yield curve parameters,
-  2018.
+\newblock Modeling joint probability distribution of yield curve parameters.
+\newblock \emph{arXiv preprint arXiv:1807.11743}, 2018.
 
 \bibitem[Duda and Szulc(2018)]{duda2018credibility}
 Jarek Duda and Adam Szulc.
-\newblock Credibility evaluation of income data with hierarchical correlation
-  reconstruction, 2018.
+\newblock Credibility evaluation of income data with {H}ierarchical
+  {C}orrelation {R}econstruction.
+\newblock \emph{arXiv preprint arXiv:1812.08040}, 2018.
 
 \bibitem[Duda and Bhatta(2024)]{duda2024predicting}
 Jaroslaw Duda and Gopal Bhatta.
 \newblock Predicting conditional probability distributions of redshifts of
-  active galactic nuclei using hierarchical correlation reconstruction.
+  {A}ctive {G}alactic {N}uclei using {H}ierarchical {C}orrelation
+  {R}econstruction.
 \newblock \emph{Monthly Notices of the Royal Astronomical Society},
   530\penalty0 (2):\penalty0 2282--2291, 2024.
 \newblock \doi{10.1093/mnras/stae963}.
 
 \bibitem[Duda et~al.(2020)Duda, Gurgul, and Syrek]{duda2020modelling}
 Jaros{\l}aw Duda, Henryk Gurgul, and Robert Syrek.
-\newblock Modelling bid-ask spread conditional distributions using hierarchical
-  correlation reconstruction.
+\newblock Modelling bid-ask spread conditional distributions using
+  {H}ierarchical {C}orrelation {R}econstruction.
 \newblock \emph{Statistics in Transition New Series}, 21\penalty0 (5):\penalty0
   99--118, 2020.
 \newblock \doi{10.21307/stattrans-2020-057}.
@@ -153,7 +157,8 @@ Bradley Efron and R.~J. Tibshirani.
 
 \bibitem[Forde and Paganini(2019)]{forde2019scientific}
 Jessica~Zosa Forde and Michela Paganini.
-\newblock The scientific method in the science of machine learning, 2019.
+\newblock The scientific method in the science of machine learning.
+\newblock \emph{arXiv preprint arXiv:1904.10922}, 2019.
 \newblock Presented at the ICLR 2019 Debugging Machine Learning Models
   workshop.
 
@@ -180,8 +185,8 @@ A.~Ronald Gallant and Douglas~W. Nychka.
 \bibitem[Gast and Roth(2018)]{gast2018lightweight}
 Jochen Gast and Stefan Roth.
 \newblock Lightweight probabilistic deep networks.
-\newblock In \emph{2018 IEEE/CVF Conference on Computer Vision and Pattern
-  Recognition}, pages 3369--3378, 2018.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision
+  and Pattern Recognition}, pages 3369--3378, 2018.
 \newblock \doi{10.1109/CVPR.2018.00355}.
 
 \bibitem[Glad et~al.(2003)Glad, Hjort, and Ushakov]{glad2003correction}
@@ -261,8 +266,7 @@ Pasha Khosravi, YooJung Choi, Yitao Liang, Antonio Vergari, and Guy Van~den
 \bibitem[Kingma and Ba(2015)]{kingma2015adam}
 Diederik~P. Kingma and Jimmy Ba.
 \newblock Adam: A method for stochastic optimization.
-\newblock In \emph{3rd International Conference for Learning Representations},
-  2015.
+\newblock In \emph{International Conference on Learning Representations}, 2015.
 
 \bibitem[Kronmal and Tarter(1968)]{kronmal1968estimation}
 R.~Kronmal and M.~Tarter.
@@ -292,7 +296,7 @@ Daniel Lewandowski, Dorota Kurowicka, and Harry Joe.
 \bibitem[Lindskog et~al.(2003)Lindskog, McNeil, and
   Schmock]{lindskog2003kendall}
 Filip Lindskog, Alexander McNeil, and Uwe Schmock.
-\newblock Kendall's tau for elliptical distributions.
+\newblock {K}endall's tau for elliptical distributions.
 \newblock In \emph{Credit Risk}, Contributions to Economics, pages 149--156.
   Physica-Verlag HD, 2003.
 \newblock \doi{10.1007/978-3-642-59365-9_8}.
@@ -333,7 +337,7 @@ Albert~W. Marshall and Ingram Olkin.
 
 \bibitem[McNeil and Ne{\v{s}}lehov{\'a}(2009)]{mcneil2009multivariate}
 Alexander~J. McNeil and Johanna Ne{\v{s}}lehov{\'a}.
-\newblock Multivariate {A}rchimedean copulas, d-monotone functions and
+\newblock Multivariate {A}rchimedean copulas, $d$-monotone functions and
   $\ell_1$-norm symmetric distributions.
 \newblock \emph{The Annals of Statistics}, 37\penalty0 (5B):\penalty0
   3059--3097, 2009.
@@ -350,19 +354,18 @@ Xiao-Li Meng.
 Thomas~P. Minka.
 \newblock Expectation propagation for approximate {B}ayesian inference.
 \newblock In J.~Breese and D.~Koller, editors, \emph{Proceedings of the
-  Seventeenth Conference on Uncertainty in Artificial Intelligence (UAI2001)},
-  pages 362--369. Morgan Kaufmann, 2001.
+  Seventeenth Conference on Uncertainty in Artificial Intelligence}, pages
+  362--369. Morgan Kaufmann, 2001.
 
 \bibitem[Munk et~al.(2022)Munk, Mead, and Wood]{munk2022uncertain}
 Andreas Munk, Alexander Mead, and Frank Wood.
-\newblock Uncertain evidence in probabilistic models and stochastic simulators,
-  2022.
+\newblock Uncertain evidence in probabilistic models and stochastic simulators.
+\newblock \emph{arXiv preprint arXiv:2210.12236}, 2022.
 
 \bibitem[Nelsen(2006)]{nelsen2006introduction}
 Roger~B. Nelsen.
 \newblock \emph{An Introduction to Copulas}.
-\newblock Springer Series in Statistics. Springer, 2 edition, 2006.
-\newblock ISBN 978-0-387-28659-4.
+\newblock Springer Series in Statistics. Springer, second edition, 2006.
 \newblock \doi{10.1007/0-387-28678-0}.
 
 \bibitem[Ngounou~Bakam and Pommeret(2025)]{ngounoubakam2025nonparametric}
@@ -389,7 +392,7 @@ Gary~W. Oehlert.
 
 \bibitem[Owen(2013)]{owen2013monte}
 Art~B. Owen.
-\newblock Monte carlo theory, methods and examples, 2013.
+\newblock {M}onte {C}arlo theory, methods and examples, 2013.
 \newblock URL \url{https://artowen.su.domains/mc/}.
 
 \bibitem[Paszke et~al.(2019)Paszke, Gross, Massa, Lerer, Bradbury, Chanan,
@@ -481,7 +484,8 @@ Victoria Stodden, Marcia McNutt, David~H. Bailey, Ewa Deelman, Yolanda Gil,
 
 \bibitem[Strawa and Duda(2025)]{strawa2025improving}
 Jakub Strawa and Jarek Duda.
-\newblock Improving {KAN} with {CDF} normalization to quantiles, 2025.
+\newblock Improving {KAN} with {CDF} normalization to quantiles.
+\newblock \emph{arXiv preprint arXiv:2507.13393}, 2025.
 
 \bibitem[{The mpmath development team}(2026)]{mpmath2026}
 {The mpmath development team}.
@@ -531,7 +535,7 @@ Hao Wang, Xingjian Shi, and Dit-Yan Yeung.
 \bibitem[Wright et~al.(2024)Wright, Nakahira, and Moura]{wright2024analytic}
 Oren Wright, Yorie Nakahira, and Jos{\'e} M.~F. Moura.
 \newblock An analytic solution to covariance propagation in neural networks.
-\newblock In \emph{Proceedings of The 27th International Conference on
+\newblock In \emph{Proceedings of the 27th International Conference on
   Artificial Intelligence and Statistics}, volume 238 of \emph{Proceedings of
   Machine Learning Research}, pages 4087--4095, 2024.
 
@@ -547,12 +551,14 @@ Anqi Wu, Sebastian Nowozin, Edward Meeds, Richard~E. Turner, Jos{\'e}~Miguel
 Zeyu Yang, Karel Adamek, and Wesley Armour.
 \newblock Accurate and convenient energy measurements for {GPUs}: A detailed
   study of {NVIDIA} {GPU}'s built-in power sensor.
-\newblock In \emph{SC24: International Conference for High Performance
-  Computing, Networking, Storage and Analysis}, pages 1--17. IEEE, 2024.
+\newblock In \emph{Proceedings of the International Conference for High
+  Performance Computing, Networking, Storage and Analysis}, pages 1--17. IEEE,
+  2024.
 \newblock \doi{10.1109/SC41406.2024.00028}.
 
 \bibitem[Yu(2020)]{yu2020soft}
 Edward Yu.
-\newblock {B}ayesian neural networks with soft evidence, 2020.
+\newblock {B}ayesian neural networks with soft evidence.
+\newblock \emph{arXiv preprint arXiv:2010.09570}, 2020.
 
 \end{thebibliography}

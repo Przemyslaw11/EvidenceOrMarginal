@@ -14,6 +14,7 @@
 \usepackage[numbers,sort&compress]{natbib}
 \usepackage{caption}
 \usepackage{enumitem}
+\usepackage{float}
 \usepackage{placeins}
 \usepackage{titlesec}
 \usepackage{hyperref}
@@ -91,14 +92,14 @@
 \vspace{-2.2em}
 
 \begin{abstract}
-\noindent When an input of a neuron is lost, or known only through a belief $q$, what should the neuron output? For a neuron that stores a joint polynomial density $N$ with input density $D$, two formulas compete. $\pcd=\Eq[N]/\Eq[D]$ needs one matrix--vector product on a moment vector; Hierarchical Correlation Reconstruction introduces it as a constant-denominator approximation to $\peu=\Eq[N/D]$. We show that for a model that is a density the two are exact answers to different questions: $\pcd$ is Bayesian updating with the belief as virtual evidence, one sum-product message, and $\peu$ installs the belief as a new marginal, which is Jeffrey's rule. With a missing input $\pcd$ returns the model's conditional and $\peu$ in general does not. This reading is post hoc: it is proved, illustrated at $k=2$ inputs, and has no pre-registered test or real-data task. We then characterise the gap, give closed forms within a factor 2 of all \V{lead.n} measured points, and locate the onset of negative density near $\rs\sim1/k$. In a pre-registered synthetic study with up to 32 inputs, \V{hyp.sup} of \V{hyp.total} hypotheses are supported, \V{hyp.inc} inconclusive and \V{hyp.not} not supported, among them all three on transfer beyond the Gaussian copula. Post hoc, truncating the density usually outweighs the gap in pair neurons; triple neurons under flat and data beliefs are the exceptions.
+\noindent When an input of a neuron is lost, or known only through a belief $q$, what should the neuron output? For a neuron storing a joint polynomial density $N$ with input density $D$, two formulas compete. $\pcd=\Eq[N]/\Eq[D]$ costs one matrix--vector product; Hierarchical Correlation Reconstruction introduces it as a constant-denominator approximation to $\peu=\Eq[N/D]$. For a density model both are exact answers to different questions: $\pcd$ is Bayesian updating with the belief as virtual evidence, one sum-product message; $\peu$ installs the belief as a new marginal, which is Jeffrey's rule. With a missing input $\pcd$ returns the model's conditional; $\peu$ in general does not. This reading is post hoc: proved, illustrated at $k=2$ inputs, with no pre-registered test or real-data task. We characterise the gap, give closed forms within a factor 2 of all \V{lead.n} measured points, and locate the onset of negative density near $\rs\sim1/k$. In a pre-registered synthetic study with up to 32 inputs, \V{hyp.sup} of \V{hyp.total} hypotheses are supported, \V{hyp.inc} inconclusive and \V{hyp.not} not supported, including all three on transfer beyond the Gaussian copula. Post hoc, truncation usually outweighs the gap for Beta beliefs in pair neurons; triple neurons under flat and data beliefs are exceptions.
 \end{abstract}
 
 \section{Introduction}
 
 A neuron with two inputs loses one of them at test time. If the neuron stores the joint density of its inputs and output, the right output seems obvious: condition on the input that remains. Now write the loss as a belief $q$ over the inputs, a point mass on the first and flat on the second, and pass $q$ through the neuron. There are two natural formulas: average the conditional $N/D$ under $q$, or average numerator and denominator separately and divide. They disagree, and only the second returns the conditional the model implies. Change the story, and let the second input really be uniform and independent of the first in the population the neuron now serves. The same two formulas now swap roles, and the first is right.
 
-This is not a numerical accident. Normalising after averaging is usually treated as a cheap approximation to normalising before. This paper shows that the two are \emph{exact answers to different questions}. In a density model, $\pcd=\Eq[N]/\Eq[D]$ is Bayesian updating with the belief as evidence (Pearl's virtual evidence, one sum-product message), and $\peu=\Eq[N/D]$ installs the belief as a new marginal (Jeffrey's rule). Which is right depends on where the belief came from.
+This is not a numerical accident. Normalising after averaging looks like a cheap approximation to normalising before. This paper shows that the two are \emph{exact answers to different questions}. In a density model, $\pcd=\Eq[N]/\Eq[D]$ is Bayesian updating with the belief as evidence (Pearl's virtual evidence, one sum-product message), and $\peu=\Eq[N/D]$ installs the belief as a new marginal (Jeffrey's rule). Which is right depends on where the belief came from.
 
 The question arises in density neurons, which store the joint density of inputs and output as coefficients of a polynomial basis. Hierarchical Correlation Reconstruction (HCR) is one such model \citep{duda2024biology,duda2018hierarchical}. Holding a density, not only a function, such a neuron can take a density over its inputs and return one over its output. The natural formula integrates the conditional against the belief, an integral of a ratio of polynomials. HCR's Eq.~10 \citep{duda2024biology} instead averages numerator and denominator separately; the belief then enters only through its moment vector, and propagation is one matrix--vector product. The source paper states the integral of the conditional as the density to propagate, and presents this step as an approximation with a constant denominator. We ask what that step computes, how far it lies from the integral, and when either exists.
 
@@ -112,9 +113,9 @@ The question arises in density neurons, which store the joint density of inputs 
 \paragraph{Contributions.}
 \begin{itemize}
 \item \textbf{Meaning} (Section~\ref{sec:semantics}). We prove the semantic reading for moment-vector messages, including the missing-input case, and show that any model that normalises after averaging has the same structure. The mathematics of uncertain evidence is classical \citep{jeffrey1965logic,pearl1988probabilistic,chan2005revision}; its application to these messages is what we add. As far as we could find, this reading has not been stated for moment or kernel messages.
-\item \textbf{Size} (Section~\ref{sec:gap}). An exact expansion explains why the gap is second order in the pair basis and first order in the triple basis, and closed forms explain why a pre-registered single power law failed.
+\item \textbf{Size} (Section~\ref{sec:gap}). An exact expansion explains why the gap is second order in the pair basis and first order in the triple basis, and closed forms explain why the pre-registered single power law fits only one of its four cells (H1c, \emph{inconclusive}).
 \item \textbf{Existence} (Section~\ref{sec:fail}). A positive semidefinite form of the pair denominator gives a convex bound on the negativity onset, an exact corner formula covers the triple basis, a formula for $\Eq[D]$ explains why pair messages survive where triple messages do not, and we give the sample size needed under noise.
-\item \textbf{Measurement} (Section~\ref{sec:study}). All \V{hyp.total} pre-registered outcomes are in Table~\ref{tab:hyp}, many of them unfavourable. Post hoc analyses of the same data show that truncation, not the denominator, usually sets the error.
+\item \textbf{Measurement} (Section~\ref{sec:study}). All \V{hyp.total} pre-registered outcomes are in Table~\ref{tab:hyp}, many of them unfavourable. Post hoc analyses of the same data show that in pair neurons under Beta beliefs truncation, not the denominator, usually sets the error; triple neurons under flat and data beliefs are the exceptions.
 \end{itemize}
 
 We do not claim that either form is right in general, nor that the contrast of Figure~\ref{fig:idea} persists at large $k$: at $k=4$ and $8$ truncation hides it (Section~\ref{sec:illus}). The study's reference and metric names were fixed before the semantic reading was worked out, and its design tests only one of the two semantics.
@@ -231,7 +232,7 @@ These formulas explain the H1c result, which asked whether $\dden$ under S2 is o
 \begin{figure}[t]
 \centering
 \includegraphics{F2_scaling.pdf}
-\caption{Why a single power law in $\chi_D$ fails and what replaces it (population coefficients, S2, $m=4$, the \V{lead.n} points of H1c). (a) Measured $\dden$ against $\chi_D$: the triple SUM cell collapses and the others separate by $k$. (b) The same points against the closed forms of Corollary~\ref{cor:closed}, with no fitted constant. The band is a factor 2. Post hoc.}
+\caption{Why a single power law in $\chi_D$ fits only one cell, and what replaces it (population coefficients, S2, $m=4$, the \V{lead.n} points of H1c). (a) Measured $\dden$ against $\chi_D$: the triple SUM cell collapses and the others separate by $k$. (b) The same points against the closed forms of Corollary~\ref{cor:closed}, with no fitted constant. The band is a factor 2. Post hoc.}
 \label{fig:scaling}
 \end{figure}
 
@@ -319,7 +320,7 @@ This turns the rule of thumb $n\gtrsim z^2K$ into a statement on how $z$ grows. 
 
 \section{The pre-registered study}\label{sec:study}
 
-The theory above came after the data. The study itself asked plainer questions, fixed in advance: how large is the gap, where does the reference vanish, do the numbers transfer, and do depth and training change them? Table~\ref{tab:hyp} gives every answer. In short: the reference vanishes early, as predicted; thresholds do not transfer; depth and training did not show the expected effects; and the gap is rarely the largest error.
+The theory above came after the data. The study itself asked plainer questions, fixed in advance: how large is the gap, where does the reference vanish, do the numbers transfer, and do depth and training change them? Table~\ref{tab:hyp} gives every answer. In short: the reference vanishes early, as predicted; thresholds do not transfer; depth and training did not show the expected effects; and in pair neurons under Beta beliefs the gap is rarely the largest error.
 
 \subsection{Design}\label{sec:design}
 
@@ -349,11 +350,11 @@ Densities can be signed, so TV here is an $L^1$ distance with a factor $\frac12$
 \label{tab:hyp}
 \end{table}
 
-\subsection{Truncation, not the denominator, usually sets the error}\label{sec:trunc}
+\subsection{In pair neurons truncation, not the denominator, usually sets the error}\label{sec:trunc}
 
 We begin with a post hoc reading of metrics that were all pre-registered, because it answers the practical question: would replacing $\pcd$ with $\peu$ help? Mostly not. Table~\ref{tab:trunc} sets the gap $\dden$ against the error of the truncated model $\dmu=\TV(\peu,\pg)$, where both exist, under the semantics that favours $\peu$. In the pair basis the model error exceeds the gap by a median factor of \V{tr.S4.pair.ratio} (S4) to \V{tr.S3d.pair.ratio} (S3d), and both forms sit at nearly the same distance from the truth, for example \V{tr.S3a.pair.cd} and \V{tr.S3a.pair.eu} under S3a. $\peu$ is closer in \V{tr.S3c.pair.euc} (S3c) to \V{tr.S3b.pair.euc} (S3b) of evaluations. A pair model with few coefficients cannot represent the conditional well enough for the difference to count.
 
-There are two exceptions, both predicted by Section~\ref{sec:gap}. Triple neurons under S2 and S4 have model error far below the gap, with ratios \V{tr.S2.triple.ratio} and \V{tr.S4.triple.ratio}, and $\peu$ closer in \V{tr.S2.triple.euc} of evaluations: here $T_1$ is first order and it is the whole error of $\pcd$. Under the Beta beliefs the triple ratio is \V{tr.S3b.triple.ratio} to \V{tr.S3d.triple.ratio}. The illustration of Section~\ref{sec:illus} sends the same message with the evidence truth at $k=4,8$, where truncation of \V{sem.big.lo} to \V{sem.big.hi} hides the choice of form. These results are for $m=4$, $\varepsilon=0.01$, $\rs>0$ and defined evaluations only. They concern synthetic ground truths, where the truncated part of the density is known, and a task could weigh the error differently.
+There are two exceptions, both explained by Section~\ref{sec:gap}. Triple neurons under S2 and S4 have model error far below the gap, with ratios \V{tr.S2.triple.ratio} and \V{tr.S4.triple.ratio}, and $\peu$ closer in \V{tr.S2.triple.euc} of evaluations: here $T_1$ is first order and it is the whole error of $\pcd$. Under the Beta beliefs the triple ratio is \V{tr.S3b.triple.ratio} to \V{tr.S3d.triple.ratio}. The illustration of Section~\ref{sec:illus} sends the same message with the evidence truth at $k=4,8$, where truncation of \V{sem.big.lo} to \V{sem.big.hi} hides the choice of form. These results are for $m=4$, $\varepsilon=0.01$, $\rs>0$ and defined evaluations only, and the filter that defines them also caps the gap (Section~\ref{sec:gapres}), so they say nothing about the region past the onset, where $\peu$ does not exist. They concern synthetic ground truths, where the truncated part of the density is known, and a task could weigh the error differently.
 
 \begin{table}[t]
 \centering
@@ -374,9 +375,9 @@ What the gap moves is mostly spread. Among \V{ph.mv.n} points of the pair basis 
 
 \subsection{The reference vanishes early, and noise brings it forward}\label{sec:onset}
 
-Here the expectations held. \textbf{H1a, H1b (\verdict{\V{H1a.verdict}}, \verdict{\V{H1b.verdict}}).} The onset falls strictly with $k$ in all \V{H1a.n} population cells, and at $n=10^7$ the difference between $k=32$ and $k=2$ has a confidence interval below zero in all \V{H1b.n} cells. For SUM in the pair basis it falls from \V{H1b.sp.k2} to \V{H1b.sp.k32}, a difference with $95\,\%$ CI $[\V{H1b.sp.lo},\V{H1b.sp.hi}]$. \textbf{H2a (\verdict{\V{H2a.verdict}}).} A higher degree gives an earlier onset in \V{H2a.sig} of \V{H2a.n} population cells (Table~\ref{tab:onsetm}). \textbf{H2b (\verdict{\V{H2b_population.verdict}} with population coefficients, \verdict{\V{H2b_gauss.verdict}} at $n=10^7$).} The triple basis is earlier than pair in \V{H2b_population.sig} of \V{H2b_population.n} and \V{H2b_gauss.sig} of \V{H2b_gauss.n} cells. These outcomes were close to expected once more terms are added, and Propositions~\ref{prop:pair} and \ref{prop:corner} now give their mechanism.
+Here the expectations held. \textbf{H1a, H1b (\verdict{\V{H1a.verdict}}, \verdict{\V{H1b.verdict}}).} The onset falls strictly with $k$ in all \V{H1a.n} population cells, and at $n=10^7$ the difference between $k=32$ and $k=2$ has a confidence interval below zero in all \V{H1b.n} cells. For SUM in the pair basis it falls from \V{H1b.sp.k2} to \V{H1b.sp.k32}, a difference with $95\,\%$ CI $[\V{H1b.sp.lo},\V{H1b.sp.hi}]$. \textbf{H2a (\verdict{\V{H2a.verdict}}).} A higher degree gives an earlier onset in \V{H2a.sig} of \V{H2a.n} population cells (Table~\ref{tab:onsetm}). \textbf{H2b (\verdict{\V{H2b_population.verdict}} with population coefficients, \verdict{\V{H2b_gauss.verdict}} at $n=10^7$).} The triple basis is earlier than pair in \V{H2b_population.sig} of \V{H2b_population.n} and \V{H2b_gauss.sig} of \V{H2b_gauss.n} cells. These outcomes are what one would expect as terms are added, and Propositions~\ref{prop:pair} and \ref{prop:corner} now give their mechanism.
 
-Noise moves the onset at large $k$: \V{thr.SUM.pair.32.on} against \V{thr.SUM.pair.32.pop} (pair, $k=32$), and \V{thr.SUM.triple.16.on} against \V{thr.SUM.triple.16.pop} (triple, $k=16$), as Proposition~\ref{prop:noise} predicts. Moving the floor on $D$ from $0$ to $0.05$ changes the share of S2 evaluations with $\min D$ above it by at most \V{floor.shift} of evaluations in any cell (post hoc reanalysis), so the pre-registered floor decides little.
+Noise moves the onset at large $k$: \V{thr.SUM.pair.32.on} against \V{thr.SUM.pair.32.pop} (pair, $k=32$), and \V{thr.SUM.triple.16.on} against \V{thr.SUM.triple.16.pop} (triple, $k=16$), in line with Proposition~\ref{prop:noise}. Moving the floor on $D$ from $0$ to $0.05$ changes the share of S2 evaluations with $\min D$ above it by at most \V{floor.shift} of evaluations in any cell (post hoc reanalysis), so the pre-registered floor decides little.
 
 \subsection{Estimation, not integration, limits the numbers}\label{sec:conv}
 
@@ -390,11 +391,11 @@ Negativity removes $\peu$; it does not remove pair $\pcd$. Past the onset, $\pcd
 
 \subsection{Thresholds do not transfer beyond the Gaussian sweep}\label{sec:transfer}
 
-All three transfer hypotheses failed. \textbf{H3a (\verdict{\V{H3a.verdict}}).} The rule requires every onset difference from the Gaussian to have a CI inside $\pm0.05$. Of \V{H3a.n} comparisons, \V{H3a.in} were inside and \V{H3a.out} entirely outside (Table~\ref{tab:fam}, Figure~\ref{fig:fam}). Onsets were mostly earlier, with differences as low as \V{fam.t3.min} for $t_3$ and \V{fam.clayton.min} for Clayton. \textbf{H3b (\verdict{\V{H3b.verdict}}).} $\dden$ under S2 at matched Kendall's $\tau$ fell within a factor 2 of the Gaussian, with its CI, at \V{H3b.in} of \V{H3b.n} points and entirely outside at \V{H3b.out}; median ratios were \V{fam.t10.ratio} ($t_{10}$), \V{fam.clayton.ratio} (Clayton), \V{fam.t3.ratio} ($t_3$) and \V{fam.gumbel.ratio} (Gumbel). \textbf{H3c (\verdict{\V{H3c.verdict}}).} For LKJ matrices the Gaussian power law predicted $\dden$ within a factor 2 for \V{H3c.pair} (pair) and \V{H3c.triple} (triple) of \V{H3c.n} defined matrices. This rests on $k=2$: at $k=4$ and $8$ the numbers of defined matrices were \V{lkj.defined.k4} and \V{lkj.defined.k8} (Table~\ref{tab:lkj}).
+None of the three transfer hypotheses was supported. \textbf{H3a (\verdict{\V{H3a.verdict}}).} The rule requires every onset difference from the Gaussian to have a CI inside $\pm0.05$. Of \V{H3a.n} comparisons, \V{H3a.in} were inside and \V{H3a.out} entirely outside (Table~\ref{tab:fam}, Figure~\ref{fig:fam}). Onsets were mostly earlier, with differences as low as \V{fam.t3.min} for $t_3$ and \V{fam.clayton.min} for Clayton. \textbf{H3b (\verdict{\V{H3b.verdict}}).} $\dden$ under S2 at matched Kendall's $\tau$ fell within a factor 2 of the Gaussian, with its CI, at \V{H3b.in} of \V{H3b.n} points and entirely outside at \V{H3b.out}; median ratios were \V{fam.t10.ratio} ($t_{10}$), \V{fam.clayton.ratio} (Clayton), \V{fam.t3.ratio} ($t_3$) and \V{fam.gumbel.ratio} (Gumbel). \textbf{H3c (\verdict{\V{H3c.verdict}}).} For LKJ matrices the Gaussian power law predicted $\dden$ within a factor 2 for \V{H3c.pair} (pair) and \V{H3c.triple} (triple) of \V{H3c.n} defined matrices. This rests on $k=2$: at $k=4$ and $8$ the numbers of defined matrices were \V{lkj.defined.k4} and \V{lkj.defined.k8} (Table~\ref{tab:lkj}).
 
-Part of the $t$ result is consistent with structure: a $t$ copula is dependent at zero correlation, so $\rs=0$ is not independence. At $k=2$ in the pair basis $\chi_D$ at $\rs=0$ is \V{ph.t3.chi} for $t_3$ and \V{ph.t10.chi} for $t_{10}$, against \V{ph.g.chi} for the Gaussian, and $t_3$ already has $\min D=\V{ph.t3.minD4}$ at $k=4$ (post hoc). We did not test this further.
+Part of the $t$ result is consistent with structure: a $t$ copula is dependent at zero correlation, so $\rs=0$ is not independence. At $k=2$ in the pair basis $\chi_D$ at $\rs=0$ is \V{ph.t3.chi} for $t_3$ and \V{ph.t10.chi} for $t_{10}$, against \V{ph.g.chi} for the Gaussian, and $t_3$ already has $\min D={}$\V{ph.t3.minD4} at $k=4$ (post hoc). We did not test this further.
 
-\subsection{Depth did not compound, and training did not reduce the errors}\label{sec:depth}
+\subsection{In these chains depth did not compound, and training did not reduce the errors}\label{sec:depth}
 
 \textbf{H5a (\verdict{\V{H5a.verdict}}).} The ratio $\dtot(L=4)/\dtot(L=1)$ exceeded 1 significantly in \V{H5a.sig} of \V{H5a.n} cells and was significantly below 1 in \V{H5a.opp}. Median ratios are \V{H5a.ratio.S2} (S2), \V{H5a.ratio.S3c} (S3c) and \V{H5a.ratio.S4} (S4) (Table~\ref{tab:depth}, Figure~\ref{fig:depth}). This is not good news by itself, because the target moves: under S2 the variance of $\pg$ rises towards the uniform value $1/12$ (from \V{ph.depth.var.S2.pair.1} to \V{ph.depth.var.S2.pair.4}), and $\dtot$ falls because the true output forgets the belief. A variance-type deviation shrinks by $\alpha^6=\V{ph.a6}$ over three layers, close to the S2 ratio, which is consistent with contraction under a mixing kernel \citep{boyen1998tractable}, not something we tested. S4 rises, with pair at \V{ph.h5a.S4.pair.ratio} (\V{ph.h5a.S4.pair.sig} of \V{ph.h5a.S4.pair.n} cells significant) and triple at \V{ph.h5a.S4.triple.ratio}, though the significant cells all have tiny errors: $\dtot(L=4)\leq\V{ph.h5a.sig.maxL4}$ (post hoc). Inputs of later neurons are independent, so their $D$ is nearly flat (median $\min D$ \V{ph.layer.minD}): H5a does not test compounding of denominator error over correlated inputs.
 
@@ -422,7 +423,7 @@ Part of the $t$ result is consistent with structure: a $t$ copula is dependent a
 \item \emph{Do not spend effort on the denominator in pair neurons} under Beta-like beliefs (Table~\ref{tab:trunc}): truncation dominates. In triple neurons under flat and data beliefs it can matter.
 \item \emph{Check negativity.} For Gaussian-like dependence use the convex bound of Proposition~\ref{prop:pair} or the corners of Proposition~\ref{prop:corner}. Expect an onset near $\rs\sim1/k$, and earlier with degree or a triple basis. Do not transfer the numbers to heavy-tailed or asymmetric dependence (H3a--c).
 \item \emph{Size $n$ with $z^2K_{\mathrm c}$} (Proposition~\ref{prop:noise}). Prefer the pair basis with low degree at large $k$, or select coefficients, as the source paper suggests.
-\item \emph{Be careful with clipping.} Per-input clipping moved outputs away from the truth in most evaluations.
+\item \emph{Be careful with clipping.} Per-input clipping moved outputs away from the truth in most defined evaluations.
 \end{enumerate}
 
 \paragraph{Limitations.}
@@ -439,7 +440,7 @@ Part of the $t$ result is consistent with structure: a $t$ copula is dependent a
 
 \section{Conclusion}
 
-A reader who propagates beliefs through a density model should ask first what the belief is, because the choice between normalising after and normalising before is a choice of question, not of accuracy. For polynomial neurons the rest is arithmetic: the gap is second order in the dependence for pair bases and first order for triple bases, the reference disappears near $\rs\sim1/k$, and in pair neurons truncation usually outweighs the gap. Thresholds did not transfer beyond the Gaussian sweep, and whether training can compensate for any of this remains open. Three experiments would settle most of what we leave unsettled: a pre-registered test of the two semantics, a real task with missing or noisy inputs, and chains whose inputs stay correlated.
+A reader who propagates beliefs through a density model should ask first what the belief is, because the choice between normalising after and normalising before is a choice of question, not of accuracy. For polynomial neurons the rest is arithmetic: the gap is second order in the dependence for pair bases and first order for triple bases, the reference disappears near $\rs\sim1/k$, and in pair neurons under Beta beliefs truncation usually outweighs the gap, while in triple neurons under flat and data beliefs it does not. Thresholds did not transfer beyond the Gaussian sweep, and whether training can compensate for any of this remains open. Three experiments would settle most of what we leave unsettled: a pre-registered test of the two semantics, a real task with missing or noisy inputs, and chains whose inputs stay correlated.
 
 \section*{Acknowledgements}
 \TODO{acknowledgements, subject to consent of those named; funding}
@@ -501,7 +502,6 @@ Explanations for tail dependence and mixing & Consistent with the data; untested
 \label{tab:claims}
 \end{table}
 
-\FloatBarrier
 \section{Proofs}\label{app:proofs}
 
 All statements of Sections~\ref{sec:semantics}--\ref{sec:fail} are proved here, in order. Each was also checked numerically against exact formulas and the study's data.
@@ -728,14 +728,14 @@ This appendix holds the threshold tables and error components behind Sections~\r
 \label{fig:dec}
 \end{figure}
 
-\begin{figure}[ht]
+\FloatBarrier
+\begin{figure}[H]
 \centering
 \includegraphics{G6_mean_vs_variance.pdf}
 \caption{Absolute relative variance error against standardised mean error, both relative to $\peu$, pair basis, $m=4$, $\varepsilon=0.01$, all $k$, types and $\rs>0$ where defined; seed medians. Points above the dashed line have larger variance error than mean error.}
 \label{fig:mv}
 \end{figure}
 
-\FloatBarrier
 \section{Decision rules and hypothesis details}\label{app:hyp}
 
 The decision rules below are given in substance from the protocol. The tables and the figure that follow hold the detail behind H1c, H2a, H3a--c and H4b.
