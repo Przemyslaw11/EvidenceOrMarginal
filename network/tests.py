@@ -83,7 +83,7 @@ def m14(dev):
         loss = lf(P.models(), data, {})
         grads = torch.autograd.grad(loss, P.tensors(), allow_unused=True)
         ad = sum(float((gr * v).sum()) for gr, v in zip(grads, V) if gr is not None)
-        h = 1e-8  # FD step: the nll has max(N, eps) kinks; h = 1e-6 straddles some of them (LOG2)
+        h = 1e-8  # FD step: the nll has max(N, eps) kinks; h = 1e-6 straddles some of them
         with torch.no_grad():
             for p, v in zip(P.tensors(), V):
                 p.add_(h * v)

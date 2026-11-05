@@ -17,5 +17,5 @@ run("tests/run_tests.py", "post")          # T9, T10
 run("src/extras.py", "8", "9")             # optional: Taylor, value-loss training
 run("src/analysis.py")                     # threshold table
 run("src/figures.py")                      # F1-F7, one-pager
-run("src/report.py")                       # report.md, summary_PL.md
+run("src/report.py")                       # results/report.txt
 print("done")

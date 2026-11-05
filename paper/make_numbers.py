@@ -2,7 +2,7 @@
 
     .venv/bin/python paper/make_numbers.py
 
-Reads results2/summary/, results2/merged/*_status.json and *_meta.csv, results2/energy/, energy2.md, docs/LOG2.md,
+Reads results2/summary/, results2/merged/*_status.json and *_meta.csv, results2/energy/, results2/run_record.json, results/report.txt,
 tests2/test_results2.json, config2.yaml, paper/posthoc.json, paper/theory.json, paper/semantics.json, paper/regression.json and paper/pilot.json. Writes generated/numbers.tex (the macro table behind
 \\V{key}), generated/numbers.json (the same table, read by check_numbers.py) and generated/tab_*.tex. Nothing is typed by hand.
 """
@@ -97,10 +97,8 @@ def compute_block():
     put("jobs", thou(sum(s["done"] for s in st.values())))
     put("failed", sum(len(s["failed"]) for s in st.values()))
     put("gpuh.jobs", f"{sum(s['gpu_hours'] for s in st.values()):.1f}")
-    log = open(os.path.join(ROOT, "docs", "LOG2.md")).read()
-    billed = float(re.search(r"Billed total ([\d.]+) GPU-h", log).group(1))
-    last = float(re.search(r"Full GPU validation at one commit \(job 3497120.*?(\d+) s\)", log, re.S).group(1))
-    put("gpuh.billed", f"{billed + last / 3600:.2f}")
+    rec = json.load(open(os.path.join(ROOT, "results2", "run_record.json")))
+    put("gpuh.billed", f"{rec['billed_gpu_hours'] + rec['final_validation_seconds'] / 3600:.2f}")
     meta = {e: pd.read_csv(os.path.join(ROOT, f"results2/merged/{e}_meta.csv")) for e in st}
     order = ("6a98646", "8addd92", "9bac5d5", "b8e5341", "3dd5707")
     rows = []
@@ -117,7 +115,7 @@ def compute_block():
     assert allm.torch.nunique() == 1 and allm.numpy.nunique() == 1 and allm.gpu.nunique() == 1
     put("sw.torch", allm.torch.iloc[0])
     put("sw.numpy", allm.numpy.iloc[0])
-    put("sw.scipy", re.search(r"scipy (\d+\.\d+\.\d+)\)", log).group(1))
+    put("sw.scipy", rec["scipy"])
     return st
 
 
@@ -491,7 +489,7 @@ def energy():
         for r in e[e.dtype == dt].sort_values(["k", "B", "layer"], kind="stable").itertuples():
             rows.append([r.k, thou(r.B), r.layer, thou(r.params), sig(r.ms), sig(r.J), sig(r.J_net), f"{r.power_W:.0f}", f"{r.sm_MHz:.0f}", f"{r.counter_ratio:.3f}"])
         table(f"energy_{dt}", "rrlr" + "D{.}{.}{4}" + "D{.}{.}{5}" + "D{.}{.}{6}" + "rrr", rows, ["$k$", "batch", "layer", "params"] + mc("ms", "J", "J net") + ["W", "MHz", "counter"], "\\scriptsize", thin=2)
-    t = open(os.path.join(ROOT, "energy2.md")).read()
+    t = open(os.path.join(ROOT, "results2", "energy", "report.txt")).read()
     m = re.search(r"Counter vs sampled energy over (\d+) repeats: median ([\d.]+), 1st-99th percentile ([\d.]+)-([\d.]+)", t)
     put("sw.driver", re.search(r"driver ([\d.]+),", t).group(1))
     put("en.repeats", thou(m.group(1)))
@@ -548,8 +546,8 @@ def validation():
 
 
 def d3():
-    """Numbers of the earlier d = 3 study, read from report.md (its own wording, one line each)."""
-    t = open(os.path.join(ROOT, "report.md")).read()
+    """Numbers of the earlier d = 3 study, read from results/report.txt (its own wording, one line each)."""
+    t = open(os.path.join(ROOT, "results", "report.txt")).read()
     m = re.search(r"d_denom is ([\d.]+)% \(SUM\) and ([\d.]+)% \(CONTRAST\) at rho_S=0.2", t)
     put("d3.flat.sum", m.group(1) + "\\,\\%")
     put("d3.flat.con", m.group(2) + "\\,\\%")

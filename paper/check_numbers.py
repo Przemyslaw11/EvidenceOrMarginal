@@ -4,7 +4,7 @@
 
 1. Regenerates generated/ from the sources and requires identical bytes.
 2. Re-applies the pre-registered decision rules to hypotheses.json and compares the hypothesis table, row by row.
-3. Compares the generated tables and macros with report2.md and energy2.md, which other code wrote.
+3. Compares the generated tables and macros with the reports in results2/, which other code wrote.
 4. Recomputes post hoc counts from the merged parquet files, by a separate route, when those files exist.
 5. Scans main.tex: every \\V key exists, and no decimal or percentage is typed outside the whitelist of design constants.
 6. Confirms PREREGISTRATION.md is byte-identical to the frozen commit.
@@ -115,7 +115,7 @@ def tex_rows(name):
 
 
 def reports():
-    rep = open(os.path.join(ROOT, "report2.md")).read()
+    rep = open(os.path.join(ROOT, "results2", "report.txt")).read()
     norm = lambda c: c.replace("—", "---").replace("–", "--").strip()  # noqa: E731
     md = {tuple(c[:3]): [norm(x) for x in c[3:]] for c in
           ([x.strip() for x in line.strip("|").split("|")] for line in rep.splitlines() if re.match(r"\| (SUM|CONTRAST) \| (pair|triple) \|", line))}
@@ -125,28 +125,28 @@ def reports():
     for r in rows:
         if r[0] in ("SUM", "CONTRAST"):
             n += 1
-            check(md.get(tuple(r[:3])) == r[3:], f"thresholds differ from report2.md: {r[:3]}")
+            check(md.get(tuple(r[:3])) == r[3:], f"thresholds differ from the report: {r[:3]}")
     check(n == len(md) == 20, "threshold rows")
     V = make_numbers.V
     for pat, key in ((r"\*\*(?:not )?supported\*\* \(4/4 cells", None),):
-        check(re.search(pat, rep), "report2 H1a")
+        check(re.search(pat, rep), "report H1a")
     for txt, key in (("21/48 CIs inside, 27 entirely outside", "H3a"), ("73/236 inside, 156 outside", "H3b"), ("11/72; 51 cells", "H5a"),
                      ("5/18 significant, 1 significant", "H5b"), ("24/78 significant, 19 significant", "H5c"), ("27/192 significant, 84 significant", "H5d")):
         a, b = (int(x) for x in re.findall(r"\d+", txt)[:2])
         if key in ("H3a", "H3b"):
-            check((int(V[f"{key}.in"]), int(V[f"{key}.n"])) == (a, b), f"{key} vs report2")
+            check((int(V[f"{key}.in"]), int(V[f"{key}.n"])) == (a, b), f"{key} vs report")
         else:
-            check((int(V[f"{key}.sig"]), int(V[f"{key}.n"])) == (a, b), f"{key} vs report2")
-        check(txt in rep, f"report2 lacks {txt}")
+            check((int(V[f"{key}.sig"]), int(V[f"{key}.n"])) == (a, b), f"{key} vs report")
+        check(txt in rep, f"report lacks {txt}")
     for fam in ("clayton", "gumbel", "t10", "t3"):
         m = re.search(rf"\| {fam} \| \d+ \| .*? \| \d+ \| \d+ \| ([\d.]+) \|", rep)
         check(m and m.group(1) == V[f"fam.{fam}.ratio"], f"family ratio {fam}")
     m = re.search(r"gives (\d+) of (\d+) \(k = 8 and 32", rep)
-    check(int(m.group(1)) == int(V["H4b.viol"].replace("{,}", "")) and int(m.group(2)) == int(V["H4b.n2"].replace("{,}", "")), "H4b vs report2")
+    check(int(m.group(1)) == int(V["H4b.viol"].replace("{,}", "")) and int(m.group(2)) == int(V["H4b.n2"].replace("{,}", "")), "H4b vs report")
     m = re.search(r"S2 ([\d.]+), S3c ([\d.]+), S4 ([\d.]+);", rep)
-    check(m.groups() == (V["H5a.ratio.S2"], V["H5a.ratio.S3c"], V["H5a.ratio.S4"]), "H5a ratios vs report2")
-    # energy: every row of both full tables against energy2.md
-    en = open(os.path.join(ROOT, "energy2.md")).read()
+    check(m.groups() == (V["H5a.ratio.S2"], V["H5a.ratio.S3c"], V["H5a.ratio.S4"]), "H5a ratios vs report")
+    # energy: every row of both full tables against the energy report
+    en = open(os.path.join(ROOT, "results2", "energy", "report.txt")).read()
     secs = re.split(r"^## (float\d\d)$", en, flags=re.M)
     for dt, body in zip(secs[1::2], secs[2::2]):
         md = {}
@@ -279,7 +279,7 @@ def repo_detail():
 
 
 def frozen():
-    a = subprocess.run(["/usr/bin/git", "show", "6a98646:PREREGISTRATION.md"], cwd=ROOT, capture_output=True, check=True).stdout
+    a = subprocess.run(["/usr/bin/git", "show", "8abbf12:PREREGISTRATION.md"], cwd=ROOT, capture_output=True, check=True).stdout
     check(a == open(os.path.join(ROOT, "PREREGISTRATION.md"), "rb").read(), "PREREGISTRATION.md changed")
 
 

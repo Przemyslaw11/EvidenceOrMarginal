@@ -1,4 +1,4 @@
-"""report2.md and summary_PL2.md, generated from results2/summary and results2/merged/*_status.json only.
+"""results2/report.txt, generated from results2/summary and results2/merged/*_status.json only.
 
     python -m analysis2.report
 """
@@ -146,8 +146,8 @@ def main():
       "were stacked into one problem, and the Student-t CDF/quantile moved to the GPU; whole-job outputs agreed with the "
       "previous code to 1e-10 and test M7 checks the t functions against 50-digit mpmath. Ten t-copula slots that timed "
       "out before the fix were re-run; no result was produced by the old code. M7's t check was rewritten after production: "
-      "it first compared 1 - F with scipy, which cannot resolve tails near F = 1 and failed on the A100 with scipy 1.13.1 "
-      "(the record is in docs/LOG2.md); no production code changed.\n")
+      "it first compared 1 - F with scipy, which cannot resolve tails near F = 1 and failed on the A100 with scipy 1.13.1; "
+      "no production code changed.\n")
     w("## Deviations from the pre-registration")
     w(deviations + "\n")
     w("## Three talking points (measurements)")
@@ -158,21 +158,7 @@ def main():
       f"E_q[N/D] is undefined while CONST_DENOM stays defined (E_q[D] = 1 under the flat belief).")
     w(f"3. Under the pre-registered settings, training did not reduce d_denom or P(D<0) in most cells, and in a "
       f"4-layer chain d_total decreased with depth (median ratio {med.get('S2', np.nan):.2f} for S2).")
-    open(os.path.join(ROOT, "report2.md"), "w").write("\n".join(L) + "\n")
-
-    pl = (f"**Podsumowanie (badanie skalowane).** Sprawdziłem numerycznie przybliżenie stałego mianownika "
-          f"(E[N]/E[D] zamiast E[N/D]) w neuronie HCR dla k = 2–32 wejść, {n_jobs} zadań na GPU A100, hipotezy "
-          f"zarejestrowane z góry. Przy płaskim przekonaniu i bazie par różnica TV osiąga 1 % przy ρ_S = "
-          f"{f3(g.loc[('SUM', 'pair', 2)].denom_1pct).replace('.', ',')} (k = 2) i "
-          f"{f3(g.loc[('SUM', 'pair', 16)].denom_1pct).replace('.', ',')} (k = 16). Gęstość D staje się ujemna od "
-          f"ρ_S = {f3(g.loc[('SUM', 'pair', 2)].neg_onset).replace('.', ',')} (k = 2) do "
-          f"{f3(g.loc[('SUM', 'pair', 32)].neg_onset).replace('.', ',')} (k = 32); wtedy dokładny iloraz jest "
-          f"nieokreślony, a przybliżenie pozostaje określone. Wyniki zależą od rodziny kopuł (H3: nie potwierdzone). "
-          f"Trening nie zmniejszył błędu w większości komórek, a w łańcuchu 4 neuronów błąd malał z głębokością. "
-          f"Test zbieżności względem n_est nie przeszedł (szum estymacji). Pliki: report2.md, "
-          f"figures2/summary_onepager2.png.")
-    open(os.path.join(ROOT, "summary_PL2.md"), "w").write(pl + "\n")
-    print("report2.md:", len(" ".join(L).split()), "words; summary_PL2.md:", len(pl.split()), "words")
+    open(os.path.join(ROOT, "results2", "report.txt"), "w").write("\n".join(L) + "\n")
 
 
 if __name__ == "__main__":

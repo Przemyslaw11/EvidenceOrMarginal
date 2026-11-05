@@ -222,6 +222,10 @@ __marimo__/
 # Local copy of the paper (third-party copyright; see arXiv:2405.05097)
 /duda.pdf
 
+# Generated figures (the paper keeps its own in paper/figures/)
+/figures/
+/figures2/
+
 # Scaled-up study: bulky per-job outputs and scheduler state (merged summaries are tracked)
 results2/jobs/
 results2/claims/

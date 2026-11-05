@@ -3,7 +3,7 @@
     <venv>/bin/python paper/pilot.py        # writes paper/pilot.json
 
 Not pre-registered, run after the study's results were seen, no tuning. Needs scikit-learn, which is deliberately not a project
-requirement: run it from a separate virtual environment outside the repository (numpy, scipy, scikit-learn; see docs/LOG2.md).
+requirement: run it from a separate virtual environment outside the repository (numpy, scipy, scikit-learn).
 make_numbers.py reads only the JSON, so the paper rebuilds without scikit-learn.
 
 Eight inputs and the median value are mapped to [0, 1] by the training EDF; 15,000 training and 2,500 test rows per seed. Scenarios:
