@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RES = os.environ.get("HCR_RESULTS2", os.path.join(ROOT, "results2"))
+RES = os.environ.get("HCR_RESULTS", os.path.join(ROOT, "results"))
 SUMMARY = os.path.join(RES, "summary")
 B_BOOT = 2000
 BOOT_SEED = 12345

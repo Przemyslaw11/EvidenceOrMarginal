@@ -2,8 +2,8 @@
 
     .venv/bin/python paper/make_figures.py      # after paper/semantics.py and paper/check_theory.py; writes paper/figures/F*.pdf
 
-Same colours, markers and sizes as the paper mode of analysis2/figures.py. Reads paper/semantics.json, paper/theory.json and
-results2/summary/thresholds_*.csv, so nothing plotted here is typed by hand.
+Same colours, markers and sizes as the paper mode of analysis/figures.py. Reads paper/semantics.json, paper/theory.json and
+results/summary/thresholds_*.csv, so nothing plotted here is typed by hand.
 """
 import json
 import math
@@ -12,7 +12,7 @@ import sys
 
 os.environ["HCR_PAPER"] = "1"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-os.environ["HCR_FIGURES2"] = os.path.join(ROOT, "paper", "figures")
+os.environ["HCR_FIGURES"] = os.path.join(ROOT, "paper", "figures")
 sys.path.insert(0, ROOT)
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
@@ -20,7 +20,7 @@ from matplotlib.lines import Line2D  # noqa: E402
 from matplotlib.patches import Patch  # noqa: E402
 from scipy.special import ndtr, ndtri  # noqa: E402
 
-from analysis2 import figures as F  # noqa: E402
+from analysis import figures as F  # noqa: E402
 
 plt = F.plt
 CD, EU, GREY = F.OI[0], F.OI[1], "#555555"
@@ -98,8 +98,8 @@ def f2(th):
 
 
 def f3(th):
-    tg = pd.read_csv(os.path.join(ROOT, "results2/summary/thresholds_gauss.csv"))
-    tp = pd.read_csv(os.path.join(ROOT, "results2/summary/thresholds_population.csv"))
+    tg = pd.read_csv(os.path.join(ROOT, "results/summary/thresholds_gauss.csv"))
+    tp = pd.read_csv(os.path.join(ROOT, "results/summary/thresholds_population.csv"))
     sel = lambda t, b: t[(t.type == "SUM") & (t.m == 4) & (t.belief == "S2") & (t.basis == b)].sort_values("k")  # noqa: E731
     fig, axs = plt.subplots(1, 2, figsize=(11.5, 3.9), sharey=True, gridspec_kw=dict(wspace=0.08))
     floor = 2.2e-3

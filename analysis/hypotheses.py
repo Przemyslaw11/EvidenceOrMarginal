@@ -1,6 +1,6 @@
-"""Evaluate the pre-registered hypotheses (PREREGISTRATION.md, section 6) -> results2/summary/hypotheses.json
+"""Evaluate the pre-registered hypotheses (PREREGISTRATION.md, section 6) -> results/summary/hypotheses.json
 
-    python -m analysis2.hypotheses
+    python -m analysis.hypotheses
 Each hypothesis yields a verdict (supported / not supported / inconclusive), the evaluable cells and the evidence.
 """
 import json
@@ -10,7 +10,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from analysis2.common import BOOT_SEED, B_BOOT, SUMMARY, boot_idx, crossing, load, median_curve, onset_negative, seed_matrix
+from analysis.common import BOOT_SEED, B_BOOT, SUMMARY, boot_idx, crossing, load, median_curve, onset_negative, seed_matrix
 
 LOG2 = math.log(2.0)
 
@@ -322,7 +322,7 @@ def main():
             res.update(h3(gauss, fam, lkj, curves_g))
     conv = os.path.join(SUMMARY, "convergence.csv")
     if os.path.exists(conv):
-        from analysis2.convergence import m13
+        from analysis.convergence import m13
         ok, det = m13()
         res["H4b"] = dict(verdict="supported" if ok else "not supported", detail=det)
     net = load("network")

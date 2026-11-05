@@ -2,8 +2,8 @@
 
     python run_small.py [--device cuda]
 Runs the fast validation tests, a reduced sweep (k in {2, 8}, pair basis, 3 seeds, n_est = 1e6, M = 2^18), the
-matching population run, one small chain/training job, then the analysis and figures, into results2/small/ and
-figures2/small/. The full study runs on a cluster: see README (scheduler/make_jobs.py, scheduler/slurm_array.sh).
+matching population run, one small chain/training job, then the analysis and figures, into results/small/ and
+figures/small/. The full study runs on a cluster: see README (scheduler/make_jobs.py, scheduler/slurm_array.sh).
 """
 import argparse
 import json
@@ -21,12 +21,12 @@ def main():
     a = ap.parse_args()
     from gpu.job import load_cfg
     from scheduler.make_jobs import jobs, with_id
-    res = os.path.join(ROOT, "results2", "small")
+    res = os.path.join(ROOT, "results", "small")
     os.makedirs(res, exist_ok=True)
-    env = dict(os.environ, HCR_RESULTS2=res, HCR_FIGURES2=os.path.join(ROOT, "figures2", "small"), PYTHONPATH=ROOT)
+    env = dict(os.environ, HCR_RESULTS=res, HCR_FIGURES=os.path.join(ROOT, "figures", "small"), PYTHONPATH=ROOT)
     py = sys.executable
     run = lambda *c: subprocess.run([py, *c], cwd=ROOT, env=env, check=True)
-    run("tests2/run_tests2.py", "pre", "--device", a.device, "--only", "M1,M2,M5,M6,M7,M8,M10")
+    run("tests/run_tests.py", "pre", "--device", a.device, "--only", "M1,M2,M5,M6,M7,M8,M10")
     cfg = load_cfg()
     ov = {"numerics": {"M": 2 ** 18}}
     for exp in ("gauss", "population", "network"):
@@ -46,9 +46,9 @@ def main():
     run("scheduler/launcher.py", "--worker", "--device", a.device, "--jobs",
         *[os.path.join(res, f"jobs_{e}.jsonl") for e in ("gauss", "population", "network")])
     run("scheduler/merge.py", "gauss", "population", "network")
-    run("-m", "analysis2.thresholds", "gauss", "population")
-    run("-m", "analysis2.figures")
-    print("small reproduction done: results2/small/, figures2/small/")
+    run("-m", "analysis.thresholds", "gauss", "population")
+    run("-m", "analysis.figures")
+    print("small reproduction done: results/small/, figures/small/")
 
 
 if __name__ == "__main__":

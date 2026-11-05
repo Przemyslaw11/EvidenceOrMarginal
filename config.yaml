@@ -1,27 +1,90 @@
-seed: 12345
-n_samples: 2000000
-chunk: 200000
-mmax: 6
-types: [SUM, CONTRAST]
-rho_S: [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+# Scaled-up study of the constant-denominator approximation (all parameters).
+root_seed: 12345
+m_max: 6
 degrees: [2, 4, 6]
 eps: [0.1, 0.01, 0.001]
-scenarios: [S1, S2, S3a, S3b, S3c, S3d]
-beta_params:            # (alpha_y, beta_y, alpha_z, beta_z)
-  S3a: [3, 3, 3, 3]
-  S3b: [4, 2, 4, 2]
-  S3c: [4, 2, 2, 4]
-  S3d: [6, 6, 6, 6]
-D_floor: 0.01           # EXACT_UNCAL defined only if D >= D_floor on supp(q)
-supp_rel: 1.0e-6        # supp(q) = {q >= supp_rel * max q}
-nodes: 192
-nodes_check: 256
-fine_grid: 401          # endpoint-inclusive grid for min D / frac D<0
-gold_tol: 1.0e-3        # GOLD normalisation tolerance before fallback
-gold_fallback: {smax: 8.0, nodes: 401}
-contrast_c_max: 0.5
-contrast_c_scale: 0.8
-sum_r: 0.5
-taylor_m: [4]
-taylor_K: [1, 2]
-train: {m: 4, n_train: 200000, n_test: 200000, rho_S: [0.2, 0.5, 0.8], maxiter: 500}
+D_floor: 0.01          # EXACT_UNCAL defined only if D >= D_floor on supp(q)
+supp_rel: 1.0e-6       # supp(q) = {q >= supp_rel * max q}
+mc_limited_ess: 1.0e-3 # flag rows with ESS/M below this
+
+# rho_S grid: the brief's 0.1 grid plus points near 0, where the high-k thresholds lie
+rho_S: [0.0, 0.01, 0.02, 0.03, 0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.6, 0.7, 0.8, 0.9]
+
+couplings:
+  c_max: 0.5           # SUM/CONTRAST output coupling cap
+  c_scale: 0.8         # bounds the output's R^2 by c_scale^2 = 0.64
+
+beliefs:
+  S3a: [[3, 3]]                 # Beta(3,3) for all inputs
+  S3b: [[4, 2]]                 # Beta(4,2) for all inputs
+  S3c: [[4, 2], [2, 4]]         # alternating: inputs conflict
+  S3d: [[6, 6]]                 # narrow
+order: [S1, S2, S3a, S3b, S3c, S3d, S4]
+
+numerics:
+  s_nodes: 801         # trapezoid grid in normal-score s on [-s_max, s_max]
+  s_max: 8.0
+  x_gl: 192            # Gauss-Legendre nodes in x for the calibration normaliser
+  R: 16                # replicate blocks per belief
+  M: 1048576           # MC samples per belief (2^20)
+  chunk_est: 65536     # samples per estimation chunk (reduced automatically for large models)
+  chunk_mc: 65536       # MC chunk (upper limit; reduced so that one pair-feature matrix stays below 4e8 elements)
+  gh_nodes: 160        # Gauss-Hermite nodes per axis for population coefficients (M3: converged to 1e-9 at m=6, rho_S=0.9)
+  mind:
+    starts: 2000
+    steps: 400
+    lr: [0.005, 0.0001] # cosine from first to second
+    mc_seeds: 256      # lowest-D MC samples used as starts
+
+experiments:
+  gauss:              # 3a (Q1, Q2, Q4)
+    k: [2, 4, 8, 16, 32]
+    types: [SUM, CONTRAST]
+    basis: [pair, triple]
+    seeds: 50
+    n_est: 10000000
+  population:         # 3a, n_est = inf (exact Gaussian-copula moments)
+    k: [2, 4, 8, 16, 32]
+    types: [SUM, CONTRAST]
+    basis: [pair, triple]
+    seeds: 5          # MC seeds of the beliefs only
+  families:           # 3b (Q3): matched Kendall tau of the inputs
+    k: [2, 4, 8]
+    basis: [pair, triple]
+    seeds: 20
+    n_est: 10000000
+    combos: [[gauss, EXCH], [t3, SUM], [t3, CONTRAST], [t3, EXCH], [t10, SUM], [t10, CONTRAST], [t10, EXCH], [clayton, EXCH], [gumbel, EXCH]]
+  lkj:                # 3b (Q3): random correlation matrices over (x, y)
+    k: [2, 4, 8]
+    eta: [1, 4]
+    basis: [pair, triple]
+    matrices: 200     # per (k, eta); 10 matrices per job
+    per_job: 10
+    n_est: 10000000
+  convergence:        # 3c (Q4)
+    k: [2, 8, 32]
+    types: [SUM, CONTRAST]
+    basis: [pair, triple]
+    seeds: 5
+    n_est: 10000000
+    variants: [base, M2, n2, s2, x2]
+
+network:              # Stage 4 (Q5)
+  k: [2, 4, 8]
+  L: [1, 2, 3, 4]
+  rho_S: [0.0, 0.2, 0.4, 0.6]
+  basis: [pair, triple]
+  m: 4
+  a_prev: 0.6          # normal-score coupling h_{l-1} -> h_l
+  b_side: 0.5          # normal-score coupling w_l -> h_l
+  beliefs: [S2, S3c, S4]
+  heldout_beliefs: [S3a, S3b, S3d]
+  eps: 0.01
+  n_est: 1000000
+  n_train: 200000
+  n_val: 100000
+  n_test: 100000
+  M: 262144
+  seeds: 10
+  adam: {lr: 0.003, steps: 2000, eval_every: 50, patience: 10}
+  lbfgs: {lr: 1.0, max_iter: 20, outer: 50, history: 20, eval_every: 1, patience: 10}

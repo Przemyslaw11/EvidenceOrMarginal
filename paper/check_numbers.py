@@ -4,7 +4,7 @@
 
 1. Regenerates generated/ from the sources and requires identical bytes.
 2. Re-applies the pre-registered decision rules to hypotheses.json and compares the hypothesis table, row by row.
-3. Compares the generated tables and macros with the reports in results2/, which other code wrote.
+3. Compares the generated tables and macros with the reports in results/, which other code wrote.
 4. Recomputes post hoc counts from the merged parquet files, by a separate route, when those files exist.
 5. Scans main.tex: every \\V key exists, and no decimal or percentage is typed outside the whitelist of design constants.
 6. Confirms PREREGISTRATION.md is byte-identical to the frozen commit.
@@ -27,7 +27,7 @@ sys.path.insert(0, HERE)
 import make_numbers  # noqa: E402
 
 GEN = os.path.join(HERE, "generated")
-S = os.path.join(ROOT, "results2", "summary")
+S = os.path.join(ROOT, "results", "summary")
 bad = []
 n_ok = 0
 
@@ -72,7 +72,7 @@ def hypotheses():
     s = [x["within2"] for x in H["H1c"]["cells"]]
     cell = ["supported" if v >= 0.9 else "not supported" if v < 0.5 else "inconclusive" for v in s]
     check(cell == [x["verdict"] for x in H["H1c"]["cells"]], "H1c cell verdicts")
-    # the pre-registration rules H1c per (type, basis); analysis2/hypotheses.py at the freeze commit combines the cells by unanimity
+    # the pre-registration rules H1c per (type, basis); analysis/hypotheses.py at the freeze commit combines the cells by unanimity
     want["H1c"] = cell[0] if len(set(cell)) == 1 else "inconclusive"
     v = H["H2c"]["share"]
     want["H2c"] = "supported" if v >= 0.8 else "not supported" if v <= 0.5 else "inconclusive"
@@ -115,7 +115,7 @@ def tex_rows(name):
 
 
 def reports():
-    rep = open(os.path.join(ROOT, "results2", "report.txt")).read()
+    rep = open(os.path.join(ROOT, "results", "report.txt")).read()
     norm = lambda c: c.replace("—", "---").replace("–", "--").strip()  # noqa: E731
     md = {tuple(c[:3]): [norm(x) for x in c[3:]] for c in
           ([x.strip() for x in line.strip("|").split("|")] for line in rep.splitlines() if re.match(r"\| (SUM|CONTRAST) \| (pair|triple) \|", line))}
@@ -146,7 +146,7 @@ def reports():
     m = re.search(r"S2 ([\d.]+), S3c ([\d.]+), S4 ([\d.]+);", rep)
     check(m.groups() == (V["H5a.ratio.S2"], V["H5a.ratio.S3c"], V["H5a.ratio.S4"]), "H5a ratios vs report")
     # energy: every row of both full tables against the energy report
-    en = open(os.path.join(ROOT, "results2", "energy", "report.txt")).read()
+    en = open(os.path.join(ROOT, "results", "energy", "report.txt")).read()
     secs = re.split(r"^## (float\d\d)$", en, flags=re.M)
     for dt, body in zip(secs[1::2], secs[2::2]):
         md = {}
@@ -163,7 +163,7 @@ def reports():
 
 
 def parquet():
-    p = os.path.join(ROOT, "results2", "merged", "gauss.parquet")
+    p = os.path.join(ROOT, "results", "merged", "gauss.parquet")
     if not os.path.exists(p):
         print("parquet files absent: post hoc recomputation skipped")
         return
@@ -177,7 +177,7 @@ def parquet():
     check(set(neg.basis) == {"triple"} and neg.k.min() == int(V["ph.eqd.mink"]), "E_q[D] <= 0 cells")
     check((G.d_total > 1).sum() == n("ph.tv1.n"), "d_total > 1 count")
     check(f"{G.d_total.max():.0f}" == V["ph.tv1.max"], "max d_total")
-    Pp = pd.read_parquet(os.path.join(ROOT, "results2", "merged", "population.parquet"), columns=["E_q_D"], filters=[("eps", "==", 0.01)])
+    Pp = pd.read_parquet(os.path.join(ROOT, "results", "merged", "population.parquet"), columns=["E_q_D"], filters=[("eps", "==", 0.01)])
     check((Pp.E_q_D <= 0).sum() == n("ph.eqd.pop.nonpos") and len(Pp) == n("ph.eqd.pop.rows"), "population E_q[D]")
     # headline of the truncation table, straight from the rows
     D = pd.read_parquet(p, columns=["basis", "belief", "d_denom", "d_model_uncal", "d_model_cal"],
@@ -187,7 +187,7 @@ def parquet():
         check(f"{(x.d_model_uncal / x.d_denom).median():.{nd}f}" == V[f"tr.{b}.{basis}.ratio"], f"truncation ratio {b} {basis}")
     w = D[D.belief != "S1"].groupby(["belief", "basis"]).apply(lambda x: (x.d_model_cal < x.d_model_uncal).mean(), include_groups=False)
     check(f"{100 * w.max():.0f}" in V["clip.max"], "clipping beats the reference, largest share")
-    st = [json.load(open(f)) for f in glob.glob(os.path.join(ROOT, "results2/merged/*_status.json"))]
+    st = [json.load(open(f)) for f in glob.glob(os.path.join(ROOT, "results/merged/*_status.json"))]
     check(sum(s["done"] for s in st) == n("jobs") and not any(s["failed"] for s in st), "jobs")
     v = pd.read_csv(os.path.join(S, "convergence_violations.csv"))
     check(len(v) == n("H4b.viol") and (v.k == 8).sum() == n("H4b.k8") and (v.k == 32).sum() == n("H4b.k32"), "H4b violations")
@@ -229,7 +229,7 @@ def additions():
     Tj = json.load(open(os.path.join(HERE, "theory.json")))["pair_onset_large"]
     check([r["k"] for r in Tj] == [8, 32, 128, 512, 2048] and all(a["k_rho"] < b["k_rho"] for a, b in zip(Tj, Tj[1:])), "convex bound rises")
     check(all(V[f"on.conv.kr.{r['k']}"] == f"{r['k_rho']:.3f}" for r in Tj), "convex bound macros")
-    p = os.path.join(ROOT, "results2", "merged", "gauss.parquet")
+    p = os.path.join(ROOT, "results", "merged", "gauss.parquet")
     if os.path.exists(p):
         G = pd.read_parquet(p, columns=["k", "basis", "belief", "m", "rho_S", "defined", "d_denom", "d_total", "d_model_cal", "E_q_D", "sd_q_D", "minD", "n_drop", "M"], filters=[("eps", "==", 0.01)])
         G = G[G.belief != "S1"]
@@ -263,7 +263,7 @@ def scan():
         check(m.group(0) in ALLOWED, f"typed number {m.group(0)}: ...{x[max(0, m.start() - 40):m.end() + 20]!r}")
 
 
-REPO = re.compile(r"\.md\b|\.py\b|\.csv\b|commit|\bgit\b|branch|repositor|README|version-controlled|(?-i:PREREGISTRATION)|results2|\bgpu/|\bnetwork/|SeedSequence"
+REPO = re.compile(r"\.md\b|\.py\b|\.csv\b|commit|\bgit\b|branch|repositor|README|version-controlled|(?-i:PREREGISTRATION)|\bresults/|\bgpu/|\bnetwork/|SeedSequence"
                   r"|\\texttt\{[^}]*\b[0-9a-f]{7,40}\b|\b(?=[0-9a-f]*[a-f])(?=[0-9a-f]*[0-9])[0-9a-f]{7,40}\b|\bjob\b 3\d{6}", re.I)
 
 

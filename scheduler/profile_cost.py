@@ -32,7 +32,7 @@ def from_results():
     cost = json.load(open(OUT))
     cost.setdefault("cells", {})
     groups, net = {}, []
-    for f in glob.glob(os.path.join(ROOT, "results2", "jobs", "*", "*.parquet")):
+    for f in glob.glob(os.path.join(ROOT, "results", "jobs", "*", "*.parquet")):
         m = read_meta(f)
         sp = m["spec"]
         if sp.get("group") == "pilot" or sp.get("variant", "base") != "base" or sp["exp"] == "population":

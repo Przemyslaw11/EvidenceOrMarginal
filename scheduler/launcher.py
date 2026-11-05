@@ -1,13 +1,13 @@
 """Idempotent job runner: one worker per GPU pulls jobs from a job list.
 
-    python scheduler/launcher.py --jobs results2/jobs_gauss.jsonl --gpus 0-3    # local multi-GPU
-    python scheduler/launcher.py --jobs results2/jobs_gauss.jsonl --worker      # one worker (Slurm task)
+    python scheduler/launcher.py --jobs results/jobs_gauss.jsonl --gpus 0-3    # local multi-GPU
+    python scheduler/launcher.py --jobs results/jobs_gauss.jsonl --worker      # one worker (Slurm task)
 
-A job is done when results2/jobs/<exp>/<id>.parquet exists (written atomically by gpu.job).
-A worker claims a job by creating results2/claims/<id>.claim with O_EXCL (atomic on NFS) and keeps
+A job is done when results/jobs/<exp>/<id>.parquet exists (written atomically by gpu.job).
+A worker claims a job by creating results/claims/<id>.claim with O_EXCL (atomic on NFS) and keeps
 its mtime fresh while the job runs; a claim older than --stale minutes is taken over by renaming it
 (only one renamer wins). Each attempt runs in a subprocess; failures are recorded in
-results2/failures/<id>.<n>.json and a job is retried at most twice (three attempts).
+results/failures/<id>.<n>.json and a job is retried at most twice (three attempts).
 """
 import argparse
 import json
@@ -18,7 +18,7 @@ import sys
 import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RES = os.environ.get("HCR_RESULTS2", os.path.join(ROOT, "results2"))
+RES = os.environ.get("HCR_RESULTS", os.path.join(ROOT, "results"))
 MAX_ATTEMPTS = 3
 
 

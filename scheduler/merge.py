@@ -1,7 +1,7 @@
-"""Merge per-job result files into results2/merged/<exp>.parquet and report completeness.
+"""Merge per-job result files into results/merged/<exp>.parquet and report completeness.
 
     python scheduler/merge.py [exp ...]
-Writes results2/merged/<exp>.parquet, <exp>_meta.csv (one row per job: wall time, GPU, versions, commit)
+Writes results/merged/<exp>.parquet, <exp>_meta.csv (one row per job: wall time, GPU, versions, commit)
 and <exp>_status.json (expected / done / failed / missing job ids).
 """
 import glob
@@ -13,7 +13,7 @@ import pandas as pd
 import pyarrow.parquet as pq
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RES = os.environ.get("HCR_RESULTS2", os.path.join(ROOT, "results2"))
+RES = os.environ.get("HCR_RESULTS", os.path.join(ROOT, "results"))
 sys.path.insert(0, ROOT)
 from scheduler.launcher import MAX_ATTEMPTS, n_failures  # noqa: E402
 

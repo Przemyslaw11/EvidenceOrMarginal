@@ -1,4 +1,4 @@
-"""M14: validation of the Stage 4 chain (called from tests2/run_tests2.py network)."""
+"""M14: validation of the Stage 4 chain (called from tests/run_tests.py network)."""
 import math
 
 import numpy as np

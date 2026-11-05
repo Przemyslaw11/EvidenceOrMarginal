@@ -1,6 +1,6 @@
 """Post hoc (not pre-registered) descriptive statistics of the paper, from the merged production results.
 
-    .venv/bin/python paper/posthoc.py        # writes paper/posthoc.json; needs results2/merged/*.parquet
+    .venv/bin/python paper/posthoc.py        # writes paper/posthoc.json; needs results/merged/*.parquet
 
 Nothing here changes a pre-registered verdict. The parquet files are large and not in git, so the output is committed
 and paper/make_numbers.py reads it; paper/check_numbers.py recomputes a sample of it when the parquet files exist.
@@ -15,9 +15,9 @@ import pandas as pd
 from scipy import stats
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MERGED = os.path.join(ROOT, "results2", "merged")
-SUMMARY = os.path.join(ROOT, "results2", "summary")
-A_PREV, N_EST = 0.6, 1e7  # config2.yaml: network.a_prev, experiments.gauss.n_est
+MERGED = os.path.join(ROOT, "results", "merged")
+SUMMARY = os.path.join(ROOT, "results", "summary")
+A_PREV, N_EST = 0.6, 1e7  # config.yaml: network.a_prev, experiments.gauss.n_est
 
 
 def pq(name, cols):

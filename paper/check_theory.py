@@ -4,7 +4,7 @@
 
 Post hoc: nothing here is a study result or changes a verdict. Population moments of the equicorrelated Gaussian copula come
 from the latent-factor form Z_l = sqrt(r) W + sqrt(1 - r) e_l, with Gauss-Hermite in W and e; the triple-basis output moments
-use a three-dimensional Gauss-Hermite rule. Needs results2/merged/population.parquet and results2/summary/thresholds_*.csv.
+use a three-dimensional Gauss-Hermite rule. Needs results/merged/population.parquet and results/summary/thresholds_*.csv.
 """
 import json
 import math
@@ -123,7 +123,7 @@ def t1_tv(typ, k, rho, m=4):
 
 def pop_rows(cols, **eq):
     f = [(a, "==", b) for a, b in eq.items()]
-    return pd.read_parquet(os.path.join(ROOT, "results2/merged/population.parquet"), columns=cols, filters=f)
+    return pd.read_parquet(os.path.join(ROOT, "results/merged/population.parquet"), columns=cols, filters=f)
 
 
 # ---------------------------------------------------------------- 1. semantics, exact on a small grid
@@ -307,7 +307,7 @@ def bisect(fun, lo=1e-4, hi=0.9, it=24):
 
 def pair_onset():
     rng = np.random.default_rng(3)
-    th = pd.read_csv(os.path.join(ROOT, "results2/summary/thresholds_population.csv"))
+    th = pd.read_csv(os.path.join(ROOT, "results/summary/thresholds_population.csv"))
     th = th[(th.belief == "S2") & (th.type == "SUM") & (th.basis == "pair")]
     # the quadratic form, against the repository's model
     R, _ = C.coupled_R("SUM", 8, 0.1)
@@ -420,7 +420,7 @@ def corner_formula():
 
 
 def triple_onset():
-    th = pd.read_csv(os.path.join(ROOT, "results2/summary/thresholds_population.csv"))
+    th = pd.read_csv(os.path.join(ROOT, "results/summary/thresholds_population.csv"))
     th = th[(th.belief == "S2") & (th.type == "SUM") & (th.basis == "triple")]
     P = pop_rows(["k", "basis", "m", "rho_S", "minD"], eps=0.01, belief="S2", type="SUM", basis="triple")
     rows = []

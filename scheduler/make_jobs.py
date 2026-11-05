@@ -1,4 +1,4 @@
-"""Write the job lists results2/jobs_<exp>.jsonl from config2.yaml.
+"""Write the job lists results/jobs_<exp>.jsonl from config.yaml.
 
 Every job is fully specified; its id is a hash of the spec. Random streams are derived from
 SeedSequence(root_seed, spawn_key=key + (stream,)), where key omits the neuron type and the basis, so
@@ -101,7 +101,7 @@ def jobs(exp, cfg):
 
 
 def pilot_jobs(cfg):
-    """Throughput pilot: seed index 1000 never occurs in production, results go to results2/jobs/pilot."""
+    """Throughput pilot: seed index 1000 never occurs in production, results go to results/jobs/pilot."""
     out = []
     for exp in ("gauss", "population", "families", "lkj"):
         for s in jobs(exp, cfg):
@@ -128,13 +128,13 @@ def load_cost():
 def main(argv):
     cfg = load_cfg()
     cost = load_cost()
-    os.makedirs(os.path.join(ROOT, "results2"), exist_ok=True)
+    os.makedirs(os.path.join(ROOT, "results"), exist_ok=True)
     for exp in argv or ["gauss", "population", "families", "lkj", "convergence"]:
         js = pilot_jobs(cfg) if exp == "pilot" else jobs(exp, cfg)
         for s in js:
             s["expected_min"] = round(expected_minutes(s, cfg, cost), 3)
         js.sort(key=lambda s: (s["seed"], -s["expected_min"]))  # seed by seed (PREREGISTRATION 4), longest first
-        path = os.path.join(ROOT, "results2", f"jobs_{exp}.jsonl")
+        path = os.path.join(ROOT, "results", f"jobs_{exp}.jsonl")
         with open(path, "w") as f:
             for s in js:
                 f.write(json.dumps(s) + "\n")

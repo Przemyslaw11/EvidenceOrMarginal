@@ -1,7 +1,7 @@
 """Stage 7 diagnostic: why float64 MLP at k = 2, B = 16384 is faster than float32.
 
 Per configuration: wall time per forward and CUDA kernel names and times from torch.profiler, so kernel selection and
-GPU-bound vs dispatch-bound can be told apart. Not an energy measurement. Writes results2/energy/probe_mlp_<jobid>.csv.
+GPU-bound vs dispatch-bound can be told apart. Not an energy measurement. Writes results/energy/probe_mlp_<jobid>.csv.
 """
 import os
 import time

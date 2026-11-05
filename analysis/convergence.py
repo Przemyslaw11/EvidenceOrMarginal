@@ -2,14 +2,14 @@
 
 Each `convergence` job is paired with the `gauss` job of the same (k, type, basis, seed) (identical random streams).
 A change is a violation if |TV_variant - TV_base| > max(3 * max(SE_base, SE_variant), 1e-3).
-Writes results2/summary/convergence.csv and convergence_violations.csv.
+Writes results/summary/convergence.csv and convergence_violations.csv.
 """
 import os
 
 import numpy as np
 import pandas as pd
 
-from analysis2.common import SUMMARY, load
+from analysis.common import SUMMARY, load
 
 TV = ["d_denom", "d_neg", "d_model_uncal", "d_model_cal", "d_total", "d_dc"]
 KEY = ["k", "type", "basis", "seed", "rho_S", "m", "belief", "eps"]

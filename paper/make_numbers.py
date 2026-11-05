@@ -2,8 +2,8 @@
 
     .venv/bin/python paper/make_numbers.py
 
-Reads results2/summary/, results2/merged/*_status.json and *_meta.csv, results2/energy/, results2/run_record.json, results/report.txt,
-tests2/test_results2.json, config2.yaml, paper/posthoc.json, paper/theory.json, paper/semantics.json, paper/regression.json and paper/pilot.json. Writes generated/numbers.tex (the macro table behind
+Reads results/summary/, results/merged/*_status.json and *_meta.csv, results/energy/, results/run_record.json, three_input_study/results/report.txt,
+tests/test_results.json, config.yaml, paper/posthoc.json, paper/theory.json, paper/semantics.json, paper/regression.json and paper/pilot.json. Writes generated/numbers.tex (the macro table behind
 \\V{key}), generated/numbers.json (the same table, read by check_numbers.py) and generated/tab_*.tex. Nothing is typed by hand.
 """
 import glob
@@ -18,7 +18,7 @@ import yaml
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-S = os.path.join(ROOT, "results2", "summary")
+S = os.path.join(ROOT, "results", "summary")
 GEN = os.path.join(HERE, "generated")
 KS = (2, 4, 8, 16, 32)
 TYPES = ("SUM", "CONTRAST")
@@ -93,13 +93,13 @@ def load():
 
 
 def compute_block():
-    st = {os.path.basename(p)[:-12]: json.load(open(p)) for p in sorted(glob.glob(os.path.join(ROOT, "results2/merged/*_status.json")))}
+    st = {os.path.basename(p)[:-12]: json.load(open(p)) for p in sorted(glob.glob(os.path.join(ROOT, "results/merged/*_status.json")))}
     put("jobs", thou(sum(s["done"] for s in st.values())))
     put("failed", sum(len(s["failed"]) for s in st.values()))
     put("gpuh.jobs", f"{sum(s['gpu_hours'] for s in st.values()):.1f}")
-    rec = json.load(open(os.path.join(ROOT, "results2", "run_record.json")))
+    rec = json.load(open(os.path.join(ROOT, "results", "run_record.json")))
     put("gpuh.billed", f"{rec['billed_gpu_hours'] + rec['final_validation_seconds'] / 3600:.2f}")
-    meta = {e: pd.read_csv(os.path.join(ROOT, f"results2/merged/{e}_meta.csv")) for e in st}
+    meta = {e: pd.read_csv(os.path.join(ROOT, f"results/merged/{e}_meta.csv")) for e in st}
     order = ("6a98646", "8addd92", "9bac5d5", "b8e5341", "3dd5707")
     rows = []
     plain = {"gauss": "Gaussian sweep", "population": "population sweep", "convergence": "convergence study", "families": "copula families", "lkj": "LKJ matrices", "network": "chains"}
@@ -221,7 +221,7 @@ def hypotheses(H, conv, ph):
     for k, n in v.groupby("k").size().items():
         put(f"H4b.k{k}", thou(n))
     assert set(v.variant) == {"n2"} and len(v) == viol
-    assert viol == int(re.search(r"(\d+) violations", json.load(open(os.path.join(ROOT, "tests2/test_results2.json")))["M13"]["detail"]).group(1))
+    assert viol == int(re.search(r"(\d+) violations", json.load(open(os.path.join(ROOT, "tests/test_results.json")))["M13"]["detail"]).group(1))
     for h in ("H5a", "H5b", "H5c", "H5d"):
         put(f"{h}.sig", H[h]["significant"])
         put(f"{h}.n", H[h]["n"])
@@ -470,7 +470,7 @@ def posthoc(ph, H):
 
 
 def energy():
-    e = pd.read_csv(os.path.join(ROOT, "results2", "energy", "summary.csv"))
+    e = pd.read_csv(os.path.join(ROOT, "results", "energy", "summary.csv"))
     sig = lambda v: f"{v:.3g}"  # noqa: E731
     assert e.n_runs.nunique() == 1 and e.n_repeats.nunique() == 1
     put("en.runs.dtype", e.n_runs.iloc[0])
@@ -489,7 +489,7 @@ def energy():
         for r in e[e.dtype == dt].sort_values(["k", "B", "layer"], kind="stable").itertuples():
             rows.append([r.k, thou(r.B), r.layer, thou(r.params), sig(r.ms), sig(r.J), sig(r.J_net), f"{r.power_W:.0f}", f"{r.sm_MHz:.0f}", f"{r.counter_ratio:.3f}"])
         table(f"energy_{dt}", "rrlr" + "D{.}{.}{4}" + "D{.}{.}{5}" + "D{.}{.}{6}" + "rrr", rows, ["$k$", "batch", "layer", "params"] + mc("ms", "J", "J net") + ["W", "MHz", "counter"], "\\scriptsize", thin=2)
-    t = open(os.path.join(ROOT, "results2", "energy", "report.txt")).read()
+    t = open(os.path.join(ROOT, "results", "energy", "report.txt")).read()
     m = re.search(r"Counter vs sampled energy over (\d+) repeats: median ([\d.]+), 1st-99th percentile ([\d.]+)-([\d.]+)", t)
     put("sw.driver", re.search(r"driver ([\d.]+),", t).group(1))
     put("en.repeats", thou(m.group(1)))
@@ -520,7 +520,7 @@ def energy():
 
 
 def validation():
-    T = json.load(open(os.path.join(ROOT, "tests2", "test_results2.json")))
+    T = json.load(open(os.path.join(ROOT, "tests", "test_results.json")))
     d = {k: v["detail"] for k, v in T.items()}
     what = {"M1": "orthonormality of the basis, explicit $f_1,\\dots,f_4$", "M2": "index families, coefficient counts, block vs dense estimator",
             "M3": "estimator vs population moments, SE scaling, Gauss--Hermite convergence", "M4": "reproduces the TV values of the $d=3$ study",
@@ -546,8 +546,8 @@ def validation():
 
 
 def d3():
-    """Numbers of the earlier d = 3 study, read from results/report.txt (its own wording, one line each)."""
-    t = open(os.path.join(ROOT, "results", "report.txt")).read()
+    """Numbers of the earlier d = 3 study, read from three_input_study/results/report.txt (its own wording, one line each)."""
+    t = open(os.path.join(ROOT, "three_input_study", "results", "report.txt")).read()
     m = re.search(r"d_denom is ([\d.]+)% \(SUM\) and ([\d.]+)% \(CONTRAST\) at rho_S=0.2", t)
     put("d3.flat.sum", m.group(1) + "\\,\\%")
     put("d3.flat.con", m.group(2) + "\\,\\%")
@@ -563,7 +563,7 @@ def d3():
 
 
 def design():
-    c = yaml.safe_load(open(os.path.join(ROOT, "config2.yaml")))
+    c = yaml.safe_load(open(os.path.join(ROOT, "config.yaml")))
     g = c["numerics"]
     put("cfg.M", "2^{20}" if g["M"] == 2 ** 20 else g["M"])
     put("cfg.R", g["R"])

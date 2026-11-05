@@ -1,4 +1,4 @@
-"""Reproduce everything: python run_all.py  (about 5 minutes on one CPU core)."""
+"""Reproduce everything: python three_input_study/run_all.py  (about 5 minutes on one CPU core)."""
 import subprocess, sys, os, time, shutil
 ROOT = os.path.dirname(os.path.abspath(__file__))
 py = sys.executable

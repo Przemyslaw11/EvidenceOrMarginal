@@ -4,7 +4,7 @@ Code, data and manuscript for *Evidence or Marginal? What Moment-Vector Propagat
 
 A neuron that stores a joint polynomial density, as in Hierarchical Correlation Reconstruction (HCR), can propagate a density over its inputs. The paper shows that the constant-denominator formula E[N]/E[D] and the exact form E[N/D] are not an approximation and its target. They are exact answers to different questions: Bayesian updating with the belief as virtual evidence, and Jeffrey's rule. It then measures how far apart they are and when each exists, in a pre-registered synthetic study with up to 32 inputs.
 
-The manuscript is [`paper/main.pdf`](paper/main.pdf). The study protocol is [`PREREGISTRATION.md`](PREREGISTRATION.md).
+The manuscript is [`paper/main.pdf`](paper/main.pdf). The study protocol is [`PREREGISTRATION.md`](PREREGISTRATION.md). It uses the file names of its time: `config2.yaml` is now `config.yaml`.
 
 ## Layout
 
@@ -12,15 +12,15 @@ The manuscript is [`paper/main.pdf`](paper/main.pdf). The study protocol is [`PR
 paper/        manuscript, figures, generated numbers and tables, post hoc analyses
 gpu/          density neuron, copulas, propagation and energy benchmark (PyTorch)
 network/      chains of neurons and training
-analysis2/    thresholds, hypothesis tests, study figures and report
+analysis/     thresholds, hypothesis tests, study figures and report
 scheduler/    job lists, launcher and Slurm scripts
-tests2/       validation tests M1-M14
-results2/     merged results and summaries of the study
-config2.yaml  study settings
-src/, tests/, results/, config.yaml   the earlier three-input study
+tests/        validation tests M1-M14
+results/      merged results and summaries of the study
+config.yaml   study settings
+three_input_study/   the earlier three-input study
 ```
 
-`results2/run_record.json` holds GPU accounting, and maps the commit ids stored in the run metadata to this repository's history.
+`results/run_record.json` holds GPU accounting, and maps the commit ids stored in the run metadata to this repository's history.
 
 ## Rebuild the paper
 
@@ -49,18 +49,18 @@ The full study, on a Slurm cluster with PyTorch installed:
 
 ```bash
 python scheduler/make_jobs.py gauss population convergence families lkj network
-sbatch -A <account> --array=0-39 scheduler/slurm_array.sh results2/jobs_gauss.jsonl
+sbatch -A <account> --array=0-39 scheduler/slurm_array.sh results/jobs_gauss.jsonl
 python scheduler/merge.py gauss population convergence families lkj network
-python -m analysis2.thresholds gauss population families
-python tests2/run_tests2.py post
-python -m analysis2.hypotheses
-python -m analysis2.figures
-python -m analysis2.report
+python -m analysis.thresholds gauss population families
+python tests/run_tests.py post
+python -m analysis.hypotheses
+python -m analysis.figures
+python -m analysis.report
 ```
 
 A job counts as done once its result file exists, so an array can be resubmitted until `merge.py` reports nothing missing.
 
-The three-input study runs on one CPU core in a few minutes with `python run_all.py`.
+The three-input study runs on one CPU core in a few minutes with `python three_input_study/run_all.py`.
 
 ## License
 

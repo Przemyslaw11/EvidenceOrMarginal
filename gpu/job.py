@@ -1,6 +1,6 @@
 """Run one fully specified job of the sweep and write one parquet file (atomically) with metadata.
 
-    python -m gpu.job --spec '<json>' --out results2/jobs/<exp>/<id>.parquet [--device cuda]
+    python -m gpu.job --spec '<json>' --out results/jobs/<exp>/<id>.parquet [--device cuda]
 """
 import argparse
 import json
@@ -25,7 +25,7 @@ STREAM = {"est": 0, "mc": 1, "mind": 2, "lkj": 3, "train": 4, "val": 5, "test": 
 
 
 def load_cfg(path=None):
-    with open(path or os.path.join(ROOT, "config2.yaml")) as f:
+    with open(path or os.path.join(ROOT, "config.yaml")) as f:
         return yaml.safe_load(f)
 
 

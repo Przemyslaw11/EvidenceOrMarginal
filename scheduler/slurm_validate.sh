@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPU validation run: the test suite on the A100, then the cost profile (it saves after every cell). Submit from the repository root:
 #   sbatch -A <account> [-p plgrid-now] scheduler/slurm_validate.sh
-#SBATCH --job-name=hcr2-validate
+#SBATCH --job-name=hcr-validate
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
@@ -22,6 +22,6 @@ export CUBLAS_WORKSPACE_CONFIG=:4096:8
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-8}"
 nvidia-smi --query-gpu=name,driver_version,clocks.max.sm,power.limit --format=csv,noheader
 git rev-parse HEAD
-srun python tests2/run_tests2.py pre --device cuda
-srun python tests2/run_tests2.py network --device cuda
+srun python tests/run_tests.py pre --device cuda
+srun python tests/run_tests.py network --device cuda
 srun python scheduler/profile_cost.py --device cuda

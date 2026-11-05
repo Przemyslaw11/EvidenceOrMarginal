@@ -2,7 +2,7 @@
 
     python -m gpu.energy --check                                  # CPU self-check of the layers
     python -m gpu.energy --dtype float32 --replicate 0            # one measurement run on the GPU (Slurm job)
-    python -m gpu.energy --summarise                              # results2/energy/summary.csv and report.txt
+    python -m gpu.energy --summarise                              # results/energy/summary.csv and report.txt
 
 Layers (W = 64 units, k inputs, matched parameter count P = W * n_coef of an HCR neuron, pair basis, m = 4):
   HCR-CD   CONST_DENOM: B product beliefs given by their input coefficient vectors b (B, k, m);
@@ -32,7 +32,7 @@ import torch
 from .core import Model, gauss_legendre, input_basis, legendre, pairs
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(ROOT, "results2", "energy")
+OUT = os.path.join(ROOT, "results", "energy")
 W_UNITS, M_DEG, S_SAMPLES, G_NODES, EPS = 64, 4, 64, 192, 0.01
 KS, BATCHES, LAYERS = (2, 8, 32), (256, 16384), ("HCR-CD", "HCR-CAL", "MLP", "KAN")
 REPEATS, REPEAT_S, WARM_S, IDLE_S = 30, 2.0, 3.0, 30.0
@@ -371,8 +371,8 @@ def summarise():
     for rid, v in sorted(metas.items(), key=lambda kv: kv[1]["uuid"]):
         L.append(f"| {rid} | {v['dtype']} | {v['uuid'][4:12]} | {v['host']} | {v['idle_W']:.1f} | {rel[rid]:.3f} |")
     L.append("")
-    open(os.path.join(ROOT, "results2", "energy", "report.txt"), "w").write("\n".join(L) + "\n")
-    print(f"summary: {len(s)} rows from {len(metas)} runs -> results2/energy/summary.csv, report.txt")
+    open(os.path.join(ROOT, "results", "energy", "report.txt"), "w").write("\n".join(L) + "\n")
+    print(f"summary: {len(s)} rows from {len(metas)} runs -> results/energy/summary.csv, report.txt")
 
 
 if __name__ == "__main__":

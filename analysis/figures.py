@@ -1,11 +1,11 @@
-"""Figures G1-G9 and summary_onepager2.png from results2/summary/*.csv and the merged network results.
+"""Figures G1-G9 and summary_onepager.png from results/summary/*.csv and the merged network results.
 
-    python -m analysis2.figures
+    python -m analysis.figures
 Okabe-Ito colours in a fixed order per entity (validated: CVD separation and normal-vision floor pass; orange and
 reddish purple are below 3:1 contrast, so every series also has its own marker and a legend). Undefined points are
 gaps; points below 3x their MC noise floor are hollow markers; bands are 2.5-97.5 % seed intervals.
 
-    HCR_PAPER=1 HCR_FIGURES2=paper/figures python -m analysis2.figures
+    HCR_PAPER=1 HCR_FIGURES=paper/figures python -m analysis.figures
 renders the same data for the paper at print size (text width, 1:1): no figure titles (the captions carry them), the paper's
 symbols and type, panel letters, hatched bars for greyscale, PDF only. Nothing plotted changes.
 """
@@ -19,9 +19,9 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
-from analysis2.common import ROOT, SUMMARY, load  # noqa: E402
+from analysis.common import ROOT, SUMMARY, load  # noqa: E402
 
-OUT = os.environ.get("HCR_FIGURES2", os.path.join(ROOT, "figures2"))
+OUT = os.environ.get("HCR_FIGURES", os.path.join(ROOT, "figures"))
 OI = ["#0072B2", "#E69F00", "#009E73", "#D55E00", "#CC79A7", "#56B4E9", "#000000"]
 MK = ["o", "s", "^", "D", "v", "P", "X"]
 KCOL = {2: 0, 4: 1, 8: 2, 16: 3, 32: 4}
@@ -485,8 +485,8 @@ def onepager(cg, tg, tp, net):
     ax.set_title("(d) does training help? median change, neuron 1")
     fig.tight_layout()
     os.makedirs(OUT, exist_ok=True)
-    fig.savefig(os.path.join(OUT, "summary_onepager2.png"), dpi=100)
-    fig.savefig(os.path.join(OUT, "summary_onepager2.pdf"))
+    fig.savefig(os.path.join(OUT, "summary_onepager.png"), dpi=100)
+    fig.savefig(os.path.join(OUT, "summary_onepager.pdf"))
     plt.close(fig)
 
 

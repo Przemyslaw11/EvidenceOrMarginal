@@ -1,8 +1,8 @@
 #!/bin/bash
 # One worker per array task (1 GPU each); all tasks pull from the same idempotent job list(s).
 # Submit from the repository root:
-#   sbatch -A <account> --array=0-39%40 --time=08:00:00 scheduler/slurm_array.sh results2/jobs_gauss.jsonl [...]
-#SBATCH --job-name=hcr2
+#   sbatch -A <account> --array=0-39%40 --time=08:00:00 scheduler/slurm_array.sh results/jobs_gauss.jsonl [...]
+#SBATCH --job-name=hcr
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1

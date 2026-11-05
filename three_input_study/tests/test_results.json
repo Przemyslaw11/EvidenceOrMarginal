@@ -1,0 +1,42 @@
+{
+ "T1": {
+  "pass": true,
+  "detail": "gram max err 1.14e-14; explicit formulas max err 2.60e-14"
+ },
+ "T2": {
+  "pass": true,
+  "detail": "a000=1; max |dev|/SE = 2.94 (<=5) over a_011 vs rho_S and single-index coeffs, n=400000"
+ },
+ "T3": {
+  "pass": true,
+  "detail": "max |minD - (1-3|a011|)| = 0.0091"
+ },
+ "T8": {
+  "pass": true,
+  "detail": "max|GOLD-1|=3.30e-03 (<=1e-2); TV(GOLD,uniform)=3.31e-06 (<=2e-3)"
+ },
+ "T4": {
+  "pass": true,
+  "detail": "flat-D control: max |DUDA-EXACT_UNCAL| = 3.44e-14 over all 6 scenarios"
+ },
+ "T5": {
+  "pass": true,
+  "detail": "S1: max|EXACT_UNCAL - sum a_i00 f_i| = 5.08e-14"
+ },
+ "T6": {
+  "pass": true,
+  "detail": "max|int DUDA/UNCAL -1| = 3.06e-14 (<=1e-8); max GOLD norm err = 1.33e-06 (<=1e-3, fallback applied where needed)"
+ },
+ "T7": {
+  "pass": true,
+  "detail": "max |(DUDA-EXACT_UNCAL) - Cov_q(N/D,D)/E_q[D]| = 1.50e-14"
+ },
+ "T9": {
+  "pass": false,
+  "detail": "STRICT criterion (all rows, rho_S<=0.6): max |TV change| 192->256 = 2.58e-04 in d_model_cal (<1e-4 required); excluding rows flagged quadrature_limited (GOLD x-grid singular edges, 9 such rows at rho_S<=0.6): 9.83e-05; rho_S>=0.7 observed (reported): 4.95e-03 all rows, 2.26e-04 excluding flagged; defined-flag changes: 0. Deviation: only GOLD-based TVs (d_total, d_model_*) of CONTRAST/S2 rows flagged quadrature_limited exceed 1e-4; see gold_check.csv"
+ },
+ "T10": {
+  "pass": true,
+  "detail": "same-seed reduced re-run (n=200000, rho in {0.2,0.6}, m=4, 96 nodes) identical excl. runtime: True; full results.csv not re-run (see ASSUMPTIONS 9)"
+ }
+}

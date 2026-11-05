@@ -223,13 +223,13 @@ __marimo__/
 /duda.pdf
 
 # Generated figures (the paper keeps its own in paper/figures/)
+/three_input_study/figures/
 /figures/
-/figures2/
 
 # Scaled-up study: bulky per-job outputs and scheduler state (merged summaries are tracked)
-results2/jobs/
-results2/claims/
-results2/failures/
-results2/merged/*.parquet
-results2/pilot/
+results/jobs/
+results/claims/
+results/failures/
+results/merged/*.parquet
+results/pilot/
 slurm_logs/
