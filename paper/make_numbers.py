@@ -731,7 +731,7 @@ def theory(ph, H):
             put(f"tr.{b}.{basis}.ec", pc(r["ec_beats_eu"]))
         if basis == "pair":
             rows.append("MID")
-    table("trunc", "llrrrr" + "D{.}{.}{2}" + "rr", rows, ["basis", "belief", "evaluations", "$d_{\\mathrm{denom}}$", "$\\mathrm{TV}(p_{\\mathrm{EU}},p_{\\mathrm{G}})$", "$\\mathrm{TV}(p_{\\mathrm{CD}},p_{\\mathrm{G}})$"]
+    table("trunc", "llrrrrrrr", rows, ["basis", "belief", "evaluations", "$d_{\\mathrm{denom}}$", "$\\mathrm{TV}(p_{\\mathrm{EU}},p_{\\mathrm{G}})$", "$\\mathrm{TV}(p_{\\mathrm{CD}},p_{\\mathrm{G}})$"]
           + mc("ratio") + ["EU closer", "EC beats EU"], "\\footnotesize", thin=1)
     put("clip.max", pc(max(r["ec_beats_eu"] for r in Tr.values())))
     put("clip.min", pc(min(r["ec_beats_eu"] for r in Tr.values())))
