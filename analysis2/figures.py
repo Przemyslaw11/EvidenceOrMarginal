@@ -40,11 +40,13 @@ SYMBOLS = (("CONST_DENOM", r"$p_{\mathrm{CD}}$"), ("EXACT_UNCAL", r"$p_{\mathrm{
 PAGE = 6.3  # text width in inches: paper figures are drawn at this size and included at scale 1
 CAP = 3
 HATCH = [None] * 4
+BAR = [0, 1, 2, 3]
 if PAPER:
     CAP = 1.5
+    BAR = [3, 1, 2, 0]  # d_denom keeps the colour it has in G2
     HATCH = [None, "////", "....", "xxxx"]
     plt.rcParams.update({"font.family": "STIXGeneral", "mathtext.fontset": "stix", "font.size": 8, "axes.titlesize": 8, "axes.labelsize": 8,
-                         "legend.fontsize": 7, "xtick.labelsize": 7, "ytick.labelsize": 7, "lines.linewidth": 1, "lines.markersize": 3.2,
+                         "legend.fontsize": 8, "xtick.labelsize": 8, "ytick.labelsize": 8, "lines.linewidth": 1, "lines.markersize": 3.2,
                          "axes.linewidth": 0.5, "grid.linewidth": 0.4, "xtick.major.width": 0.5, "ytick.major.width": 0.5, "xtick.minor.width": 0.3,
                          "ytick.minor.width": 0.3, "xtick.major.size": 2.5, "ytick.major.size": 2.5, "xtick.minor.size": 1.5, "ytick.minor.size": 1.5,
                          "axes.titleweight": "bold", "axes.titlelocation": "left", "axes.titlepad": 3, "axes.labelpad": 2, "legend.frameon": False,
@@ -69,7 +71,7 @@ def run_label(r):
     """'e2e4_adam' -> 'end-to-end\nL=4\nadam'."""
     loss, opt = r.split("_")
     if PAPER:
-        return {"val": "value", "nll": "NLL", "e2e4": "end-to-\nend, $L=4$"}[loss] + "\n" + {"adam": "Adam", "lbfgs": "L-BFGS"}[opt]
+        return {"val": "value", "nll": "NLL", "e2e4": "end-to-\nend,\n$L=4$"}[loss] + "\n" + {"adam": "Adam", "lbfgs": "L-BFGS"}[opt]
     return {"val": "val. loss", "nll": "NLL", "e2e4": "end-to-\nend, L=4"}[loss] + "\n" + opt
 
 
@@ -102,10 +104,21 @@ def typeset(fig):
         fig.subplots_adjust(hspace=0.42)
 
 
+def fit(fig):
+    """Narrow the axes until the figure, labels included, fits the text width: fonts stay at print size."""
+    for _ in range(4):
+        fig.canvas.draw()
+        excess = fig.get_tightbbox(fig.canvas.get_renderer()).width - (PAGE - 0.03)  # 0.02 is savefig's padding
+        if excess <= 0 or fig.get_constrained_layout():
+            return
+        fig.subplots_adjust(left=fig.subplotpars.left + excess / fig.get_figwidth())
+
+
 def save(fig, name):
     os.makedirs(OUT, exist_ok=True)
     if PAPER:
         typeset(fig)
+        fit(fig)
         fig.savefig(os.path.join(OUT, name + ".pdf"), bbox_inches="tight", pad_inches=0.01)
         plt.close(fig)
         return
@@ -134,7 +147,8 @@ def curve(ax, c, metric, color, marker, label, logy=True, band=True, ls="-"):
         y = np.where(c.share_undefined.to_numpy() >= 0.5, np.nan, y)
     if logy:
         y = np.where(y > 0, y, np.nan)
-    ax.plot(x, y, color=color, label=label, marker=None, ls=ls)
+    ax.plot(x, y, color=color, marker=None, ls=ls)
+    ax.plot([], [], color=color, marker=marker, ls=ls, label=label)  # legend entry shows the marker too
     below = c[metric + "_below_share"].to_numpy(float) >= 0.5 if metric + "_below_share" in c else np.zeros(len(c), bool)
     ok = np.isfinite(y)
     ax.plot(x[ok & ~below], y[ok & ~below], ls="none", marker=marker, color=color)
@@ -170,6 +184,7 @@ def g1(cg):
             if j == 0:
                 ax.set_ylabel("d_denom (TV)")
     if PAPER:
+        fig.subplots_adjust(wspace=0.24)
         fig.legend(*axs[0, 0].get_legend_handles_labels(), loc="lower center", ncol=5, bbox_to_anchor=(0.5, -0.07))
     else:
         axs[0, 0].legend(title="inputs", loc="lower right")
@@ -230,7 +245,7 @@ def g3(cg):
         axs[0, j].set_yscale("symlog", linthresh=0.1)
         axs[0, j].set_title(f"SUM, {basis} basis")
         axs[1, j].set_xlabel("input Spearman ρ_S")
-    axs[0, 0].set_ylabel("min D over [0,1]^k (upper bound)")
+    axs[0, 0].set_ylabel("min D over [0,1]^k\n(upper bound)")
     axs[1, 0].set_ylabel("P(D < 0), y uniform")
     if PAPER:
         fig.subplots_adjust(left=0.085)
@@ -250,13 +265,21 @@ def g4(cg):
             c = sel(cg, type=typ, belief="S2", basis=basis, m=4, eps=0.01)
             P = c.pivot_table(index="k", columns="rho_S", values="share_undefined")
             ax = axs[i, j]
-            im = ax.imshow(P.to_numpy(), aspect="auto", cmap="Blues", vmin=0, vmax=1, origin="lower")
+            if PAPER:  # vector cells, same array and cell centres as the image below
+                im = ax.pcolormesh(np.arange(P.shape[1] + 1) - 0.5, np.arange(P.shape[0] + 1) - 0.5, P.to_numpy(), cmap="Blues", vmin=0, vmax=1,
+                                   edgecolors="face", linewidth=0.2)
+                ax.grid(False)
+            else:
+                im = ax.imshow(P.to_numpy(), aspect="auto", cmap="Blues", vmin=0, vmax=1, origin="lower")
             ax.set_yticks(range(len(P.index)), [str(int(v)) for v in P.index])
             ax.set_xticks(range(0, len(P.columns), 2), [f"{v:g}" for v in P.columns[::2]], rotation=45)
             ax.set_title(f"{typ}, {basis}")
             ax.set_ylabel("$k$" if PAPER else "k")
             ax.set_xlabel("ρ_S")
-    fig.colorbar(im, ax=axs, label="share of seeds with EXACT_UNCAL undefined (S2)")
+    cb = fig.colorbar(im, ax=axs, label="share of seeds with EXACT_UNCAL undefined (S2)")
+    if PAPER:
+        cb.solids.set_rasterized(False)
+        cb.solids.set_edgecolor("face")
     fig.suptitle("G4: where the exact ratio E_q[N/D] is undefined (m=4)")
     save(fig, "G4_undefined_share")
 
@@ -280,7 +303,7 @@ def g5(tf, cf):
         axs[bi].set_xticks([2, 4, 8], ["2", "4", "8"])
         axs[bi].set_title(f"{basis} basis")
         axs[bi].set_xlabel("number of inputs k")
-    axs[0].set_ylabel("D<0 onset (ρ_S-equivalent, matched Kendall τ)")
+    axs[0].set_ylabel("D<0 onset (ρ_S-equivalent,\nmatched Kendall τ)")
     fig.legend(*axs[0].get_legend_handles_labels(), loc="lower center", ncol=4 if PAPER else 7, bbox_to_anchor=(0.5, -0.26 if PAPER else -0.1))
     fig.suptitle("G5: negativity onset by copula family (m=4, n_est=1e7, 95 % CI)")
     save(fig, "G5_copula_families")
@@ -323,7 +346,7 @@ def g7(cg):
                         val = np.nan
                     v.append(val)
                 xs = np.arange(len(ks)) + (mi - 1.5) * 0.2
-                ax.bar(xs, np.nan_to_num(v, nan=0), width=0.18, color=OI[mi], label=mt, hatch=HATCH[mi], edgecolor="white", lw=0)
+                ax.bar(xs, np.nan_to_num(v, nan=0), width=0.18, color=OI[BAR[mi]], label=mt, hatch=HATCH[mi], edgecolor="white", lw=0)
                 for x, val in zip(xs, v):
                     if not np.isfinite(val):
                         ax.text(x, 1.3e-4, "n/d", ha="center", va="bottom", fontsize=12, rotation=90, color="0.2")
@@ -356,14 +379,15 @@ def g8(net):
                 g = c.groupby("layer").d_total.median()
                 if g.empty:
                     continue
-                ax.plot(g.index, g.values, color=OI[ki], marker=MK[ri], alpha=0.5 + 0.5 * ri / 3,
+                ax.plot(g.index, g.values, color=OI[ki], marker=MK[ri], ls=("-", "--", ":")[ki], alpha=0.5 + 0.5 * ri / 3,
                         label=f"k={k}, ρ_S={rho}" if b == "S2" else None)
         ax.set_yscale("log")
         ax.set_xticks([1, 2, 3, 4])
         ax.set_xlabel("layer l")
         ax.set_title(f"belief {b}")
     axs[0].set_ylabel("d_total = TV(CONST_DENOM, GOLD), seed median")
-    fig.legend(*axs[0].get_legend_handles_labels(), loc="lower center", ncol=6, bbox_to_anchor=(0.5, -0.3 if PAPER else -0.2))
+    fig.legend(*axs[0].get_legend_handles_labels(), loc="lower center", ncol=6, bbox_to_anchor=(0.5, -0.3 if PAPER else -0.2),
+               **(dict(handlelength=1.6, handletextpad=0.4, columnspacing=0.8) if PAPER else {}))
     fig.suptitle("G8: depth compounding in the HCR chain (direct estimates, pair basis)")
     save(fig, "G8_depth")
 
@@ -374,7 +398,7 @@ def g9(net):
     n1 = net[(net.table == "neuron1") & (net.belief == "S2")]
     runs = [r for r in ("val_adam", "val_lbfgs", "nll_adam", "nll_lbfgs", "e2e4_adam", "e2e4_lbfgs")]
     fig, axs = plt.subplots(1, 2, figsize=(14, 5))
-    for ax, (metric, lab) in zip(axs, (("d_dc", "change of TV(CONST_DENOM, EXACT_CAL), neuron 1, S2"),
+    for ax, (metric, lab) in zip(axs, (("d_dc", "change of TV(CONST_DENOM, EXACT_CAL),\nneuron 1, S2"),
                                        ("P_Dneg_u", "change of P(D<0), neuron 1"))):
         for ii, init in enumerate(("direct", "flat")):
             base = n1[n1.run == ("direct" if init == "direct" else "flat_init")].set_index(["k", "rho_S", "basis", "seed"])[metric]
@@ -392,7 +416,11 @@ def g9(net):
         ax.axhline(0, color="0.3", lw=1)
         ax.set_xticks(range(len(runs)), [run_label(r) for r in runs])
         ax.set_ylabel(lab)
-    axs[0].legend()
+    if PAPER:
+        fig.subplots_adjust(wspace=0.3)
+        axs[0].legend(loc="lower left", bbox_to_anchor=(0.1, 1), ncol=2, borderaxespad=0, columnspacing=1.0)  # above the axes: clear of the bars
+    else:
+        axs[0].legend()
     fig.suptitle("G9: effect of training (median and 10-90 % over all k, ρ_S, bases, seeds)")
     save(fig, "G9_training")
 

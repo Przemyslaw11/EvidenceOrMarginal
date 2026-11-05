@@ -25,6 +25,7 @@ from analysis2 import figures as F  # noqa: E402
 plt = F.plt
 CD, EU, GREY = F.OI[0], F.OI[1], "#555555"
 KS = (2, 4, 8, 16, 32)
+SIZE = {2: 3, 4: 5, 8: 8, 16: 12, 32: 18}  # marker area also tells k, for greyscale print
 
 
 def f1(sem):
@@ -71,14 +72,14 @@ def f2(th):
             for typ, fill in (("SUM", True), ("CONTRAST", False)):
                 x = d[(d.k == k) & (d.basis == basis) & (d.type == typ)]
                 c = F.OI[F.KCOL[k]]
-                kw = dict(s=7, marker=mk, edgecolors=c, facecolors=c if fill else "none", linewidths=0.5)
+                kw = dict(s=SIZE[k], marker=mk, edgecolors=c, facecolors=c if fill else "none", linewidths=0.5)
                 axs[0].scatter(x.chi, x.d, **kw)
                 axs[1].scatter(x.pred, x.d, **kw)
     lo, hi = 1e-5, 0.2
     z = np.array([lo, hi])
     axs[1].fill_between(z, z / 2, z * 2, color="#000000", alpha=0.08, lw=0)
     axs[1].plot(z, z, color=GREY, lw=0.9)
-    axs[1].text(4e-5, 2.2e-4, "factor 2", rotation=33, color=GREY, fontsize=7)
+    axs[1].text(4e-5, 2.2e-4, "factor 2", rotation=33, color=GREY)
     for a in axs:
         a.set_xscale("log")
         a.set_yscale("log")
@@ -89,10 +90,10 @@ def f2(th):
     axs[0].set_ylabel(r"measured $d_{\mathrm{denom}}$")
     F.panel(axs[0], "a", "the pre-registered variable")
     F.panel(axs[1], "b", "the closed forms")
-    h = [Line2D([], [], ls="", marker="o", color=F.OI[F.KCOL[k]], label=f"$k={k}$") for k in KS]
+    h = [Line2D([], [], ls="", marker="o", ms=SIZE[k] ** 0.5, color=F.OI[F.KCOL[k]], label=f"$k={k}$") for k in KS]
     h += [Line2D([], [], ls="", marker="o", color=GREY, label="pair"), Line2D([], [], ls="", marker="^", color=GREY, label="triple"),
           Line2D([], [], ls="", marker="o", color=GREY, mfc="none", label="CONTRAST (hollow)")]
-    fig.legend(handles=h, loc="lower center", ncol=8, bbox_to_anchor=(0.5, -0.13), columnspacing=1.0, handletextpad=0.2)
+    fig.legend(handles=h, loc="lower center", ncol=8, bbox_to_anchor=(0.5, -0.2), columnspacing=0.8, handletextpad=0.2)
     F.save(fig, "F2_scaling")
 
 
@@ -105,13 +106,13 @@ def f3(th):
     for ax, b in zip(axs, ("pair", "triple")):
         p, g = sel(tp, b), sel(tg, b)
         ax.fill_between(p.k, floor, p.neg_onset, color=CD, alpha=0.13, lw=0)
-        ax.plot(p.k, p.neg_onset, color=CD, marker="o", label="population")
+        ax.plot(p.k, p.neg_onset, color=CD, marker="s", ls="--", label="population")  # solid n, dashed population, as in G2
         pos = g[g.neg_onset > 0]
-        ax.plot(pos.k, pos.neg_onset, color=EU, marker="s", ls="--", label=r"$n=10^7$")
+        ax.plot(pos.k, pos.neg_onset, color=EU, marker="o", label=r"$n=10^7$")
         zero = g[g.neg_onset <= 0]
         if len(zero):
             ax.scatter(zero.k, [floor * 1.25] * len(zero), marker="v", color=EU, s=10, zorder=3)
-            ax.text(zero.k.iloc[0] * 0.98, floor * 1.75, r"$\min D<0$ at $\rho_S=0$", ha="center", fontsize=7)
+            ax.text(zero.k.iloc[0] * 0.98, floor * 1.75, r"$\min D<0$ at $\rho_S=0$", ha="center")
         if b == "pair":
             r = pd.DataFrame(th["pair_onset"])
             r = r[r.m == 4].sort_values("k")
