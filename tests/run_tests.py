@@ -711,6 +711,7 @@ def main():
         print("M14:", "PASS" if ok else "FAIL", det)
     results = {k: {("pass" if kk == "pass_" else kk): vv for kk, vv in v.items()} for k, v in results.items()}
     save(results)
+    sys.exit(0 if all(v["pass"] for v in results.values()) else 1)
 
 
 if __name__ == "__main__":

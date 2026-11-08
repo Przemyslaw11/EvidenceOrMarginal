@@ -1,0 +1,25 @@
+name: check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt
+      - name: Numbers and tables
+        working-directory: paper
+        run: |
+          python make_numbers.py
+          python check_numbers.py
+      - name: Fast validation tests on CPU
+        run: python tests/run_tests.py pre --device cpu --only M1,M2,M5,M6,M7,M8,M10 --out "$RUNNER_TEMP/test_results.json"
