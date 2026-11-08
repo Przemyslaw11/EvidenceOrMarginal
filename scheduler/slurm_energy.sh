@@ -1,4 +1,5 @@
 #!/bin/bash
+# Site-specific settings (Athena, PLGrid): partition, modules and a venv/ at the repository root; adapt them to your cluster.
 # Stage 7: one time/energy measurement run (gpu/energy.py) on one GPU, nothing else in the job.
 # Submit from the repository root:
 #   sbatch -A <account> -p plgrid-now --time=00:58:00 scheduler/slurm_energy.sh <float32|float64> <replicate>

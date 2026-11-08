@@ -1,4 +1,5 @@
 #!/bin/bash
+# Site-specific settings (Athena, PLGrid): partition, modules, the home quota check and a venv/ at the repository root; adapt them to your cluster.
 # One worker per array task (1 GPU each); all tasks pull from the same idempotent job list(s).
 # Submit from the repository root:
 #   sbatch -A <account> --array=0-39%40 --time=08:00:00 scheduler/slurm_array.sh results/jobs_gauss.jsonl [...]

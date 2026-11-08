@@ -1,4 +1,5 @@
 #!/bin/bash
+# Site-specific settings (Athena, PLGrid): partition, modules and a venv/ at the repository root; adapt them to your cluster.
 # GPU validation run: the test suite on the A100, then the cost profile (it saves after every cell). Submit from the repository root:
 #   sbatch -A <account> [-p plgrid-now] scheduler/slurm_validate.sh
 #SBATCH --job-name=hcr-validate
