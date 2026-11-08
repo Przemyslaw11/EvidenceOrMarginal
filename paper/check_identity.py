@@ -10,8 +10,8 @@ import numpy as np
 import torch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from gpu import copulas as C
-from gpu.core import DT, input_basis, legendre, population_model
+from densprop.domain import copulas as C
+from densprop.domain.neuron import DT, input_basis, legendre, population_model
 
 M, m, rho = 2**20, 4, 0.3
 R, _ = C.coupled_R("SUM", 2, rho)

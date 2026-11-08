@@ -30,7 +30,7 @@ import time
 import numpy as np
 import torch
 
-from .core import Model, gauss_legendre, input_basis, legendre, pairs
+from densprop.domain.neuron import Model, gauss_legendre, input_basis, legendre, pairs
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "results", "energy")

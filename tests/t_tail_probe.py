@@ -12,7 +12,7 @@ import numpy as np
 import torch
 from scipy.special import stdtr, stdtrit
 
-from gpu import copulas as C
+from densprop.domain import copulas as C
 
 xg = np.concatenate([-np.logspace(-6, 6, 300), np.logspace(-6, 6, 300)])
 ug = np.concatenate([np.logspace(-14, np.log10(0.5), 200), 1 - np.logspace(-14, np.log10(0.5), 200)])

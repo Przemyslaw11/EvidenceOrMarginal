@@ -1,4 +1,4 @@
-"""Stage 4 job: one (k, rho_S, basis, seed) configuration of the HCR chain; called by gpu.job for exp == 'network'.
+"""Stage 4 job: one (k, rho_S, basis, seed) configuration of the HCR chain; called by the job runner for exp == 'network'.
 
 Runs: the directly estimated chain (L = 4, every layer reported, which covers L = 1..4 because propagation is causal),
 then training from the direct estimates and from a flat-D control initialisation:
@@ -14,10 +14,10 @@ import numpy as np
 import pandas as pd
 import torch
 
-from gpu.core import DT, input_basis, legendre
-from gpu.propagate import Grid, beta_logq, sample_beliefs
-from network.chain import LayerGrid, Teacher, estimate_student, propagate_chain
-from network.train import Data, Params, loss_val, make_loss_e2e, make_loss_nll, train
+from densprop.domain.chain import LayerGrid, Teacher, estimate_student, propagate_chain
+from densprop.domain.neuron import DT, input_basis, legendre
+from densprop.domain.propagate import Grid, beta_logq, sample_beliefs
+from densprop.domain.train import Data, Params, loss_val, make_loss_e2e, make_loss_nll, train
 
 
 def run_network_job(spec, cfg, device, rng_for):

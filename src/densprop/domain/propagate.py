@@ -16,7 +16,7 @@ import numpy as np
 import torch
 from scipy.special import betaln
 
-from .core import DT, chunk_for, gauss_legendre, input_basis, legendre
+from densprop.domain.neuron import DT, chunk_for, gauss_legendre, input_basis, legendre
 
 NAN = float("nan")
 

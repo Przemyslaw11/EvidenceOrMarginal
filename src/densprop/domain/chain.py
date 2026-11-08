@@ -6,7 +6,7 @@ side inputs w_l ~ N(0, 1). The structure is Markov by construction, and w_l is i
 so the product belief rho_(l-1)(h) q_w(w) used by the paper's propagation is exact for this teacher.
 
 Student: neuron 1 models (h_1; y_1..y_k) with the pair or triple basis; neuron l >= 2 models (h_l; h_(l-1), w_l) (k = 2).
-Layer 1 is propagated by the Monte Carlo engine (gpu.propagate.evaluate_case); layers >= 2 deterministically on a
+Layer 1 is propagated by the Monte Carlo engine (propagate.evaluate_case); layers >= 2 deterministically on a
 Gauss-Legendre grid in (h, w), with q_w uniform:
     CONST_DENOM  closed form  c_l,i = (c_i + sum_j W1[i,0,j-1] c_(l-1),j) / (1 + sum_j W1[0,0,j-1] c_(l-1),j)
     EXACT_UNCAL  e_l,i = int int A_i/A_0 rho_(l-1)(h) dh dw, defined only if rho_(l-1) >= 0 and D_l >= D_floor on its support
@@ -18,9 +18,9 @@ import math
 import numpy as np
 import torch
 
-from gpu import copulas as C
-from gpu.core import DT, Estimator, gauss_legendre, input_basis, legendre
-from gpu.propagate import evaluate_case, min_D, tv_stats
+from densprop.domain import copulas as C
+from densprop.domain.neuron import DT, Estimator, gauss_legendre, input_basis, legendre
+from densprop.domain.propagate import evaluate_case, min_D, tv_stats
 
 NAN = float("nan")
 

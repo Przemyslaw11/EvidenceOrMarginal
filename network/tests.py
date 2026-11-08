@@ -5,12 +5,12 @@ import math
 import numpy as np
 import torch
 
-from gpu import copulas as C
-from gpu.core import DT, input_basis, legendre
+from densprop.domain import copulas as C
+from densprop.domain.chain import LayerGrid, Teacher, cd_layer, estimate_student, gold_layers, kernels, poly_on, propagate_chain
+from densprop.domain.neuron import DT, input_basis, legendre
+from densprop.domain.propagate import Grid, beta_logq, evaluate_case, sample_beliefs
+from densprop.domain.train import Data, Params, loss_val, make_loss_e2e, make_loss_nll
 from gpu.job import load_cfg
-from gpu.propagate import Grid, beta_logq, evaluate_case, sample_beliefs
-from network.chain import LayerGrid, Teacher, cd_layer, estimate_student, gold_layers, kernels, poly_on, propagate_chain
-from network.train import Data, Params, loss_val, make_loss_e2e, make_loss_nll
 
 
 def _setup(dev, k=4, rho=0.2, L=3, n_est=200000, M=2**15):

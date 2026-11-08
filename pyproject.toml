@@ -26,6 +26,13 @@ gpu = ["torch>=2.4.0", "nvidia-ml-py"]  # NVML for the energy benchmark
 [dependency-groups]
 dev = ["pytest>=8", "ruff>=0.13"]
 
+[build-system]
+requires = ["uv_build>=0.8.19,<0.10"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "densprop"
+
 [tool.uv]
 # The versions that rebuilt the paper's outputs byte for byte (Python 3.13, macOS); the lock keeps them.
 constraint-dependencies = [

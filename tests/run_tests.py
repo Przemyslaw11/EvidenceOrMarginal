@@ -26,8 +26,8 @@ import torch
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-from gpu import copulas as C  # noqa: E402
-from gpu.core import (
+from densprop.domain import copulas as C  # noqa: E402
+from densprop.domain.neuron import (
     DT,
     Estimator,
     Model,
@@ -41,8 +41,8 @@ from gpu.core import (
     order_of,
     population_model,
 )
+from densprop.domain.propagate import Grid, beta_logq, evaluate_case, min_D, sample_beliefs  # noqa: E402
 from gpu.job import load_cfg, rng_for, run_job, setup_torch  # noqa: E402
-from gpu.propagate import Grid, beta_logq, evaluate_case, min_D, sample_beliefs  # noqa: E402
 
 OUT = os.path.join(ROOT, "results", "small", "test_results.json")
 DEV = "cpu"

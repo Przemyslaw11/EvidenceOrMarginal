@@ -27,8 +27,8 @@ from scipy.special import ndtr
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-from gpu import copulas as C  # noqa: E402
-from gpu.core import input_basis, legendre, population_model  # noqa: E402
+from densprop.domain import copulas as C  # noqa: E402
+from densprop.domain.neuron import input_basis, legendre, population_model  # noqa: E402
 
 m = 4
 s = np.linspace(-8, 8, 1601)

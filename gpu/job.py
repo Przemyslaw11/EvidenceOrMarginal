@@ -17,9 +17,9 @@ import pandas as pd
 import torch
 import yaml
 
-from . import copulas as C
-from .core import Estimator, chunk_for, population_model
-from .propagate import Grid, beta_logq, case_rows, mc_pass, sample_beliefs, solve_mind
+from densprop.domain import copulas as C
+from densprop.domain.neuron import Estimator, chunk_for, population_model
+from densprop.domain.propagate import Grid, beta_logq, case_rows, mc_pass, sample_beliefs, solve_mind
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STREAM = {"est": 0, "mc": 1, "mind": 2, "lkj": 3, "train": 4, "val": 5, "test": 6}
@@ -106,7 +106,7 @@ def run_job(spec, cfg, device="cpu"):
     setup_torch(device)
     cfg = _merged(json.loads(json.dumps(cfg)), spec.get("override", {}))
     if spec["exp"] == "network":
-        from network.job import run_network_job
+        from densprop.domain.network_job import run_network_job
 
         df = run_network_job(spec, cfg, device, rng_for)
         return _tag(df, spec, int(cfg["network"]["n_est"])), _meta(spec, t0, 0.0, device)

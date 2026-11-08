@@ -12,7 +12,7 @@ import numpy as np
 import torch
 from scipy import special as sps
 
-from .core import DT
+from densprop.domain.neuron import DT
 
 log = logging.getLogger(__name__)
 PD_TOL = 1e-6

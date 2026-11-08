@@ -23,8 +23,8 @@ from scipy.special import ndtr
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-from gpu import copulas as C  # noqa: E402
-from gpu.core import input_basis, population_model  # noqa: E402
+from densprop.domain import copulas as C  # noqa: E402
+from densprop.domain.neuron import input_basis, population_model  # noqa: E402
 
 KS = (2, 4, 8, 16, 32)
 MS = (2, 4, 6)
@@ -166,7 +166,7 @@ def flat_expansion():
     rng = np.random.default_rng(2)
     Y = torch.tensor(rng.random((1 << 19, 2)))
     x, w = (torch.tensor(v) for v in (XG, WG))
-    from gpu.core import legendre
+    from densprop.domain.neuron import legendre
 
     Fx = legendre(x, 4)
     res = {}
@@ -626,7 +626,7 @@ def noise_extremes():
 # ---------------------------------------------------------------- 5. the sharper TV bound
 def tv_bounds():
     rng = np.random.default_rng(6)
-    from gpu.core import legendre
+    from densprop.domain.neuron import legendre
 
     x, w = torch.tensor(XG), torch.tensor(WG)
     Fx = legendre(x, 4)

@@ -18,7 +18,7 @@ cd "$SLURM_SUBMIT_DIR" || exit 1
 module purge
 module load Python/3.10.4 CUDA/12.4.0
 source venv/bin/activate || { echo "Failed to activate venv"; exit 1; }
-export PYTHONPATH="${SLURM_SUBMIT_DIR}:${PYTHONPATH}"
+export PYTHONPATH="${SLURM_SUBMIT_DIR}/src:${SLURM_SUBMIT_DIR}:${PYTHONPATH}"  # the package, without installing it
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-8}"
 
 nvidia-smi --query-gpu=name,driver_version,clocks.max.sm,clocks.sm,power.limit,temperature.gpu --format=csv

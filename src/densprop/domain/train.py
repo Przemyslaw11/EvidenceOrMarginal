@@ -15,8 +15,8 @@ import time
 import numpy as np
 import torch
 
-from gpu.core import DT, Model, gauss_legendre, input_basis, legendre
-from network.chain import cd_layer
+from densprop.domain.chain import cd_layer
+from densprop.domain.neuron import DT, Model, gauss_legendre, input_basis, legendre
 
 SQ12 = math.sqrt(12.0)
 
@@ -79,7 +79,7 @@ class Data:
     """Basis tables of the neuron inputs for one split of teacher samples."""
 
     def __init__(self, samples, L, m, device):
-        from network.chain import neuron_inputs
+        from densprop.domain.chain import neuron_inputs
 
         self.x, self.F, self.Fx = [], [], []
         for l in range(1, L + 1):
