@@ -12,6 +12,7 @@
 8. Recomputes the headline numbers of the post hoc additions (flip, regression message, pilot, support cut, convex bound) by a separate route.
 """
 import glob
+import hashlib
 import json
 import math
 import os
@@ -278,9 +279,18 @@ def repo_detail():
         check(True, name)
 
 
+FROZEN_SHA256 = "55b88cae43d32e71e71900b98af8d38e9e526a0fcea2903ec5a6f14940fc3024"  # PREREGISTRATION.md at 8abbf12
+
+
 def frozen():
-    a = subprocess.run(["/usr/bin/git", "show", "8abbf12:PREREGISTRATION.md"], cwd=ROOT, capture_output=True, check=True).stdout
-    check(a == open(os.path.join(ROOT, "PREREGISTRATION.md"), "rb").read(), "PREREGISTRATION.md changed")
+    b = open(os.path.join(ROOT, "PREREGISTRATION.md"), "rb").read()
+    check(hashlib.sha256(b).hexdigest() == FROZEN_SHA256, "PREREGISTRATION.md changed")
+    try:  # a full clone can also compare with the freeze commit itself; an archive export has no history
+        a = subprocess.run(["git", "show", "8abbf12:PREREGISTRATION.md"], cwd=ROOT, capture_output=True, check=True).stdout
+    except (OSError, subprocess.CalledProcessError):
+        print("freeze commit 8abbf12 not available: git comparison skipped")
+        return
+    check(a == b, "PREREGISTRATION.md differs from commit 8abbf12")
 
 
 def main():
