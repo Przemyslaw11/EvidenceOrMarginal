@@ -14,6 +14,7 @@
 
 import glob
 import hashlib
+import itertools
 import json
 import math
 import os
@@ -83,7 +84,7 @@ def hypotheses():
         check(sum(x["inside"] for x in c) == H[h]["n_inside"] and sum(x["outside"] for x in c) == H[h]["n_outside"], f"{h}: counts")
         want[h] = "not supported" if any(x["outside"] for x in c) else "supported" if all(x["inside"] for x in c) else "inconclusive"
     for x in H["H3a"]["cells"]:
-        check(x["inside"] == (-0.05 <= x["ci"][0] and x["ci"][1] <= 0.05), f"H3a cell {x['family']} {x['k']}: inside")
+        check(x["inside"] == (x["ci"][0] >= -0.05 and x["ci"][1] <= 0.05), f"H3a cell {x['family']} {x['k']}: inside")
     v = H["H3c"]["share"]
     want["H3c"] = "supported" if v >= 0.8 else "not supported" if v < 0.5 else "inconclusive"
     v = H["H4a"]["share"]
@@ -102,13 +103,13 @@ def hypotheses():
         if "significant" in H[k]:
             n = len(H[k]["cells"])
             check(r[3].startswith(f"{H[k]['significant']}/{n}"), f"table row {k}: count")
-    check(set(w for _, _, w, _ in rows) <= {"supported", "not supported", "inconclusive"}, "verdict words")
+    check({w for _, _, w, _ in rows} <= {"supported", "not supported", "inconclusive"}, "verdict words")
 
 
 def tex_rows(name):
     t = open(os.path.join(GEN, f"tab_{name}.tex")).read()
     rows = [[c.strip() for c in r.split(" & ")] for r in re.findall(r"^(.*?) \\\\$", t, re.M)][1:]
-    for a, b in zip(rows, rows[1:]):  # the tables leave repeated labels blank
+    for a, b in itertools.pairwise(rows):  # the tables leave repeated labels blank
         for i, c in enumerate(b):
             if c:
                 break
@@ -126,7 +127,6 @@ def reports():
         )
     }
     rows = tex_rows("thr_full")
-    last = None
     n = 0
     for r in rows:
         if r[0] in ("SUM", "CONTRAST"):
@@ -134,8 +134,7 @@ def reports():
             check(md.get(tuple(r[:3])) == r[3:], f"thresholds differ from the report: {r[:3]}")
     check(n == len(md) == 20, "threshold rows")
     V = make_numbers.V
-    for pat, key in ((r"\*\*(?:not )?supported\*\* \(4/4 cells", None),):
-        check(re.search(pat, rep), "report H1a")
+    check(re.search(r"\*\*(?:not )?supported\*\* \(4/4 cells", rep), "report H1a")
     for txt, key in (
         ("21/48 CIs inside, 27 entirely outside", "H3a"),
         ("73/236 inside, 156 outside", "H3b"),
@@ -256,7 +255,7 @@ def additions():
     for k, want in ((2, 6 / math.pi * math.asin(1 / 48)), (32, 6 / math.pi * math.asin(1 / 768))):
         check(V[f"on.arc.{k}"] == f"{want:.4f}", "explicit condition of the first bound")
     Tj = json.load(open(os.path.join(HERE, "theory.json")))["pair_onset_large"]
-    check([r["k"] for r in Tj] == [8, 32, 128, 512, 2048] and all(a["k_rho"] < b["k_rho"] for a, b in zip(Tj, Tj[1:])), "convex bound rises")
+    check([r["k"] for r in Tj] == [8, 32, 128, 512, 2048] and all(a["k_rho"] < b["k_rho"] for a, b in itertools.pairwise(Tj)), "convex bound rises")
     check(all(V[f"on.conv.kr.{r['k']}"] == f"{r['k_rho']:.3f}" for r in Tj), "convex bound macros")
     c = pd.read_csv(os.path.join(S, "curves_gauss.csv.gz"))
     c = c[

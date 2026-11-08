@@ -619,7 +619,7 @@ def noise_extremes():
     check("surrogate cube minimum at least as deep as corners", all(r["z_cube"] >= r["z_corner"] - 1e-9 for r in rows))
     check(
         "pair: measured z below the surrogate cube value at k = 32",
-        ph[("pair", 32)]["z"] < [r for r in rows if r["basis"] == "pair" and r["k"] == 32][0]["z_cube"],
+        ph[("pair", 32)]["z"] < next(r for r in rows if r["basis"] == "pair" and r["k"] == 32)["z_cube"],
     )
 
 

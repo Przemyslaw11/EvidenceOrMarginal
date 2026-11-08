@@ -51,8 +51,8 @@ def h1a_h2a_h2b_pop(pop):
     th = th[th.belief == "S2"]  # minD does not depend on the belief
     out = {}
     cells = []
-    for (typ, basis), g in th[th.m == 4].groupby(["type", "basis"]):
-        g = g.sort_values("k")
+    for (typ, basis), cell in th[th.m == 4].groupby(["type", "basis"]):
+        g = cell.sort_values("k")
         v = g.neg_onset.to_numpy()
         cells.append(dict(type=typ, basis=basis, k=g.k.tolist(), onset=v.tolist(), sig=bool(np.all(np.diff(v) < 0))))
     s = sum(c["sig"] for c in cells)
@@ -98,7 +98,7 @@ def h1b_h2b_gauss(g):
         idx = boot_idx(len(seeds))  # paired: pair and triple share random numbers within a seed
         res = {}
         for basis in ("pair", "triple"):
-            rhos, sd, V = seed_matrix(gg[(gg.basis == basis) & gg.seed.isin(seeds)], "minD", defined_col=None)
+            rhos, _, V = seed_matrix(gg[(gg.basis == basis) & gg.seed.isin(seeds)], "minD", defined_col=None)
             res[basis] = (onset_negative(rhos, median_curve(V)), np.array([onset_negative(rhos, median_curve(V[i])) for i in idx]))
         diff = res["triple"][1] - res["pair"][1]
         lo, hi = ci(diff)
@@ -350,7 +350,7 @@ def h5(net):
     n1 = net[(net.table == "neuron1") & np.isclose(net.eps, 0.01) & (net.belief == "S2")].copy()
     n1.loc[n1.defined != 1, "d_denom"] = np.nan
     before = n1[n1.run == "direct"]
-    for hname, value, cond in (("H5b", "d_denom", lambda b: True), ("H5c", "P_Dneg_u", lambda b: b > 0)):
+    for hname, value in (("H5b", "d_denom"), ("H5c", "P_Dneg_u")):
         cells = []
         for run_prefix in ("val_adam", "val_lbfgs", "nll_adam", "nll_lbfgs", "e2e4_adam", "e2e4_lbfgs"):
             after = n1[n1.run == f"{run_prefix}_direct"]

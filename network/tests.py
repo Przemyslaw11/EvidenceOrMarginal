@@ -40,11 +40,11 @@ def m14(dev):
     sg = Grid(801, 8.0, 192, 4, dev)
     lg = LayerGrid(192, 4, dev)
     # (a) chain of length 1 == single-neuron engine
-    rc, r1 = propagate_chain(models[:1], t, bel, Ws[:, :1], sg, lg, cfg, np.random.default_rng(0), dev)
+    rc, _ = propagate_chain(models[:1], t, bel, Ws[:, :1], sg, lg, cfg, np.random.default_rng(0), dev)
     single = evaluate_case(models[0], C.Gaussian(t.R1, dev), bel, sg, cfg, np.random.default_rng(0), [4], dev)
     diff = 0.0
     for r in rc:
-        s = [x for x in single if x["belief"] == r["belief"] and x["eps"] == r["eps"]][0]
+        s = next(x for x in single if x["belief"] == r["belief"] and x["eps"] == r["eps"])
         for key in ("d_total", "d_model_cal", "d_dc"):
             diff = max(diff, abs(r[key] - s[key]))
     ok &= diff < 1e-12

@@ -46,8 +46,8 @@ def from_results():
         n = len(sp["cases"])
         key = f"{sp.get('family', 'gauss')}_{sp['k']}_{sp['basis']}"
         groups.setdefault(key, []).append((m["est_s"] / n * cost["n_est_ref"] / sp["n_est"], (m["wall_s"] - m["est_s"] - 30) / n))
-    for key, v in groups.items():
-        v = np.array(v)
+    for key, times in groups.items():
+        v = np.array(times)
         cost["cells"][key] = dict(est_s_per_case=float(np.median(v[:, 0])), case_s=float(np.median(v[:, 1])), n_jobs=len(v), source="production")
     if net:
         cost["network"] = {"measured": float(np.median(net)), "n_jobs": len(net)}

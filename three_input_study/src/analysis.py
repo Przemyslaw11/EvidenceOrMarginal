@@ -14,7 +14,7 @@ def first_crossing(rho, v, thr, absval=True, below=False):
     Returns (value or nan, note)."""
     rho = np.asarray(rho, float)
     v = np.asarray(v, float)
-    f = (lambda x: np.abs(x)) if absval else (lambda x: x)
+    f = np.abs if absval else (lambda x: x)
     hit = (lambda x: x <= thr) if below else (lambda x: x >= thr)
     for i in range(len(rho)):
         if np.isnan(v[i]):

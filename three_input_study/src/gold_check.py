@@ -6,7 +6,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 import pandas as pd
-from hcr import *
+from hcr import ROOT, Grid, corr_matrix, load_cfg
 
 cfg = load_cfg()
 z = np.load(ROOT + "/results/coeffs.npz")

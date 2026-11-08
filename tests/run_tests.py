@@ -193,7 +193,7 @@ def M3():
     det.append(f"SE(1e6)/SE(1e7) median {ratio:.3f} (sqrt(10)={math.sqrt(10):.3f})")
     # population coefficients (Gauss-Hermite) vs MC estimates, and GH node convergence
     for basis in ("pair", "triple"):
-        cop, (mc, mse) = estimate_model(R, 10**6, basis, m=4, seed=5)
+        _, (mc, mse) = estimate_model(R, 10**6, basis, m=4, seed=5)
         gh = CFG["numerics"]["gh_nodes"]
         pop = population_model(R, 4, basis, gh, DEV)
         zmax = 0.0
@@ -298,12 +298,12 @@ def COP():
             tail = [t_tail(nu, x) for x in xg]
             lower = _np(C.t_cdf(torch.as_tensor(-xg, dtype=DT, device=DEV), nu))
             upper = _np(C.t_cdf(torch.as_tensor(xg, dtype=DT, device=DEV), nu))
-            el = max(el, max(float(abs(mpmath.mpf(float(f)) / t - 1)) for f, t in zip(lower, tail)))
-            eu = max(eu, max(float(abs(mpmath.mpf(float(f)) - (1 - t))) for f, t in zip(upper, tail)))
+            el = max(el, *(float(abs(mpmath.mpf(float(f)) / t - 1)) for f, t in zip(lower, tail)))
+            eu = max(eu, *(float(abs(mpmath.mpf(float(f)) - (1 - t))) for f, t in zip(upper, tail)))
             q = _np(C.t_ppf(torch.as_tensor(ug, dtype=DT, device=DEV), nu))
             ok &= bool((np.sign(q) * (ug - 0.5) >= 0).all())
             p = [min(mpmath.mpf(float(u)), 1 - mpmath.mpf(float(u))) for u in ug]
-            eq = max(eq, max(float(abs(t_tail(nu, x) / b - 1)) for x, b in zip(q, p)))
+            eq = max(eq, *(float(abs(t_tail(nu, x) / b - 1)) for x, b in zip(q, p)))
     ok &= el < 1e-12 and eu < 1e-15 and eq < 1e-12
     det.append(
         f"t CDF (nu = 3, 10) vs mpmath: lower tail rel err {el:.1e}, upper side abs err {eu:.1e}; quantile: rel err of its tail probability {eq:.1e}"
@@ -367,7 +367,7 @@ def M4(M):
     phs = np.exp(-0.5 * sgrid**2) / math.sqrt(2 * math.pi)
     from scipy.stats import beta as bd
 
-    for typ, rho, m, bel_n, eps, mt, ov, nv, nse in ql_rows:
+    for typ, rho, m, bel_n, _, mt, ov, nv, nse in ql_rows:
         if mt != "d_total":
             continue
         R, _ = C.coupled_R(typ, 2, rho)
@@ -429,10 +429,10 @@ def _case(k, typ, rho, basis, M, names, n_est=200000, flat=False, pop=False):
 
 
 def M5():
-    worst, det = 0.0, []
+    worst = 0.0
     for k, basis, rho in ((2, "triple", 0.4), (4, "triple", 0.3), (8, "pair", 0.2)):
-        _, _, _, df, dens = _case(k, "SUM", rho, basis, 2**15, ("S1", "S2", "S3a", "S3b", "S3c", "S3d", "S4"), flat=True)
-        for (b, m), d in dens.items():
+        *_, dens = _case(k, "SUM", rho, basis, 2**15, ("S1", "S2", "S3a", "S3b", "S3c", "S3d", "S4"), flat=True)
+        for d in dens.values():
             worst = max(worst, float((d["cd_c"] - d["eu_c"]).abs().max()))
     return worst < 1e-10, f"flat-D control: max |CONST_DENOM - EXACT_UNCAL| coefficient diff {worst:.2e} over all beliefs, m, k in (2,4,8)"
 
@@ -440,7 +440,7 @@ def M5():
 def M6():
     worst, n = 0.0, 0
     for k, basis, typ, rho in ((2, "triple", "CONTRAST", 0.2), (4, "pair", "SUM", 0.2), (4, "triple", "CONTRAST", 0.1)):
-        model, cop, bel, df, dens = _case(k, typ, rho, basis, 2**15, ("S1", "S2", "S3a", "S3c", "S3d", "S4"))
+        model, _, bel, _, dens = _case(k, typ, rho, basis, 2**15, ("S1", "S2", "S3a", "S3c", "S3d", "S4"))
         for (b, m), d in dens.items():
             if not d["defined"] or d["n_drop"]:
                 continue
@@ -494,7 +494,7 @@ def M8():
         c1, c2 = cof(a1, b1), cof(a2, b2)
         xs = np.linspace(0, 1, 200001)  # reference in x: |polynomial difference| on a very fine grid
         diff = _np(legendre(torch.as_tensor(xs, device=DEV), 6) @ (c1 - c2))
-        exact = 0.5 * np.trapezoid(np.abs(diff), xs) if hasattr(np, "trapezoid") else 0.5 * np.trapz(np.abs(diff), xs)
+        exact = 0.5 * np.trapezoid(np.abs(diff), xs) if hasattr(np, "trapezoid") else 0.5 * np.trapz(np.abs(diff), xs)  # noqa: NPY201  numpy 1.26 on the cluster
         tvs = float(grid.tv(grid.poly_s(c1), grid.poly_s(c2)))
         worst = max(worst, abs(tvs - exact))
     ok &= worst < 1e-6
@@ -593,7 +593,7 @@ def M10():
     h = logging.Handler()
     h.emit = lambda r: logs.append(r.getMessage())
     C.log.addHandler(h)
-    R, info = C.coupled_R("SUM", 4, 0.0, c_max=1.0, c_scale=2.0)
+    _, info = C.coupled_R("SUM", 4, 0.0, c_max=1.0, c_scale=2.0)
     C.log.removeHandler(h)
     ok &= info["c_reductions"] > 0 and info["min_eig"] > C.PD_TOL and len(logs) == info["c_reductions"]
     det.append(f"forced case: c {info['c_requested']:.3f} -> {info['c']:.3f} in {info['c_reductions']} logged steps")

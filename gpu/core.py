@@ -72,7 +72,7 @@ def masks(k, m, basis, cap=None, device="cpu"):
         out["W2"] = (rows2[:, None, None] & ok(tot))[:, None].expand(m + 1, P, m, m).clone()
     if o >= 3 and k >= 3:
         n3 = m + 1 if o >= 4 else 1
-        pa, pb = pairs(k)
+        _, pb = pairs(k)
         third = torch.arange(k, device=device)[None, :] > torch.as_tensor(pb, device=device)[:, None]  # (P, k)
         tot = deg_x[:n3, None, None, None] + deg_y[None, :, None, None] + deg_y[None, None, :, None] + deg_y[None, None, None, :]  # (n3, m, m, m)
         out["W3"] = (ok(tot)[:, None, :, :, None, :] & third[None, :, None, None, :, None]).expand(n3, P, m, m, k, m).clone()

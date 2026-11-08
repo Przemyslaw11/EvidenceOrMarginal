@@ -184,7 +184,7 @@ def train(params, loss_fn, splits, opt, ocfg, upto=None):
             loss.backward()
             return loss
 
-        for it in range(1, ocfg["outer"] + 1):
+        for _ in range(ocfg["outer"]):
             try:
                 o.step(closure)
             except RuntimeError as e:  # recorded, not patched

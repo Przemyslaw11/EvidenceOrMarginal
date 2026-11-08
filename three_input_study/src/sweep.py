@@ -7,7 +7,7 @@ import time
 import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from hcr import *
+from hcr import Grid, corr_matrix, ctrue_grid, evaluate, gold_for, scenario_specs
 
 
 def run_sweep(cfg, coeffs, nodes, types=None, rhos=None, ms=None, want_dens=False, log=print):

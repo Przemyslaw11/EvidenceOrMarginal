@@ -495,7 +495,7 @@ def g9(net):
     if net is None:
         return
     n1 = net[(net.table == "neuron1") & (net.belief == "S2")]
-    runs = [r for r in ("val_adam", "val_lbfgs", "nll_adam", "nll_lbfgs", "e2e4_adam", "e2e4_lbfgs")]
+    runs = ["val_adam", "val_lbfgs", "nll_adam", "nll_lbfgs", "e2e4_adam", "e2e4_lbfgs"]
     fig, axs = plt.subplots(1, 2, figsize=(14, 5))
     for ax, (metric, lab) in zip(axs, (("d_dc", "change of TV(CONST_DENOM, EXACT_CAL),\nneuron 1, S2"), ("P_Dneg_u", "change of P(D<0), neuron 1"))):
         for ii, init in enumerate(("direct", "flat")):
@@ -536,7 +536,7 @@ def onepager(cg, tg, tp, net):
     ax = axs[0, 0]
     if cg is not None:
         for k in (2, 8, 32):
-            for ti, typ in enumerate(("SUM", "CONTRAST")):
+            for typ in ("SUM", "CONTRAST"):
                 c = sel(cg, type=typ, belief="S2", basis="pair", m=4, eps=0.01, k=k)
                 if len(c):
                     curve(ax, c, "d_denom", OI[KCOL[k]], MK[KCOL[k]], f"k={k} {typ}", band=False, ls="-" if typ == "SUM" else "--")
@@ -548,7 +548,7 @@ def onepager(cg, tg, tp, net):
     ax = axs[0, 1]
     if tg is not None:
         for bi, basis in enumerate(("pair", "triple")):
-            for ti, typ in enumerate(("SUM", "CONTRAST")):
+            for typ in ("SUM", "CONTRAST"):
                 c = sel(tg, type=typ, basis=basis, m=4, belief="S2").sort_values("k")
                 ax.plot(
                     c.k,

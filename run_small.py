@@ -38,11 +38,11 @@ def main():
                 continue
             if exp == "network" and s["rho_S"] != 0.2:
                 continue
-            s = {kk: v for kk, v in s.items() if kk != "id"}
+            small = {kk: v for kk, v in s.items() if kk != "id"}
             if exp == "gauss":
-                s["n_est"] = 10**6
-            s["override"] = ov if exp != "network" else {"network": {"seeds": 1, "adam": {"steps": 500}, "lbfgs": {"outer": 10}}}
-            out.append(with_id(s))
+                small["n_est"] = 10**6
+            small["override"] = ov if exp != "network" else {"network": {"seeds": 1, "adam": {"steps": 500}, "lbfgs": {"outer": 10}}}
+            out.append(with_id(small))
         with open(os.path.join(res, f"jobs_{exp}.jsonl"), "w") as f:
             f.writelines(json.dumps(s) + "\n" for s in out)
     run(

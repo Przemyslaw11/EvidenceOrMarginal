@@ -182,7 +182,7 @@ def f5(dens):
     fig, axs = plt.subplots(2, 3, figsize=(15, 7.5), sharey=True)
     for i, sc in enumerate(["S2", "S3c"]):
         for j, rho in enumerate([0.0, 0.4, 0.8]):
-            key = [k for k in dens if k[1] == sc and np.isclose(k[0], rho) and k[2] == 0.01][0]
+            key = next(k for k in dens if k[1] == sc and np.isclose(k[0], rho) and k[2] == 0.01)
             ax = axs[i, j]
             draw_dens(ax, dens[key])
             ax.set_title(rf"CONTRAST, {sc}, $\rho_S$={rho}")
@@ -242,7 +242,7 @@ def f7():
     ax.set_xticklabels(lab, rotation=45)
     ax.legend()
     ax = axs[2]
-    for k, (sc, colr, mk) in enumerate([("S2", C["blue"], "o"), ("S3c", C["verm"], "s")]):
+    for sc, colr, mk in [("S2", C["blue"], "o"), ("S3c", C["verm"], "s")]:
         g = t[t.scenario == sc].reset_index(drop=True)
         ax.plot(xx, g.d_total_before, color=colr, marker=mk, mfc="none", ls="none", ms=10, label=f"{sc} before")
         ax.plot(xx, g.d_total_after, color=colr, marker=mk, ls="none", ms=8, label=f"{sc} after")
@@ -298,7 +298,7 @@ def onepager(dens):
     ax.legend(loc="center left", fontsize=fs - 5)
     ax.text(0.98, 0.03, "m=4, belief = neuron's own D", transform=ax.transAxes, ha="right", fontsize=fs - 4)
     ax = axs[1, 1]
-    key = [k for k in dens if k[1] == "S2" and np.isclose(k[0], 0.4) and k[2] == 0.01][0]
+    key = next(k for k in dens if k[1] == "S2" and np.isclose(k[0], 0.4) and k[2] == 0.01)
     draw_dens(ax, dens[key], ylim=(0, 2.2))
     ax.legend(loc="upper center", fontsize=fs - 4)
     ax.set_xlabel("x (output)")
@@ -311,7 +311,8 @@ def onepager(dens):
 
 
 if __name__ == "__main__":
-    dens = pickle.load(open(ROOT + "/results/densities.pkl", "rb"))
+    with open(ROOT + "/results/densities.pkl", "rb") as fh:
+        dens = pickle.load(fh)
     f1()
     f2()
     f3()

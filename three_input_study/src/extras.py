@@ -7,7 +7,7 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 import pandas as pd
-from hcr import *
+from hcr import NAN, ROOT, Grid, basis, corr_matrix, ctrue_grid, evaluate, gold_for, load_cfg, model_D, model_N, ndtr, q_on, scenario_specs, tv
 from scipy.optimize import minimize
 
 SQ12 = np.sqrt(12.0)
@@ -28,11 +28,9 @@ def stage8(cfg, co, log=print):
                 minD = float(model_D(basis(np.linspace(0, 1, cfg["fine_grid"]), m), a[0]).min())
                 N = model_N(G, a, m)
                 for nm, sp in specs.items():
-                    if sp[0] == "own":
-                        if minD < 0:
-                            continue
-                        sp = ("poly", a[0])
-                    q = q_on(sp, G.u)
+                    if sp[0] == "own" and minD < 0:
+                        continue
+                    q = q_on(("poly", a[0]) if sp[0] == "own" else sp, G.u)
                     supp = q >= cfg["supp_rel"] * q.max()
                     okD = D >= cfg["D_floor"]
                     defined = bool(D[supp].min() >= cfg["D_floor"])
@@ -96,14 +94,14 @@ def stage9(cfg, co, log=print):
     m = tc["m"]
     G = Grid(cfg["nodes"], cfg["mmax"])
     specs = {k: v for k, v in scenario_specs(cfg).items() if k in ("S2", "S3b", "S3c")}
-    rows, curves = [], []
+    rows = []
     for typ in cfg["types"]:
         for rho in tc["rho_S"]:
             t0 = time.time()
             a6 = co[(typ, rho)][0]
             R = corr_matrix(typ, rho, cfg)
             L = np.linalg.cholesky(R)
-            rng = np.random.default_rng(cfg["seed"] + 7919 + int(round(rho * 10)) + (0 if typ == "SUM" else 100))
+            rng = np.random.default_rng(cfg["seed"] + 7919 + round(rho * 10) + (0 if typ == "SUM" else 100))
 
             def draw(n):
                 return np.clip(ndtr(rng.standard_normal((n, 3)) @ L.T), 1e-12, 1 - 1e-12)

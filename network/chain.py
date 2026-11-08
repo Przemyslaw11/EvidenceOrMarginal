@@ -230,7 +230,7 @@ def propagate_chain(models, teacher, beliefs, Ws, sgrid, lg, cfg, rng_md, device
                 else:
                     v, se, fl = tv_stats(sgrid, P, Q)
                     base.update({key: v, key + "_se": se, key + "_floor": fl})
-            I, mu_, var = sgrid.moments(torch.stack([CD[-1], GOLD[-1]]))
+            _, mu_, var = sgrid.moments(torch.stack([CD[-1], GOLD[-1]]))
             base.update(mean_cd=float(mu_[0]), var_cd=float(var[0]), mean_gold=float(mu_[1]), var_gold=float(var[1]))
             for e, eps in enumerate(eps_list):
                 CAL = cals[:, e]

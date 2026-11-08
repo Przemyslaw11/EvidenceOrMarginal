@@ -8,18 +8,22 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT + "/src")
 import numpy as np
 import pandas as pd
-from hcr import *
+from hcr import Grid, basis, corr_matrix, ctrue_grid, estimate_coeffs, evaluate, gl, gold_for, load_cfg, model_D, model_N, q_on, scenario_specs
 from sweep import run_sweep
 
 cfg = load_cfg()
 OUT = ROOT + "/tests/test_results.json"
-res = json.load(open(OUT)) if os.path.exists(OUT) else {}
+res = {}
+if os.path.exists(OUT):
+    with open(OUT) as fh:
+        res = json.load(fh)
 
 
 def record(name, ok, detail):
     res[name] = {"pass": bool(ok), "detail": detail}
     print(f"{name}: {'PASS' if ok else 'FAIL'}  {detail}", flush=True)
-    json.dump(res, open(OUT, "w"), indent=1)
+    with open(OUT, "w") as fh:
+        json.dump(res, fh, indent=1)
 
 
 def pre():
@@ -43,18 +47,18 @@ def pre():
     types, rhos = cfg["types"], [0.0, 0.3, 0.4, 0.8]
     co = estimate_coeffs(cfg, types, rhos, n, cfg["seed"], chunk=100000)
     ok, worst = True, 0
-    for (t, r), (a, se) in co.items():
+    for (_, r), (a, se) in co.items():
         z = []
         ok &= abs(a[0, 0, 0] - 1) < 1e-12
         z.append(abs(a[0, 1, 1] - r) / se[0, 1, 1])
         for i in range(1, 7):
             for idx in [(i, 0, 0), (0, i, 0), (0, 0, i)]:
                 z.append(abs(a[idx]) / se[idx])
-        worst = max(worst, max(z))
+        worst = max(worst, *z)
     record("T2", ok and worst <= 5, f"a000=1; max |dev|/SE = {worst:.2f} (<=5) over a_011 vs rho_S and single-index coeffs, n={n}")
     # T3
     mx = 0
-    for (t, r), (a, se) in co.items():
+    for a, _ in co.values():
         a1 = a[:2, :2, :2]
         Ff = basis(np.linspace(0, 1, 401), 1)
         mind = model_D(Ff, a1[0]).min()
@@ -130,7 +134,7 @@ def post():
 
     lo = mg[mg.rho_S <= 0.6 + 1e-9]
     hi = mg[mg.rho_S > 0.65]
-    (cl, wcl), (ch, wch) = chg(lo), chg(hi)
+    (cl, wcl), (ch, _) = chg(lo), chg(hi)
     (cl_ok, _), (ch_ok, _) = chg(lo[lo.quadrature_limited != 1]), chg(hi[hi.quadrature_limited != 1])
     und = int((mg.defined != mg.defined_256).sum())
     nql = int((lo.quadrature_limited == 1).sum())
@@ -153,7 +157,8 @@ def post():
     record(
         "T10",
         same,
-        f"same-seed reduced re-run (n={n}, rho in {{0.2,0.6}}, m=4, 96 nodes) identical excl. runtime: {same}; full results.csv not re-run (see ASSUMPTIONS 9)",
+        f"same-seed reduced re-run (n={n}, rho in {{0.2,0.6}}, m=4, 96 nodes) identical excl. runtime: {same}; "
+        "full results.csv not re-run (see ASSUMPTIONS 9)",
     )
 
 

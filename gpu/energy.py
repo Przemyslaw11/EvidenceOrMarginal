@@ -252,7 +252,7 @@ class Meter:
         t, p = s[:, 0], s[:, 1]
         tt = np.concatenate([[t0], t[(t > t0) & (t < t1)], [t1]])
         pp = np.interp(tt, t, p)
-        trap = getattr(np, "trapezoid", None) or np.trapz  # numpy >= 2 renamed it
+        trap = getattr(np, "trapezoid", None) or np.trapz  # noqa: NPY201  numpy >= 2 renamed it; the cluster has 1.26
         return float(trap(pp, tt)), float(pp.mean())
 
     def counter(self):
@@ -278,14 +278,14 @@ def measure(dtype_name, replicate):
     meter.start()
     time.sleep(IDLE_S)
     t1 = time.perf_counter()
-    idle_J, idle_W = meter.energy(t1 - IDLE_S + 1.0, t1)
+    _, idle_W = meter.energy(t1 - IDLE_S + 1.0, t1)
     meta = dict(
         meter.info(),
         run_id=run_id,
         dtype=dtype_name,
         replicate=replicate,
         host=socket.gethostname(),
-        commit=subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip(),
+        commit=subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=False).stdout.strip(),
         idle_W=idle_W,
         W=W_UNITS,
         m=M_DEG,

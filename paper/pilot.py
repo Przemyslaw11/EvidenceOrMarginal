@@ -25,7 +25,7 @@ import sklearn
 from numpy.polynomial import legendre as Lg
 from scipy.stats import norm, spearmanr
 from sklearn.datasets import fetch_california_housing
-from sklearn.ensemble import HistGradientBoostingRegressor as HGB
+from sklearn.ensemble import HistGradientBoostingRegressor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SEEDS, N_TRAIN, N_TEST, TAU, FLOOR, SAMPLES, RIDGE = 10, 15000, 2500, 0.7, 0.01, 128, 1e-2
@@ -111,7 +111,7 @@ def one_seed(seed):
     Xm[rng.random(U.shape) < 0.5] = np.nan
     Xt = Ut.copy()
     Xt[mask] = np.nan
-    boost = lambda A, B: HGB(max_iter=300, random_state=seed).fit(A, x).predict(B)
+    boost = lambda A, B: HistGradientBoostingRegressor(max_iter=300, random_state=seed).fit(A, x).predict(B)
     for sc, pr in (("full", boost(U, Ut)), ("missing", boost(Xm, Xt)), ("noisy", boost(Sn, O))):
         res.append(
             dict(seed=seed, scenario=sc, form="boost", mse=float(np.mean((pr - xt) ** 2)), mse_clip=float(np.mean((np.clip(pr, 0, 1) - xt) ** 2)))
@@ -183,25 +183,26 @@ def main():
     with ProcessPoolExecutor(4) as ex:
         out = list(ex.map(one_seed, range(SEEDS)))
     rows = [r for o in out for r in o["rows"]]
-    json.dump(
-        dict(
-            seeds=SEEDS,
-            n_train=N_TRAIN,
-            n_test=N_TEST,
-            tau=TAU,
-            floor=FLOOR,
-            samples=SAMPLES,
-            inputs=8,
-            ridge=RIDGE,
-            spearman_max=out[0]["spearman_max"],
-            spearman_median=out[0]["spearman_median"],
-            versions=dict(numpy=np.__version__, scipy=scipy.__version__, sklearn=sklearn.__version__),
-            rows=rows,
-        ),
-        open(os.path.join(HERE, "pilot.json"), "w"),
-        indent=0,
-        sort_keys=True,
-    )
+    with open(os.path.join(HERE, "pilot.json"), "w") as fh:
+        json.dump(
+            dict(
+                seeds=SEEDS,
+                n_train=N_TRAIN,
+                n_test=N_TEST,
+                tau=TAU,
+                floor=FLOOR,
+                samples=SAMPLES,
+                inputs=8,
+                ridge=RIDGE,
+                spearman_max=out[0]["spearman_max"],
+                spearman_median=out[0]["spearman_median"],
+                versions=dict(numpy=np.__version__, scipy=scipy.__version__, sklearn=sklearn.__version__),
+                rows=rows,
+            ),
+            fh,
+            indent=0,
+            sort_keys=True,
+        )
 
 
 if __name__ == "__main__":

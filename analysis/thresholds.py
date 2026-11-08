@@ -90,9 +90,9 @@ def thresholds(df):
     rows = []
     d = df[np.isclose(df.eps, 0.01)]
     keys = [c for c in CELL if c in d]
-    for key, g in d.groupby(keys, dropna=False):
+    for key, cell in d.groupby(keys, dropna=False):
         r = dict(zip(keys, key))
-        g = g.copy()
+        g = cell.copy()
         g["abs_relvar"] = g.relvar_vs_uncal.abs()
         rhos, seeds, Vd = seed_matrix(g, "d_denom")
         r["n_seeds"] = len(seeds)

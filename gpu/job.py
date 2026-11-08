@@ -70,7 +70,7 @@ def build_cases(spec, cfg, device):
             out.append((C.Gaussian(R, device), info))
         else:
             cop, info = C.make_copula(spec["family"], spec["type"], k, case["rho_S"], device, cfg["couplings"])
-            info = {kk: v for kk, v in info.items()}
+            info = dict(info)
             info["rho_S"] = case["rho_S"]
             out.append((cop, info))
     return out
@@ -159,7 +159,7 @@ def run_job(spec, cfg, device="cpu"):
     t_mind = (time.time() - t1) / len(cases)
     print(f"MC passes {sum(t_case):.0f}s, min D {t_mind * len(cases):.0f}s (estimation {t_est:.0f}s)", flush=True)
     rows = []
-    for ci, ((cop, info), (model, se)) in enumerate(zip(cases, models)):
+    for ci, ((_, info), (model, se)) in enumerate(zip(cases, models)):
         t1 = time.time()
         r = case_rows(passes[ci], grid, cfg)
         extra = dict(
@@ -224,7 +224,7 @@ def _se_yy(se):
 
 def _git():
     try:
-        return subprocess.run(["git", "-C", ROOT, "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+        return subprocess.run(["git", "-C", ROOT, "rev-parse", "HEAD"], capture_output=True, text=True, check=False).stdout.strip()
     except OSError:
         return ""
 
@@ -232,7 +232,10 @@ def _git():
 def _smi():
     try:
         return subprocess.run(
-            ["nvidia-smi", "--query-gpu=name,driver_version,clocks.max.sm,power.limit", "--format=csv,noheader"], capture_output=True, text=True
+            ["nvidia-smi", "--query-gpu=name,driver_version,clocks.max.sm,power.limit", "--format=csv,noheader"],
+            capture_output=True,
+            text=True,
+            check=False,
         ).stdout.strip()
     except OSError:
         return ""

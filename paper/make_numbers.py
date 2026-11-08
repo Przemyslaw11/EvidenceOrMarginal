@@ -881,12 +881,12 @@ def theory(ph, H):
     put("db.lo", f(D["lo"], 2))
     put("db.hi", f(D["hi"], 2))
     # onsets
-    P = [r for r in T["pair_onset"]]
+    P = list(T["pair_onset"])
     tr = {(r["m"], r["k"]): r for r in T["triple_onset"]}
     rows = []
     for m in (2, 4, 6):
         for k in KS:
-            r = [x for x in P if x["m"] == m and x["k"] == k][0]
+            r = next(x for x in P if x["m"] == m and x["k"] == k)
             t = tr.get((m, k))
             rows.append(
                 [
@@ -913,7 +913,7 @@ def theory(ph, H):
     )
     rows = []
     for k in KS:
-        r = [x for x in P if x["m"] == 4 and x["k"] == k][0]
+        r = next(x for x in P if x["m"] == 4 and x["k"] == k)
         t = tr.get((4, k))
         rows.append(
             [k, f(r["crude"]), f(r["lower"]), f(r["measured"]), (f(t["corner"]) if t and t["corner"] else DASH), (f(t["measured"]) if t else DASH)]
@@ -936,7 +936,7 @@ def theory(ph, H):
     g = T["pair_onset_gap"]
     put("on.gap", pc(g["max_rel_measured"], 1))
     put("on.gap4", pc(g["max_rel_measured_m4"], 1))
-    a = [r for r in P if r["m"] == 4 and r["k"] == 32][0]
+    a = next(r for r in P if r["m"] == 4 and r["k"] == 32)
     put("on.atoms.k32", f(sorted(a["atoms"])[1], 2))
     put("on.atoms.k32b", f(sorted(a["atoms"])[2], 2))
     put("on.kr.pair.lo", f(min(r["k"] * r["measured"] for r in P if r["m"] == 4 and r["k"] >= 4), 2))
@@ -964,7 +964,7 @@ def theory(ph, H):
         "\\footnotesize",
         thin=1,
     )
-    z32 = [r for r in Z if r["basis"] == "pair" and r["k"] == 32][0]
+    z32 = next(r for r in Z if r["basis"] == "pair" and r["k"] == 32)
     put("nz.pair32.cube", f(z32["z_cube"], 1))
     put("nz.pair32.corner", f(z32["z_corner"], 1))
     put("nz.pair32.meas", f(z32["measured"], 1))
@@ -973,7 +973,7 @@ def theory(ph, H):
     put("nz.bound.hi", pc(max(r["boundary"] for r in pr)))
     put("nz.var", f(T["noise_var"]["ratio"], 2))
     Kc = lambda k, o: k * 24 + math.comb(k, 2) * 24**2 + (math.comb(k, 3) * 24**3 if o == 3 else 0)  # m = 4, T = 24
-    t16 = [r for r in Z if r["basis"] == "triple" and r["k"] == 16][0]
+    t16 = next(r for r in Z if r["basis"] == "triple" and r["k"] == 16)
     put("nz.need.pair32", sci(z32["z_cube"] ** 2 * Kc(32, 2), 1))
     put("nz.need.triple16", sci(t16["z_cube"] ** 2 * Kc(16, 3), 1))
     put("nz.ratio.lo", f(min(r["z_cube"] / r["union"] for r in Z), 2))

@@ -15,7 +15,8 @@ thr = pd.read_csv(ROOT + "/results/thresholds.csv")
 gc = pd.read_csv(ROOT + "/results/gold_check.csv")
 tay = pd.read_csv(ROOT + "/results/taylor.csv")
 trn = pd.read_csv(ROOT + "/results/training.csv")
-tests = json.load(open(ROOT + "/tests/test_results.json"))
+with open(ROOT + "/tests/test_results.json") as fh:
+    tests = json.load(fh)
 e01 = d[d.eps == 0.01]
 E0 = d[d.eps == d.eps.min()]
 
@@ -196,5 +197,6 @@ Single neuron, d=3, Gaussian copula, low degrees (m≤6), no deep network and no
 2. The mean survives (|Δmean|≤{f(max(maxdm["S1"], maxdm["S2"]), 4)} for S1/S2) while the variance error reaches {p(max(maxrv["S1"], maxrv["S2"]))}; this is where the approximation is visible.
 3. Dr Duda's point about negative densities is measurable: D<0 starts at rho_S≈{th(minD0[S])} (m=4), after which the exact ratio is undefined and only calibrated or ratio-of-expectation forms exist; whether training removes this was probed only once (Stage 9) with no systematic reduction of the negative area.
 """
-open(ROOT + "/results/report.txt", "w").write(md)
+with open(ROOT + "/results/report.txt", "w") as fh:
+    fh.write(md)
 print(f"report written ({len(md.split())} words)")

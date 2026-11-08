@@ -7,7 +7,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
-from hcr import *
+from hcr import ROOT, estimate_coeffs, load_cfg
 from sweep import run_sweep
 
 cfg = load_cfg()
@@ -23,7 +23,8 @@ co = {(t, r): (z[f"{t}_{r}_a"], z[f"{t}_{r}_se"]) for t in cfg["types"] for r in
 if "--only256" not in sys.argv:
     df, dens = run_sweep(cfg, co, cfg["nodes"], want_dens=True, log=lambda s: print(s, flush=True))
     df.to_csv(R + "results.csv", index=False)
-    pickle.dump(dens, open(R + "densities.pkl", "wb"))
+    with open(R + "densities.pkl", "wb") as fh:
+        pickle.dump(dens, fh)
     print(f"main sweep done {time.time() - t0:.0f}s, rows={len(df)}", flush=True)
 if "--skip256" not in sys.argv:
     df2, _ = run_sweep(cfg, co, cfg["nodes_check"], log=lambda s: print(s, flush=True))

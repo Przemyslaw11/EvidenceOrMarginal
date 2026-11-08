@@ -179,7 +179,7 @@ class DStack:
         self.w3 = torch.stack([pad(x["W3"][0], (1, 2, 4)).reshape(len(pa) * m * m, k * m) for x in b]) if b[0]["W3"] is not None else None
 
     def __call__(self, Y):
-        G, n, k = Y.shape
+        G, n, _ = Y.shape
         Fy = input_basis(Y, self.m)
         Ff = Fy.reshape(G, n, -1)
         D = self.c0[:, None] + torch.bmm(Ff, self.w1[:, :, None])[..., 0]

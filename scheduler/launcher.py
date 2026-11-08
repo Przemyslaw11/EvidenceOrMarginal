@@ -11,6 +11,7 @@ results/failures/<id>.<n>.json and a job is retried at most twice (three attempt
 """
 
 import argparse
+import contextlib
 import json
 import os
 import socket
@@ -49,10 +50,8 @@ def try_claim(jid, stale_min):
                 continue
             if age < stale_min:
                 return None
-            try:  # take over a stale claim: rename is atomic, only one worker succeeds
+            with contextlib.suppress(FileNotFoundError):  # take over a stale claim: rename is atomic, only one worker succeeds
                 os.rename(path, f"{path}.stale.{socket.gethostname()}.{os.getpid()}")
-            except FileNotFoundError:
-                pass
     return None
 
 
