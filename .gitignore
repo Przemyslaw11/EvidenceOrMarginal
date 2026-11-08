@@ -232,4 +232,5 @@ results/claims/
 results/failures/
 results/merged/*.parquet
 results/pilot/
+results/small/
 slurm_logs/
