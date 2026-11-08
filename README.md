@@ -22,6 +22,10 @@ three_input_study/   the earlier three-input study
 
 `results/run_record.json` holds GPU accounting, and maps the commit ids stored in the run metadata to this repository's history.
 
+## Requirements
+
+Python 3.10 or later and the packages in `requirements.txt`; `requirements-lock.txt` pins the versions of the production runs. PyTorch is needed for the study (writing the job lists with `make_jobs.py` excepted), the tests, and `semantics.py`, `regression.py`, `check_theory.py` and `check_identity.py` in `paper/`; rebuilding the paper from the stored results does not need it.
+
 ## Rebuild the paper
 
 Everything in the paper comes from the stored results. No GPU is needed.

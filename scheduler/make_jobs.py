@@ -13,8 +13,15 @@ import math
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from gpu.job import ROOT, load_cfg  # noqa: E402
+import yaml
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def load_cfg():  # read here, not through gpu.job, so that writing job lists needs no PyTorch
+    with open(os.path.join(ROOT, "config.yaml")) as f:
+        return yaml.safe_load(f)
+
 
 CODE = {"gauss": 1, "families": 2, "lkj": 3, "network": 4}
 

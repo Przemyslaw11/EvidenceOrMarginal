@@ -1,0 +1,10 @@
+# Environment of the production runs: Python 3.10.4, CUDA 12.4.0, NVIDIA A100-SXM4-40GB (driver 595.91.07).
+# Sources: CUDA from the module the Slurm scripts load; python, torch, numpy and pandas from the metadata of every per-job result file (gpu.job.read_meta) and
+# results/merged/*_meta.csv; scipy from results/run_record.json; pyarrow from the parquet files' created_by field.
+# The versions of mpmath, matplotlib and pyyaml were not recorded.
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch==2.4.0+cu121
+numpy==1.26.4
+scipy==1.13.1
+pandas==2.2.2
+pyarrow==16.1.0
