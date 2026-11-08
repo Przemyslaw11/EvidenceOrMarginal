@@ -1,4 +1,6 @@
-"""Diagnostic for the M7 t-CDF failure on CUDA (job 3496797: tail rel err 1.0 on the GPU, 9e-15 on the CPU).
+"""Diagnostic for the M7 t-CDF failure (job 3496797: tail rel err 1.0 on the GPU with SciPy 1.13.1). Run as job 3496826,
+it gave the same metric on the cluster's CPU as on the GPU; a laptop CPU with SciPy 1.18.1 gave 9e-15. The reference
+moves, not the t functions: near F = 1, 1 - F takes only a few discrete values.
 
 Compares the lower tail itself (`_t_lower`, what t_cdf and t_ppf are built on) with scipy's stdtr(nu, -|x|), and repeats
 M7's metric for each sign of x, so a real error in the tail can be told from rounding of F = 1 - lower near 1.
