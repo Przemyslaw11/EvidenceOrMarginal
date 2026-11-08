@@ -20,7 +20,7 @@ config.yaml   study settings
 three_input_study/   the earlier three-input study
 ```
 
-`results/run_record.json` holds GPU accounting, and maps the commit ids stored in the run metadata to this repository's history.
+`results/run_record.json` holds GPU accounting, and maps the commit ids stored in the run metadata to this repository's history. For each of those ids it also lists the git tree ids of the code that ran (`gpu`, `network`, `analysis2`, `scheduler`, `tests2`, `config2.yaml`, `PREREGISTRATION.md`, under the names of the time), so the map can be checked: `git rev-parse 8abbf12:gpu` gives the tree listed for `6a98646`.
 
 ## Requirements
 
