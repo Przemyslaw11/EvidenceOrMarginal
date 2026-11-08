@@ -498,6 +498,9 @@ def main():
                     (g8, (net,)), (g9, (net,)), (onepager, (cg, tg, tp, net))):
         if PAPER and f is onepager:
             continue
+        if net is None and f in (g8, g9):
+            print("figure", f.__name__, "skipped: no network data")
+            continue
         f(*args)
         print("figure", f.__name__, "done")
 
