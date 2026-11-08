@@ -230,6 +230,11 @@ def additions():
     Tj = json.load(open(os.path.join(HERE, "theory.json")))["pair_onset_large"]
     check([r["k"] for r in Tj] == [8, 32, 128, 512, 2048] and all(a["k_rho"] < b["k_rho"] for a, b in zip(Tj, Tj[1:])), "convex bound rises")
     check(all(V[f"on.conv.kr.{r['k']}"] == f"{r['k_rho']:.3f}" for r in Tj), "convex bound macros")
+    c = pd.read_csv(os.path.join(S, "curves_gauss.csv.gz"))
+    c = c[(c.m == 4) & ((c.eps - 0.01).abs() < 1e-12) & c.belief.isin(["S2", "S3c", "S4"]) & (c.rho_S > 0) & (c.share_undefined < 0.5)
+          & (c.d_denom_sd.abs() < math.inf)]
+    check(int(V["H4a.n"]) == len(c[(c.basis == "pair") & c.k.isin([2, 8, 32])]), "H4a evaluation set: pair basis, k in {2, 8, 32}")
+    check(V["ph.H4a.all.n"] == str(len(c)) and V["ph.H4a.all.share"] == f"{100 * (c.d_denom_sd > c.d_denom_mcse).mean():.0f}\\,\\%", "H4a over all headline cells")
     p = os.path.join(ROOT, "results", "merged", "gauss.parquet")
     if os.path.exists(p):
         G = pd.read_parquet(p, columns=["k", "basis", "belief", "m", "rho_S", "defined", "d_denom", "d_total", "d_model_cal", "E_q_D", "sd_q_D", "minD", "n_drop", "M"], filters=[("eps", "==", 0.01)])

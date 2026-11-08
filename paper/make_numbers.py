@@ -176,7 +176,7 @@ def thresholds(H, tg, tp):
     table("onset_m", "r" + "r" * 6, r2, "& \\multicolumn{3}{c}{pair} & \\multicolumn{3}{c}{triple} \\\\ \\cmidrule(lr){2-4}\\cmidrule(l){5-7}\n$k$ & $m=2$ & $m=4$ & $m=6$ & $m=2$ & $m=4$ & $m=6$", "\\footnotesize")
 
 
-def hypotheses(H, conv, ph):
+def hypotheses(H, conv, ph, cg):
     verdicts = {}
     for k, v in H.items():
         verdicts[k] = v["verdict"]
@@ -206,6 +206,10 @@ def hypotheses(H, conv, ph):
     put("H4a.share", pc(H["H4a"]["share"]))
     put("H4a.n", H["H4a"]["n"])
     put("H4a.ratio", f(H["H4a"]["median_sd_over_mcse"], 1))
+    a = cg[(cg.m == 4) & np.isclose(cg.eps, 0.01) & cg.belief.isin(["S2", "S3c", "S4"]) & (cg.rho_S > 0) & (cg.share_undefined < 0.5)
+           & np.isfinite(cg.d_denom_sd)]  # post hoc: H4a over all headline cells, both bases and every k
+    put("ph.H4a.all.share", pc((a.d_denom_sd > a.d_denom_mcse).mean()))
+    put("ph.H4a.all.n", len(a))
     n2, oth = conv[conv.variant == "n2"], conv[conv.variant != "n2"]
     tot, viol = int(conv.n.sum()), int(conv.n_violations.sum())
     put("H4b.viol", thou(viol))
@@ -852,7 +856,7 @@ def main():
     compute_block()
     design()
     thresholds(H, tg, tp)
-    hypotheses(H, conv, ph)
+    hypotheses(H, conv, ph, cg)
     decomposition(cg)
     posthoc(ph, H)
     theory(ph, H)
