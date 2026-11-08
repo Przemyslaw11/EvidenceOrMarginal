@@ -7,7 +7,10 @@ then training from the direct estimates and from a flat-D control initialisation
 Every run is evaluated on all beliefs (training beliefs and the held-out beliefs S3a, S3b, S3d).
 """
 
+from __future__ import annotations
+
 import time
+from collections.abc import Callable
 
 import numpy as np
 import pandas as pd
@@ -19,7 +22,7 @@ from densprop.domain.propagate import Grid, belief_tensors, sample_beliefs
 from densprop.domain.train import Data, Params, loss_val, make_loss_e2e, make_loss_nll, train
 
 
-def run_network_job(spec, cfg, device, rng_for):
+def run_network_job(spec: dict, cfg: dict, device: str, rng_for: Callable[..., np.random.Generator]) -> pd.DataFrame:
     nc = cfg["network"]
     k, rho, basis, m, Lmax = spec["k"], spec["rho_S"], spec["basis"], nc["m"], max(nc["L"])
     key = spec["key"]

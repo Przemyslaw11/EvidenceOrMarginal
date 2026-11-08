@@ -7,6 +7,7 @@ See densprop.app.energy for the measurement.
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 
 import torch
 
@@ -90,26 +91,26 @@ class KANLayer(torch.nn.Module):
         return torch.nn.functional.silu(x) @ self.base + bases.reshape(x.shape[0], -1) @ self.spline
 
 
-def mlp(k, H, W):
+def mlp(k: int, H: int, W: int) -> torch.nn.Module:
     return torch.nn.Sequential(torch.nn.Linear(k, H), torch.nn.GELU(), torch.nn.Linear(H, W))
 
 
-def kan(k, H, W):
+def kan(k: int, H: int, W: int) -> torch.nn.Module:
     return torch.nn.Sequential(KANLayer(k, H), KANLayer(H, W))
 
 
-def matched_width(kind, k, W, P):
+def matched_width(kind: str, k: int, W: int, P: int) -> int:
     """Hidden width H of the 2-layer baseline whose parameter count is closest to P."""
     if kind == "MLP":
         return max(1, round((P - W) / (k + 1 + W)))
     return max(1, round(P / (9 * (k + W))))  # KAN, grid 5, order 3: (grid + order + 1) = 9 weights per edge
 
 
-def n_params(module):
+def n_params(module: torch.nn.Module) -> int:
     return sum(p.numel() for p in module.parameters())
 
 
-def build(layer, k, B, dtype, device, seed=0):
+def build(layer: str, k: int, B: int, dtype: torch.dtype, device: str, seed: int = 0) -> tuple[Callable[[], object], int, str]:
     """Returns (forward callable, parameter count, description of the inputs)."""
     g = torch.Generator(device="cpu").manual_seed(seed + 1)
     hcr = HCRLayer(k, W_UNITS, M_DEG, dtype, device, seed)
@@ -132,7 +133,7 @@ def build(layer, k, B, dtype, device, seed=0):
 
 
 # ---------------------------------------------------------------- self-check (CPU)
-def check():
+def check() -> None:
     torch.manual_seed(0)
     k, W, B = 3, 4, 5
     lay = HCRLayer(k, W, M_DEG, torch.float64, "cpu")

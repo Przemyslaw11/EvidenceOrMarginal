@@ -15,7 +15,7 @@ from densprop.domain.stats import B_BOOT, BOOT_SEED, boot_idx, median_curve, ons
 LOG2 = math.log(2.0)
 
 
-def verdict(sig, n):
+def verdict(sig: int, n: int) -> str:
     """Aggregation rule: supported if >= 2/3 significant, not supported if >= 2/3 not significant, else inconclusive."""
     if n < 3:
         return "inconclusive"
@@ -26,7 +26,7 @@ def verdict(sig, n):
     return "inconclusive"
 
 
-def share_verdict(share, hi, lo):
+def share_verdict(share: float, hi: float, lo: float) -> str:
     return "supported" if share >= hi else ("not supported" if share < lo else "inconclusive")
 
 
@@ -36,16 +36,16 @@ def boot_onset(g, B=B_BOOT, idx=None):
     return onset_negative(rhos, median_curve(V)), np.array([onset_negative(rhos, median_curve(V[i])) for i in idx]), seeds
 
 
-def ci(v):
+def ci(v: np.ndarray) -> tuple[float, float]:
     return tuple(np.percentile(v, [2.5, 97.5], method="inverted_cdf"))
 
 
-def prim(df, m=4, eps=0.01):
+def prim(df: pd.DataFrame, m: int = 4, eps: float = 0.01) -> pd.DataFrame:
     return df[(df.m == m) & np.isclose(df.eps, eps)]
 
 
 # ---------------------------------------------------------------- Q1, Q2
-def h1a_h2a_h2b_pop(th):
+def h1a_h2a_h2b_pop(th: pd.DataFrame) -> dict:
     """From the population thresholds (thresholds_population.csv)."""
     th = th[th.belief == "S2"]  # minD does not depend on the belief
     out = {}
@@ -75,7 +75,7 @@ def h1a_h2a_h2b_pop(th):
     return out
 
 
-def h1b_h2b_gauss(g):
+def h1b_h2b_gauss(g: pd.DataFrame) -> dict:
     out, cells, cells2 = {}, [], []
     d = prim(g)
     d = d[d.belief == "S2"]
@@ -127,7 +127,7 @@ def powerlaw(curves, typ, basis):
     )
 
 
-def h1c(curves_pop):
+def h1c(curves_pop: pd.DataFrame) -> dict:
     cells = []
     for (typ, basis), _ in curves_pop.groupby(["type", "basis"]):
         f = powerlaw(curves_pop, typ, basis)
@@ -149,7 +149,7 @@ def h1c(curves_pop):
     return dict(verdict=v, cells=cells)
 
 
-def h2c(curves_g):
+def h2c(curves_g: pd.DataFrame) -> dict:
     c = curves_g[np.isclose(curves_g.eps, 0.01) & curves_g.belief.isin(["S2", "S3c", "S4"]) & (curves_g.rho_S > 0)]
     keys = ["type", "k", "basis", "belief", "rho_S"]
     n = ok = 0
@@ -166,7 +166,7 @@ def h2c(curves_g):
 
 
 # ---------------------------------------------------------------- Q3
-def h3(gauss, fam, lkj, curves_g):
+def h3(gauss: pd.DataFrame, fam: pd.DataFrame, lkj: pd.DataFrame | None, curves_g: pd.DataFrame) -> dict:
     out = {}
     cells_a, cells_b = [], []
     G = prim(gauss)
@@ -271,7 +271,7 @@ def h3(gauss, fam, lkj, curves_g):
 
 
 # ---------------------------------------------------------------- Q4
-def h4a(curves_g):
+def h4a(curves_g: pd.DataFrame) -> dict:
     c = curves_g[
         (curves_g.m == 4)
         & np.isclose(curves_g.eps, 0.01)
@@ -292,7 +292,7 @@ def h4a(curves_g):
 
 
 # ---------------------------------------------------------------- Q5
-def paired_change(before, after, value, keys, sign=-1):
+def paired_change(before: pd.DataFrame, after: pd.DataFrame, value: str, keys: list[str], sign: int = -1) -> list[dict]:
     """Per cell: paired (after - before) over seeds; significant if the bootstrap CI of the median lies on `sign` side of 0."""
     cells = []
     b = before.set_index(keys + ["seed"])[value]
@@ -321,7 +321,7 @@ def paired_change(before, after, value, keys, sign=-1):
     return cells
 
 
-def h5(net):
+def h5(net: pd.DataFrame) -> dict:
     out = {}
     ch = net[(net.table == "chain") & np.isclose(net.eps, 0.01)]
     d = ch[(ch.run == "direct") & ch.belief.isin(["S2", "S3c", "S4"])]

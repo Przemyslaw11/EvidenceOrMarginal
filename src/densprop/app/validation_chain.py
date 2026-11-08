@@ -1,5 +1,7 @@
 """M14: validation of the Stage 4 chain (`densprop validate network`)."""
 
+from __future__ import annotations
+
 import math
 
 import numpy as np
@@ -32,7 +34,7 @@ def _setup(dev, cfg, k=4, rho=0.2, L=3, n_est=200000, M=2**15):
     return cfg, t, models, bel, Ws
 
 
-def m14(dev, cfg):
+def m14(dev: str, cfg: dict) -> tuple[bool, str]:
     det, ok = [], True
     cfg, t, models, bel, Ws = _setup(dev, cfg)
     sg = Grid(801, 8.0, 192, 4, dev)

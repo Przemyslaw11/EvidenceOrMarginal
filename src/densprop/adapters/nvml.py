@@ -13,7 +13,7 @@ import torch
 class Meter:
     """EnergyMeter on NVML for the CUDA device that runs this process; `visible` is CUDA_VISIBLE_DEVICES."""
 
-    def __init__(self, torch_device=0, visible="0"):
+    def __init__(self, torch_device: int = 0, visible: str = "0"):
         import pynvml
 
         self.nv = pynvml
@@ -34,7 +34,7 @@ class Meter:
         assert name == torch.cuda.get_device_name(torch_device), f"NVML handle {name} is not the torch device"
         self.samples, self._run = [], False
 
-    def info(self):
+    def info(self) -> dict:
         nv, h = self.nv, self.h
         procs = nv.nvmlDeviceGetComputeRunningProcesses(h)
         uuid = nv.nvmlDeviceGetUUID(h)
@@ -57,16 +57,16 @@ class Meter:
             self.samples.append((time.perf_counter(), self.nv.nvmlDeviceGetPowerUsage(self.h) / 1e3))
             time.sleep(0.01)
 
-    def start(self):
+    def start(self) -> None:
         self._run = True
         self.th = threading.Thread(target=self._loop, daemon=True)
         self.th.start()
 
-    def stop(self):
+    def stop(self) -> None:
         self._run = False
         self.th.join()
 
-    def energy(self, t0, t1):
+    def energy(self, t0: float, t1: float) -> tuple[float, float]:
         """Trapezoid integral of the sampled power over [t0, t1] (J), linear interpolation at the ends."""
         s = np.array(self.samples)
         t, p = s[:, 0], s[:, 1]
@@ -75,10 +75,10 @@ class Meter:
         trap = getattr(np, "trapezoid", None) or np.trapz  # noqa: NPY201  numpy >= 2 renamed it; the cluster has 1.26
         return float(trap(pp, tt)), float(pp.mean())
 
-    def counter(self):
+    def counter(self) -> float:
         return self.nv.nvmlDeviceGetTotalEnergyConsumption(self.h) / 1e3  # J
 
-    def clocks(self):
+    def clocks(self) -> tuple[int, int, int]:
         nv, h = self.nv, self.h
         return (
             nv.nvmlDeviceGetClockInfo(h, nv.NVML_CLOCK_SM),
