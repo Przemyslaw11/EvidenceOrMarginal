@@ -119,7 +119,7 @@ def save(fig, name):
     if PAPER:
         typeset(fig)
         fit(fig)
-        fig.savefig(os.path.join(OUT, name + ".pdf"), bbox_inches="tight", pad_inches=0.01)
+        fig.savefig(os.path.join(OUT, name + ".pdf"), bbox_inches="tight", pad_inches=0.01, metadata={"CreationDate": None})  # no date: reproducible
         plt.close(fig)
         return
     fig.savefig(os.path.join(OUT, name + ".png"), bbox_inches="tight")
