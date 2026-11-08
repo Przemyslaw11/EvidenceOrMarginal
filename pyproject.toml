@@ -1,0 +1,40 @@
+[project]
+name = "evidence-or-marginal"
+version = "1.0.0"
+description = "Code of the paper Evidence or Marginal? What Moment-Vector Propagation Computes in Polynomial Density Neurons"
+authors = [{ name = "Przemysław Spyra" }]
+license = "Apache-2.0"
+requires-python = ">=3.10"
+# Lower bounds are the versions of the production runs (numpy, scipy, pandas, pyarrow, torch) or of the paper rebuild
+# (mpmath, pyyaml); requirements-lock.txt records the production environment.
+dependencies = [
+    "numpy>=1.26.4",
+    "scipy>=1.13.1",
+    "mpmath>=1.3.0",
+    "matplotlib",  # the paper figures were made with 3.11.2, which needs Python >= 3.11
+    "pandas>=2.2.2",
+    "pyarrow>=16.1.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+# PyTorch is needed for the study, the tests and four post hoc scripts, not to rebuild the paper from stored results. From PyPI
+# it is the CPU build on macOS and the CUDA build on Linux, which the cluster needs; CI installs the CPU wheel instead.
+torch = ["torch>=2.4.0"]
+gpu = ["torch>=2.4.0", "nvidia-ml-py"]  # NVML for the energy benchmark
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.13"]
+
+[tool.uv]
+# The versions that rebuilt the paper's outputs byte for byte (Python 3.13, macOS); the lock keeps them.
+constraint-dependencies = [
+    "numpy==2.5.4; python_version >= '3.13'",
+    "scipy==1.18.1; python_version >= '3.13'",
+    "pandas==3.1.0; python_version >= '3.13'",
+    "pyarrow==26.0.0; python_version >= '3.13'",
+    "matplotlib==3.11.2; python_version >= '3.13'",
+    "mpmath==1.3.0",
+    "pyyaml==6.0.3",
+    "torch==2.14.1; python_version >= '3.13'",
+]
