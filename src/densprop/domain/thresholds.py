@@ -1,15 +1,11 @@
-"""Seed-median curves and thresholds with bootstrap CIs -> results/summary/curves_<exp>.csv.gz, thresholds_<exp>.csv
+"""Seed-median curves and pre-registered thresholds with bootstrap CIs over seeds (PREREGISTRATION.md, section 3)."""
 
-python -m analysis.thresholds [gauss population families lkj]
-"""
-
-import os
-import sys
+from __future__ import annotations
 
 import numpy as np
 import pandas as pd
 
-from analysis.common import SUMMARY, boot_stat, crossing, load, onset_negative, seed_matrix
+from densprop.domain.stats import boot_stat, crossing, onset_negative, seed_matrix
 
 CELL = ["type", "family", "k", "basis", "m", "belief"]
 TV = ["d_denom", "d_neg", "d_model_uncal", "d_model_cal", "d_total", "d_dc"]
@@ -47,7 +43,7 @@ COLS = (
 )
 
 
-def curves(df):
+def curves(df: pd.DataFrame) -> pd.DataFrame:
     """Per cell, rho_S and eps: seed median and 2.5/97.5 % quantiles of every metric, share undefined, MC SE."""
     out = []
     keys = [c for c in CELL + ["eps", "rho_S"] if c in df]
@@ -85,7 +81,7 @@ def curves(df):
     return pd.DataFrame(out)
 
 
-def thresholds(df):
+def thresholds(df: pd.DataFrame) -> pd.DataFrame:
     """Pre-registered thresholds per cell (eps = 0.01) with bootstrap CIs over seeds."""
     rows = []
     d = df[np.isclose(df.eps, 0.01)]
@@ -123,22 +119,3 @@ def thresholds(df):
         r["minD_at_0"] = float(np.median(Vm[:, 0]))
         rows.append(r)
     return pd.DataFrame(rows)
-
-
-def main(exps):
-    os.makedirs(SUMMARY, exist_ok=True)
-    for exp in exps:
-        df = load(exp, columns=None)
-        if df is None:
-            print(f"{exp}: no merged results")
-            continue
-        df = df[[c for c in COLS if c in df.columns]]
-        if exp == "lkj":
-            continue  # matrices are not on a rho grid: see analysis/hypotheses.py
-        curves(df).to_csv(os.path.join(SUMMARY, f"curves_{exp}.csv.gz"), index=False)
-        thresholds(df).to_csv(os.path.join(SUMMARY, f"thresholds_{exp}.csv"), index=False)
-        print(f"{exp}: curves and thresholds written")
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:] or ["gauss", "population", "families"])

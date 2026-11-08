@@ -45,7 +45,7 @@ from densprop.domain.propagate import Grid, beta_logq, evaluate_case, min_D, sam
 from densprop.domain.sweep import run_job, setup_torch
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)  # analysis/ and network/ for M13 and M14
+sys.path.insert(0, ROOT)  # network/ for M14
 
 OUT = os.path.join(ROOT, "results", "small", "test_results.json")
 DEV = "cpu"
@@ -755,9 +755,12 @@ def main():
             results[name] = dict(pass_=bool(ok), detail=det, device=DEV, seconds=round(time.time() - t0, 1))
             print(f"{name}: {'PASS' if ok else 'FAIL'} ({time.time() - t0:.0f}s) {det}", flush=True)
     elif a.mode == "post":
-        from analysis.convergence import m13
+        from densprop.adapters.parquet_store import ParquetStore
+        from densprop.adapters.records import FileRecords
+        from densprop.app.analysis import convergence
 
-        ok, det = m13()
+        res = os.environ.get("HCR_RESULTS", os.path.join(ROOT, "results"))
+        ok, det = convergence(ParquetStore(res), FileRecords(os.path.join(res, "summary")))
         results["M13"] = dict(pass_=bool(ok), detail=det)
         print("M13:", "PASS" if ok else "FAIL", det)
     else:

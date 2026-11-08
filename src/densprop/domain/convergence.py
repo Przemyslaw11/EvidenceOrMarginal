@@ -2,25 +2,25 @@
 
 Each `convergence` job is paired with the `gauss` job of the same (k, type, basis, seed) (identical random streams).
 A change is a violation if |TV_variant - TV_base| > max(3 * max(SE_base, SE_variant), 1e-3).
-Writes results/summary/convergence.csv and convergence_violations.csv.
+The table and the violations go to results/summary/convergence.csv and convergence_violations.csv.
 """
 
-import os
+from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-
-from analysis.common import SUMMARY, load
 
 TV = ["d_denom", "d_neg", "d_model_uncal", "d_model_cal", "d_total", "d_dc"]
 KEY = ["k", "type", "basis", "seed", "rho_S", "m", "belief", "eps"]
 
 
-def m13():
-    cols = KEY + ["variant"] + TV + [t + "_se" for t in TV]
-    conv, base = load("convergence", columns=cols), load("gauss", columns=[c for c in cols if c != "variant"])
+COLS = KEY + ["variant"] + TV + [t + "_se" for t in TV]  # of the convergence results; the gauss results without variant
+
+
+def m13(conv: pd.DataFrame | None, base: pd.DataFrame | None) -> tuple[bool, str, pd.DataFrame | None, pd.DataFrame | None]:
+    """(pass, detail, table per variant and metric, violations)."""
     if conv is None or base is None:
-        return False, "convergence or gauss results missing"
+        return False, "convergence or gauss results missing", None, None
     base = base[base.seed.isin(conv.seed.unique()) & base.k.isin(conv.k.unique())]
     j = conv.merge(base, on=KEY, suffixes=("", "_base"))
     rows, viol = [], []
@@ -49,19 +49,12 @@ def m13():
                 viol.append(
                     b[["variant", "metric"] + KEY + [t, t + "_base", "change", "tol"]].rename(columns={t: "value", t + "_base": "value_base"})
                 )
-    os.makedirs(SUMMARY, exist_ok=True)
     tab = pd.DataFrame(rows)
-    tab.to_csv(os.path.join(SUMMARY, "convergence.csv"), index=False)
     vt = pd.concat(viol, ignore_index=True) if viol else pd.DataFrame()
-    vt.to_csv(os.path.join(SUMMARY, "convergence_violations.csv"), index=False)
     n_bad = int(tab.n_violations.sum())
     parts = [f"{r.variant}/{r.metric}: max change {r.max_change:.1e}, {r.n_violations}/{r.n} violations" for r in tab.itertuples() if r.n_violations]
     det = f"{int(tab.n.sum())} paired TV values, {n_bad} violations" + (": " + "; ".join(parts) if parts else "")
     if n_bad:
         by_k = vt.groupby(["variant", "k"]).size().to_dict()
         det += f" | violations by (variant, k): {by_k}"
-    return n_bad == 0, det
-
-
-if __name__ == "__main__":
-    print(m13())
+    return n_bad == 0, det, tab, vt

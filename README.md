@@ -10,11 +10,10 @@ The manuscript is [`paper/main.pdf`](paper/main.pdf). The study protocol is [`PR
 
 ```
 paper/        manuscript, figures, generated numbers and tables, post hoc analyses
-src/densprop/domain/  density neuron, copulas, propagation, chains and training (PyTorch)
+src/densprop/domain/  density neuron, copulas, propagation, chains and training (PyTorch); thresholds and hypothesis tests
 gpu/          energy benchmark
 network/      validation test of the chains (M14)
-analysis/     thresholds, hypothesis tests, study figures and report
-src/densprop/  job specs, sweeps, worker, merge and command line
+src/densprop/  job specs, sweeps, worker, merge, analysis, study figures, report and command line
 scheduler/    cost model and Slurm scripts
 tests/        validation tests M1-M14
 results/      merged results and summaries of the study
@@ -50,7 +49,7 @@ The full rebuild, from the repository root, regenerates the post hoc results and
 .venv/bin/python paper/semantics.py      # PyTorch
 .venv/bin/python paper/regression.py     # PyTorch
 .venv/bin/python paper/check_theory.py   # needs the parquet files; PyTorch
-HCR_PAPER=1 HCR_FIGURES=paper/figures .venv/bin/python -m analysis.figures   # G1-G9; G8, G9 need the parquet files
+.venv/bin/python -m densprop figures --paper --out paper/figures   # G1-G9; G8, G9 need the parquet files
 cd paper
 ../.venv/bin/python make_figures.py
 ../.venv/bin/python make_numbers.py
@@ -76,11 +75,11 @@ The full study, on a Slurm cluster with PyTorch installed:
 python -m densprop make-jobs gauss population convergence families lkj network
 sbatch -A <account> --array=0-39 scheduler/slurm_array.sh results/jobs_gauss.jsonl
 python -m densprop merge gauss population convergence families lkj network
-python -m analysis.thresholds gauss population families
+python -m densprop thresholds gauss population families
 python tests/run_tests.py post --out tests/test_results.json
-python -m analysis.hypotheses
-python -m analysis.figures
-python -m analysis.report
+python -m densprop hypotheses
+python -m densprop figures
+python -m densprop report
 ```
 
 `sbatch` is repeated for each experiment's job list. A job counts as done once its result file exists, so an array can be resubmitted until the merge reports nothing missing. The Slurm scripts are site-specific: they load the cluster's Python and CUDA modules and expect a virtual environment in `venv/`.

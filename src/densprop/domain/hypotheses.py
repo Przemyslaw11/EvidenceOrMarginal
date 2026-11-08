@@ -1,17 +1,16 @@
-"""Evaluate the pre-registered hypotheses (PREREGISTRATION.md, section 6) -> results/summary/hypotheses.json
+"""The pre-registered hypotheses (PREREGISTRATION.md, section 6), evaluated into results/summary/hypotheses.json.
 
-    python -m analysis.hypotheses
 Each hypothesis yields a verdict (supported / not supported / inconclusive), the evaluable cells and the evidence.
 """
 
-import json
+from __future__ import annotations
+
 import math
-import os
 
 import numpy as np
 import pandas as pd
 
-from analysis.common import B_BOOT, BOOT_SEED, SUMMARY, boot_idx, load, median_curve, onset_negative, seed_matrix
+from densprop.domain.stats import B_BOOT, BOOT_SEED, boot_idx, median_curve, onset_negative, seed_matrix
 
 LOG2 = math.log(2.0)
 
@@ -46,8 +45,8 @@ def prim(df, m=4, eps=0.01):
 
 
 # ---------------------------------------------------------------- Q1, Q2
-def h1a_h2a_h2b_pop(pop):
-    th = pd.read_csv(os.path.join(SUMMARY, "thresholds_population.csv"))
+def h1a_h2a_h2b_pop(th):
+    """From the population thresholds (thresholds_population.csv)."""
     th = th[th.belief == "S2"]  # minD does not depend on the belief
     out = {}
     cells = []
@@ -377,39 +376,3 @@ def h5(net):
     s = sum(c["sig"] for c in cells)
     out["H5d"] = dict(verdict=verdict(s, len(cells)), significant=s, n=len(cells), cells=cells)
     return out
-
-
-def main():
-    res = {}
-    pop, gauss, fam, lkj = load("population"), load("gauss"), load("families"), load("lkj")
-    cp = os.path.join(SUMMARY, "curves_population.csv.gz")
-    cg = os.path.join(SUMMARY, "curves_gauss.csv.gz")
-    curves_pop = pd.read_csv(cp) if os.path.exists(cp) else None
-    curves_g = pd.read_csv(cg) if os.path.exists(cg) else None
-    if pop is not None:
-        res.update(h1a_h2a_h2b_pop(pop))
-        res["H1c"] = h1c(curves_pop)
-    if gauss is not None:
-        res.update(h1b_h2b_gauss(gauss))
-        res["H2c"] = h2c(curves_g)
-        res["H4a"] = h4a(curves_g)
-        if fam is not None:
-            res.update(h3(gauss, fam, lkj, curves_g))
-    conv = os.path.join(SUMMARY, "convergence.csv")
-    if os.path.exists(conv):
-        from analysis.convergence import m13
-
-        ok, det = m13()
-        res["H4b"] = dict(verdict="supported" if ok else "not supported", detail=det)
-    net = load("network")
-    if net is not None:
-        res.update(h5(net))
-    os.makedirs(SUMMARY, exist_ok=True)
-    with open(os.path.join(SUMMARY, "hypotheses.json"), "w") as f:
-        json.dump(res, f, indent=1, default=float)
-    for k in sorted(res):
-        print(f"{k}: {res[k]['verdict']}")
-
-
-if __name__ == "__main__":
-    main()

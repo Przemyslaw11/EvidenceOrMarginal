@@ -1,13 +1,12 @@
 """Figures G1-G9 and summary_onepager.png from results/summary/*.csv and the merged network results.
 
-    python -m analysis.figures
 Okabe-Ito colours in a fixed order per entity (validated: CVD separation and normal-vision floor pass; orange and
 reddish purple are below 3:1 contrast, so every series also has its own marker and a legend). Undefined points are
 gaps; points below 3x their MC noise floor are hollow markers; bands are 2.5-97.5 % seed intervals.
 
-    HCR_PAPER=1 HCR_FIGURES=paper/figures python -m analysis.figures
-renders the same data for the paper at print size (text width, 1:1): no figure titles (the captions carry them), the paper's
-symbols and type, panel letters, hatched bars for greyscale, PDF only. Nothing plotted changes.
+In paper mode (`configure(out, paper=True)`, before drawing) the same data are rendered for the paper at print size (text
+width, 1:1): no figure titles (the captions carry them), the paper's symbols and type, panel letters, hatched bars for
+greyscale, PDF only. Nothing plotted changes.
 """
 
 import os
@@ -18,11 +17,10 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
-from analysis.common import ROOT, SUMMARY, load
+from densprop.ports import RecordStore, ResultStore
 
-OUT = os.environ.get("HCR_FIGURES", os.path.join(ROOT, "figures"))
+OUT = "figures"  # set by configure
 OI = ["#0072B2", "#E69F00", "#009E73", "#D55E00", "#CC79A7", "#56B4E9", "#000000"]
 MK = ["o", "s", "^", "D", "v", "P", "X"]
 KCOL = {2: 0, 4: 1, 8: 2, 16: 3, 32: 4}
@@ -41,7 +39,7 @@ plt.rcParams.update(
         "savefig.dpi": 200,
     }
 )
-PAPER = os.environ.get("HCR_PAPER") == "1"
+PAPER = False
 SYMBOLS = (
     ("CONST_DENOM", r"$p_{\mathrm{CD}}$"),
     ("EXACT_UNCAL", r"$p_{\mathrm{EU}}$"),
@@ -79,7 +77,14 @@ PAGE = 6.3  # text width in inches: paper figures are drawn at this size and inc
 CAP = 3
 HATCH = [None] * 4
 BAR = [0, 1, 2, 3]
-if PAPER:
+
+
+def configure(out: str, paper: bool = False) -> None:
+    """Where the figures go and whether they are drawn for the paper; call once, before drawing."""
+    global OUT, PAPER, CAP, BAR, HATCH  # noqa: PLW0603  the rendering settings of this one-shot plotting module
+    OUT, PAPER = out, paper
+    if not paper:
+        return
     CAP = 1.5
     BAR = [3, 1, 2, 0]  # d_denom keeps the colour it has in G2
     HATCH = [None, "////", "....", "xxxx"]
@@ -194,9 +199,8 @@ def save(fig, name):
     plt.close(fig)
 
 
-def csv(name):
-    p = os.path.join(SUMMARY, name)
-    return pd.read_csv(p) if os.path.exists(p) else None
+def csv(summary, name):
+    return summary.read_csv(name) if summary.exists(name) else None
 
 
 def sel(c, **kw):
@@ -447,8 +451,8 @@ def g7(cg):
     save(fig, "G7_decomposition")
 
 
-def net_frames():
-    net = load("network")
+def net_frames(store):
+    net = store.load("network")
     if net is None:
         return None
     return net[np.isclose(net.eps, 0.01)]
@@ -601,10 +605,10 @@ def onepager(cg, tg, tp, net):
     plt.close(fig)
 
 
-def main():
-    cg, tg, tp = csv("curves_gauss.csv.gz"), csv("thresholds_gauss.csv"), csv("thresholds_population.csv")
-    tf, cf = csv("thresholds_families.csv"), csv("curves_families.csv.gz")
-    net = net_frames()
+def draw_all(summary: RecordStore, store: ResultStore, log=print) -> None:
+    cg, tg, tp = csv(summary, "curves_gauss.csv.gz"), csv(summary, "thresholds_gauss.csv"), csv(summary, "thresholds_population.csv")
+    tf, cf = csv(summary, "thresholds_families.csv"), csv(summary, "curves_families.csv.gz")
+    net = net_frames(store)
     for f, args in (
         (g1, (cg,)),
         (g2, (tg, tp)),
@@ -620,11 +624,7 @@ def main():
         if PAPER and f is onepager:
             continue
         if net is None and f in (g8, g9):
-            print("figure", f.__name__, "skipped: no network data")
+            log(f"figure {f.__name__} skipped: no network data")
             continue
         f(*args)
-        print("figure", f.__name__, "done")
-
-
-if __name__ == "__main__":
-    main()
+        log(f"figure {f.__name__} done")

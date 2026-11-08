@@ -67,7 +67,8 @@ class RecordStore(Protocol):
 
     def read_text(self, name: str) -> str: ...
 
-    def write_csv(self, name: str, df: pd.DataFrame) -> None: ...
+    def write_csv(self, name: str, df: pd.DataFrame, **kw: Any) -> None:
+        """Without the index unless asked; other to_csv options pass through."""
 
     def write_json(self, name: str, obj: Any, **kw: Any) -> None:
         """json.dump with the given formatting (indent, sort_keys, default): each record keeps its historical format."""

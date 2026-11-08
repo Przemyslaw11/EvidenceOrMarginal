@@ -2,26 +2,23 @@
 
     .venv/bin/python paper/make_figures.py      # after paper/semantics.py and paper/check_theory.py; writes paper/figures/F*.pdf
 
-Same colours, markers and sizes as the paper mode of analysis/figures.py. Reads paper/semantics.json, paper/theory.json and
+Same colours, markers and sizes as the paper mode of the study figures. Reads paper/semantics.json, paper/theory.json and
 results/summary/thresholds_*.csv, so nothing plotted here is typed by hand.
 """
 
 import json
 import os
-import sys
 
-os.environ["HCR_PAPER"] = "1"
+import numpy as np
+import pandas as pd
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
+from scipy.special import ndtri
+
+from densprop.adapters import study_figures as F
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-os.environ["HCR_FIGURES"] = os.path.join(ROOT, "paper", "figures")
-sys.path.insert(0, ROOT)
-import numpy as np  # noqa: E402
-import pandas as pd  # noqa: E402
-from matplotlib.lines import Line2D  # noqa: E402
-from matplotlib.patches import Patch  # noqa: E402
-from scipy.special import ndtri  # noqa: E402
-
-from analysis import figures as F  # noqa: E402
-
+F.configure(os.path.join(ROOT, "paper", "figures"), paper=True)
 plt = F.plt
 CD, EU, GREY = F.OI[0], F.OI[1], "#555555"
 KS = (2, 4, 8, 16, 32)

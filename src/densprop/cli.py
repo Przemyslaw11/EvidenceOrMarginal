@@ -6,6 +6,8 @@
     densprop merge [exp ...]                                                 # results/merged/
     densprop profile-cost --device cuda | --from-results                     # scheduler/cost_model.json
     densprop small [--device cuda]                                           # small reproduction, results/small/
+    densprop thresholds [exp ...] | hypotheses | report                      # results/summary/, results/report.txt
+    densprop figures [--paper] [--out DIR]                                   # G1-G9 (figures/, or the paper's)
 
 `python -m densprop` is the same. Results go to $HCR_RESULTS (default results/).
 """
@@ -130,6 +132,44 @@ def profile_cost(a: argparse.Namespace) -> None:
     pc.profile(load_config(CONFIG), a.device, name, ks, a.n_est, a.network, lambda c: save_cost(COST, c), log=lambda s: print(s, flush=True))
 
 
+def summary_records():
+    from densprop.adapters.records import FileRecords
+
+    return FileRecords(os.path.join(results_dir(), "summary"))
+
+
+def thresholds(a: argparse.Namespace) -> None:
+    from densprop.adapters.parquet_store import ParquetStore
+    from densprop.app.analysis import run_thresholds
+
+    run_thresholds(ParquetStore(results_dir()), summary_records(), a.exp or ["gauss", "population", "families"])
+
+
+def hypotheses(a: argparse.Namespace) -> None:
+    from densprop.adapters.parquet_store import ParquetStore
+    from densprop.app.analysis import run_hypotheses
+
+    run_hypotheses(ParquetStore(results_dir()), summary_records())
+
+
+def figures(a: argparse.Namespace) -> None:
+    from densprop.adapters import study_figures
+    from densprop.adapters.parquet_store import ParquetStore
+
+    study_figures.configure(a.out or os.path.join(ROOT, "figures"), paper=a.paper)
+    study_figures.draw_all(summary_records(), ParquetStore(results_dir()))
+
+
+def report(a: argparse.Namespace) -> None:
+    from densprop.adapters.records import FileRecords
+    from densprop.app.report import report as make_report
+
+    results = FileRecords(os.path.join(ROOT, "results"))
+    statuses = [results.read_json(n) for n in results.names("merged/*_status.json")]
+    prereg = FileRecords(ROOT).read_text("PREREGISTRATION.md")
+    results.write_text("report.txt", make_report(summary_records(), statuses, prereg))
+
+
 def small(a: argparse.Namespace) -> None:
     """Small end-to-end reproduction on one GPU (or CPU), about 30 minutes on an A100, into results/small/ and figures/small/.
 
@@ -142,7 +182,7 @@ def small(a: argparse.Namespace) -> None:
 
     res = os.path.join(ROOT, "results", "small")
     os.makedirs(res, exist_ok=True)
-    env = dict(os.environ, HCR_RESULTS=res, HCR_FIGURES=os.path.join(ROOT, "figures", "small"))
+    env = dict(os.environ, HCR_RESULTS=res)
 
     def run(*c: str) -> None:
         subprocess.run([sys.executable, *c], cwd=ROOT, env=env, check=True)
@@ -154,8 +194,8 @@ def small(a: argparse.Namespace) -> None:
         write_job_list(os.path.join(res, f"jobs_{exp}.jsonl"), small_jobs(exp, cfg))
     run("-m", "densprop", "launch", "--worker", "--device", a.device, "--jobs", *[os.path.join(res, f"jobs_{e}.jsonl") for e in exps])
     run("-m", "densprop", "merge", *exps)
-    run("-m", "analysis.thresholds", "gauss", "population")
-    run("-m", "analysis.figures")
+    run("-m", "densprop", "thresholds", "gauss", "population")
+    run("-m", "densprop", "figures", "--out", os.path.join(ROOT, "figures", "small"))
     print("small reproduction done: results/small/, figures/small/")
 
 
@@ -196,6 +236,21 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--n-est", type=int, default=10_000_000)
     p.add_argument("--network", default="8,triple,0.4", help="k,basis,rho_S of the timed network job ('' to skip)")
     p.set_defaults(fn=profile_cost)
+
+    p = sub.add_parser("thresholds", help="seed-median curves and thresholds into results/summary/ (default: gauss population families)")
+    p.add_argument("exp", nargs="*")
+    p.set_defaults(fn=thresholds)
+
+    p = sub.add_parser("hypotheses", help="the pre-registered hypotheses into results/summary/hypotheses.json")
+    p.set_defaults(fn=hypotheses)
+
+    p = sub.add_parser("figures", help="study figures G1-G9 and the one-page summary")
+    p.add_argument("--paper", action="store_true", help="the paper's rendering: print size, PDF only, no one-page summary")
+    p.add_argument("--out", default=None, help="default: figures/")
+    p.set_defaults(fn=figures)
+
+    p = sub.add_parser("report", help="results/report.txt from the summaries")
+    p.set_defaults(fn=report)
 
     p = sub.add_parser("small", help="small end-to-end reproduction into results/small/")
     p.add_argument("--device", default="cuda")
