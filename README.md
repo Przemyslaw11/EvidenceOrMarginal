@@ -39,7 +39,26 @@ latexmk -pdf main.tex
 ../.venv/bin/python check_numbers.py
 ```
 
-`check_numbers.py` regenerates all numbers and tables and checks them against their sources. The per-run parquet files are not in the repository, so the checks that need them are skipped.
+`check_numbers.py` regenerates all numbers and tables and checks them against their sources. The per-run parquet files (`results/merged/<experiment>.parquet`, 517 MB) are not in the repository, so the checks that need them are skipped. With the six files placed in `results/merged/` (`gauss`, `population`, `convergence`, `families`, `lkj`, `network`), every check runs.
+
+The full rebuild, from the repository root, regenerates the post hoc results and the study figures as well:
+
+```bash
+.venv/bin/python paper/posthoc.py        # needs the parquet files
+.venv/bin/python paper/semantics.py      # PyTorch
+.venv/bin/python paper/regression.py     # PyTorch
+.venv/bin/python paper/check_theory.py   # needs the parquet files; PyTorch
+HCR_PAPER=1 HCR_FIGURES=paper/figures .venv/bin/python -m analysis.figures   # G1-G9; G8, G9 need the parquet files
+cd paper
+../.venv/bin/python make_figures.py
+../.venv/bin/python make_numbers.py
+latexmk -pdf main.tex
+../.venv/bin/python check_numbers.py
+../.venv/bin/python check_identity.py    # PyTorch
+../.venv/bin/python make_arxiv.py
+```
+
+The outputs of the first four steps (`paper/*.json`) are in the repository, so the later steps run without them.
 
 ## Run the study
 
@@ -62,7 +81,9 @@ python -m analysis.figures
 python -m analysis.report
 ```
 
-A job counts as done once its result file exists, so an array can be resubmitted until `merge.py` reports nothing missing.
+`sbatch` is repeated for each experiment's job list. A job counts as done once its result file exists, so an array can be resubmitted until `merge.py` reports nothing missing. The Slurm scripts are site-specific: they load the cluster's Python and CUDA modules and expect a virtual environment in `venv/`.
+
+The time and energy benchmark runs with `sbatch -A <account> scheduler/slurm_energy.sh <float32|float64> <replicate>`, once per setting and replicate; `python -m gpu.energy --summarise` then writes `results/energy/summary.csv` and `report.txt`.
 
 The three-input study runs on one CPU core in a few minutes with `python three_input_study/run_all.py`.
 
