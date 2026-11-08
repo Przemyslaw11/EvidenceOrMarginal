@@ -9,6 +9,7 @@ its mtime fresh while the job runs; a claim older than --stale minutes is taken 
 (only one renamer wins). Each attempt runs in a subprocess; failures are recorded in
 results/failures/<id>.<n>.json and a job is retried at most twice (three attempts).
 """
+
 import argparse
 import json
 import os
@@ -34,8 +35,7 @@ def n_failures(jid):
 def try_claim(jid, stale_min):
     os.makedirs(os.path.join(RES, "claims"), exist_ok=True)
     path = os.path.join(RES, "claims", jid + ".claim")
-    info = json.dumps(dict(host=socket.gethostname(), pid=os.getpid(), slurm=os.environ.get("SLURM_JOB_ID", ""),
-                           time=time.time()))
+    info = json.dumps(dict(host=socket.gethostname(), pid=os.getpid(), slurm=os.environ.get("SLURM_JOB_ID", ""), time=time.time()))
     for _ in range(2):
         try:
             fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
@@ -82,8 +82,14 @@ def run_one(spec, claim, device, timeout_min):
     ok = p.returncode == 0 and os.path.exists(out)
     if not ok:
         os.makedirs(os.path.join(RES, "failures"), exist_ok=True)
-        rec = dict(id=spec["id"], returncode=p.returncode, host=socket.gethostname(),
-                   slurm=os.environ.get("SLURM_JOB_ID", ""), wall_s=time.time() - t0, log="".join(lines)[-6000:])
+        rec = dict(
+            id=spec["id"],
+            returncode=p.returncode,
+            host=socket.gethostname(),
+            slurm=os.environ.get("SLURM_JOB_ID", ""),
+            wall_s=time.time() - t0,
+            log="".join(lines)[-6000:],
+        )
         with open(os.path.join(RES, "failures", f"{spec['id']}.{n_failures(spec['id'])}.json"), "w") as f:
             json.dump(rec, f, indent=1)
     os.remove(claim)
@@ -118,9 +124,12 @@ def worker(jobs_file, device, stale_min, timeout_factor, max_jobs, deadline=None
                 continue
             timeout = max(30.0, timeout_factor * spec.get("expected_min", 10))
             ok, wall = run_one(spec, claim, device, timeout)
-            print(f"[{socket.gethostname()}:{os.environ.get('CUDA_VISIBLE_DEVICES', '-')}] {spec['exp']} {spec['id']} "
-                  f"k={spec['k']} {spec.get('type')} {spec['basis']} seed={spec['seed']} {'OK' if ok else 'FAIL'} "
-                  f"{wall / 60:.1f} min", flush=True)
+            print(
+                f"[{socket.gethostname()}:{os.environ.get('CUDA_VISIBLE_DEVICES', '-')}] {spec['exp']} {spec['id']} "
+                f"k={spec['k']} {spec.get('type')} {spec['basis']} seed={spec['seed']} {'OK' if ok else 'FAIL'} "
+                f"{wall / 60:.1f} min",
+                flush=True,
+            )
             done += 1
             progressed = True
             break
@@ -151,10 +160,26 @@ def main():
         procs = []
         for g in parse_gpus(a.gpus):
             env = dict(os.environ, CUDA_VISIBLE_DEVICES=str(g))
-            procs.append(subprocess.Popen([sys.executable, __file__, "--worker", "--device", a.device, "--jobs", *a.jobs,
-                                           "--stale", str(a.stale), "--timeout-factor", str(a.timeout_factor)]
-                                          + (["--max-jobs", str(a.max_jobs)] if a.max_jobs else [])
-                                          + (["--time-left", a.time_left] if a.time_left else []), env=env))
+            procs.append(
+                subprocess.Popen(
+                    [
+                        sys.executable,
+                        __file__,
+                        "--worker",
+                        "--device",
+                        a.device,
+                        "--jobs",
+                        *a.jobs,
+                        "--stale",
+                        str(a.stale),
+                        "--timeout-factor",
+                        str(a.timeout_factor),
+                    ]
+                    + (["--max-jobs", str(a.max_jobs)] if a.max_jobs else [])
+                    + (["--time-left", a.time_left] if a.time_left else []),
+                    env=env,
+                )
+            )
         sys.exit(max(p.wait() for p in procs))
     deadline = time.time() + 60 * (parse_left(a.time_left) - 2) if a.time_left else None
     for jf in a.jobs:

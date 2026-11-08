@@ -1,4 +1,5 @@
 """M14: validation of the Stage 4 chain (called from tests/run_tests.py network)."""
+
 import math
 
 import numpy as np
@@ -12,10 +13,9 @@ from network.chain import LayerGrid, Teacher, cd_layer, estimate_student, gold_l
 from network.train import Data, Params, loss_val, make_loss_e2e, make_loss_nll
 
 
-def _setup(dev, k=4, rho=0.2, L=3, n_est=200000, M=2 ** 15):
+def _setup(dev, k=4, rho=0.2, L=3, n_est=200000, M=2**15):
     cfg = load_cfg()
-    cfg = dict(cfg, degrees=[4], numerics=dict(cfg["numerics"], M=M, R=8, chunk_mc=2048,
-                                                mind=dict(cfg["numerics"]["mind"], starts=500, steps=100)))
+    cfg = dict(cfg, degrees=[4], numerics=dict(cfg["numerics"], M=M, R=8, chunk_mc=2048, mind=dict(cfg["numerics"]["mind"], starts=500, steps=100)))
     t = Teacher(k, rho, 0.6, 0.5)
     rng = np.random.default_rng(1)
     models = estimate_student(t.sample(rng, n_est, L), L, k, 4, "pair", dev)
@@ -59,7 +59,7 @@ def m14(dev):
     cd_k = cd_layer(mod2, c1)
     K = kernels(mod2, lg, sg, [0.01], cfg["D_floor"])
     eu_k = (poly_on(c1, lg.u) * lg.wt) @ K["K_eu"].T
-    U = torch.as_tensor(np.random.default_rng(4).random((2 ** 20, 2)), device=dev)
+    U = torch.as_tensor(np.random.default_rng(4).random((2**20, 2)), device=dev)
     w = poly_on(c1, U[:, 0])
     A = mod2.A(input_basis(U, 4))
     blocks = torch.arange(U.shape[0], device=dev) % 16
@@ -72,11 +72,13 @@ def m14(dev):
     # (c) autograd vs central finite differences, every loss
     data = Data(t.sample(np.random.default_rng(5), 20000, 3), 3, 4, dev)
     Fb = {"S2": input_basis(torch.as_tensor(np.random.default_rng(6).random((4096, 4)), device=dev), 4)}
-    tg = {"S2": legendre(torch.as_tensor(t.h_given_y(np.random.default_rng(7), np.random.default_rng(6).random((4096, 4)), 3),
-                                         dtype=DT, device=dev), 4).mean(0)}
+    tg = {
+        "S2": legendre(
+            torch.as_tensor(t.h_given_y(np.random.default_rng(7), np.random.default_rng(6).random((4096, 4)), 3), dtype=DT, device=dev), 4
+        ).mean(0)
+    }
     worst = 0.0
-    for name, lf, rows in (("val", loss_val, "val"), ("nll", make_loss_nll(0.01, dev), "all"),
-                           ("e2e", make_loss_e2e(3, Fb, tg), "all")):
+    for name, lf, rows in (("val", loss_val, "val"), ("nll", make_loss_nll(0.01, dev), "all"), ("e2e", make_loss_e2e(3, Fb, tg), "all")):
         P = Params(models, rows=rows)
         g = torch.Generator(device="cpu").manual_seed(0)
         V = [torch.randn(p.shape, generator=g, dtype=DT).to(dev) for p in P.tensors()]
@@ -104,7 +106,7 @@ def m14(dev):
     det.append(f"(d) value loss: max |grad| over rows i>=2 = {g2:.1e}")
     # (e) Markov property of the teacher: partial correlations in normal scores
     L = 4
-    s = t.sample(np.random.default_rng(8), 10 ** 6, L)
+    s = t.sample(np.random.default_rng(8), 10**6, L)
     worst_pc = 0.0
     for l in range(2, L):
         X = np.column_stack([s["sh"][:, l - 1], s["sw"][:, l]])
@@ -112,15 +114,15 @@ def m14(dev):
         r_h = res(s["sh"][:, l])
         for other in (s["sy"][:, 0], s["sh"][:, l - 2], s["sw"][:, l - 1]):
             pc = np.corrcoef(r_h, res(other))[0, 1]
-            worst_pc = max(worst_pc, abs(pc) * math.sqrt(10 ** 6))
+            worst_pc = max(worst_pc, abs(pc) * math.sqrt(10**6))
     ok &= worst_pc < 4.5
     det.append(f"(e) teacher Markov property: max |partial corr| x sqrt(n) = {worst_pc:.2f}")
     # (f) the product belief is exact: layer-wise propagation of the true conditionals equals the direct GOLD
-    Y = torch.as_tensor(np.random.default_rng(10).random((2 ** 20, t.k)), device=dev)
+    Y = torch.as_tensor(np.random.default_rng(10).random((2**20, t.k)), device=dev)
     W4 = torch.as_tensor(np.random.default_rng(9).random((Y.shape[0], L)), device=dev)
     gold = gold_layers(t, Y, W4, sg, 8)
     p = gold[0][-1]
-    v = math.sqrt(t.e ** 2 + t.b ** 2)
+    v = math.sqrt(t.e**2 + t.b**2)
     Kt = torch.exp(-0.5 * ((sg.s[:, None] - t.a * sg.s[None, :]) / v) ** 2) / (v * math.sqrt(2 * math.pi))
     worst_tv = 0.0
     for l in range(1, L):

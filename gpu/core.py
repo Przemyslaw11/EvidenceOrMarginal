@@ -13,6 +13,7 @@ A family allows at most `order` nonzero indices over all k+1 variables: rows i =
 nonzero inputs, rows i > 0 allow `order - 1`. Inputs interacting in groups larger than 3 are not
 supported, so `full` is available for k <= 3 only.
 """
+
 import math
 
 import numpy as np
@@ -73,8 +74,7 @@ def masks(k, m, basis, cap=None, device="cpu"):
         n3 = m + 1 if o >= 4 else 1
         pa, pb = pairs(k)
         third = torch.arange(k, device=device)[None, :] > torch.as_tensor(pb, device=device)[:, None]  # (P, k)
-        tot = (deg_x[:n3, None, None, None] + deg_y[None, :, None, None] + deg_y[None, None, :, None]
-               + deg_y[None, None, None, :])  # (n3, m, m, m)
+        tot = deg_x[:n3, None, None, None] + deg_y[None, :, None, None] + deg_y[None, None, :, None] + deg_y[None, None, None, :]  # (n3, m, m, m)
         out["W3"] = (ok(tot)[:, None, :, :, None, :] & third[None, :, None, None, :, None]).expand(n3, P, m, m, k, m).clone()
     return out
 
@@ -82,7 +82,7 @@ def masks(k, m, basis, cap=None, device="cpu"):
 def count_formula(k, m, basis):
     """Number of coefficients (including a_0) of the pair/triple families without a degree cap."""
     o = order_of(basis, k)
-    return sum(math.comb(k + 1, r) * m ** r for r in range(0, min(o, k + 1) + 1))
+    return sum(math.comb(k + 1, r) * m**r for r in range(min(o, k + 1) + 1))
 
 
 class Model:
@@ -155,8 +155,7 @@ class Model:
         return Model(self.k, m, self.basis, nb, self.cap)
 
     def detached(self):
-        return Model(self.k, self.m, self.basis, {k: (None if v is None else v.detach()) for k, v in self.blocks.items()},
-                     self.cap)
+        return Model(self.k, self.m, self.basis, {k: (None if v is None else v.detach()) for k, v in self.blocks.items()}, self.cap)
 
     def with_flat_D(self):
         """Control model: a_(0, j) = 0 for every j != 0, so D(y) = 1."""
@@ -239,7 +238,7 @@ class Estimator:
             Pf = (Fy[:, self.pa, :, None] * Fy[:, self.pb, None, :]).reshape(n, -1)
             out.append(Fx.T @ Pf)
             if self.has3:
-                out.append(torch.stack([(Pf * Fx[:, i: i + 1]).T @ Fyf for i in range(self.n3)]))
+                out.append(torch.stack([(Pf * Fx[:, i : i + 1]).T @ Fyf for i in range(self.n3)]))
         return out
 
     def add(self, U):
@@ -295,6 +294,7 @@ class GaussianMoments:
         key = tuple(np.round(Rs[np.triu_indices(len(Rs), 1)], 14))
         if key not in self.cache:
             from scipy.special import ndtr
+
             d = len(Rs)
             L = np.linalg.cholesky(Rs)
             grids = np.meshgrid(*([self.z] * d), indexing="ij")

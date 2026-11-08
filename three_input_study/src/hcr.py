@@ -1,12 +1,14 @@
 """Core library: basis, copula sampler, coefficient estimator, propagation engine, metrics.
 Implemented from the task specification; float64 throughout."""
+
 import os
 import time
+
 import numpy as np
 import yaml
+from numpy.polynomial.legendre import leggauss
 from scipy.special import eval_legendre, ndtr, ndtri
 from scipy.stats import beta as beta_dist
-from numpy.polynomial.legendre import leggauss
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -70,12 +72,12 @@ def estimate_coeffs(cfg, types, rhos, n, seed, chunk=None, mmax=6):
             U = np.clip(ndtr(Z @ Ls[k].T), 1e-12, 1 - 1e-12)
             Fx, Fy, Fz = (basis(U[:, i], mmax) for i in range(3))
             S1[k] += Fx.T @ (Fy[:, :, None] * Fz[:, None, :]).reshape(c, -1)
-            S2[k] += (Fx ** 2).T @ ((Fy ** 2)[:, :, None] * (Fz ** 2)[:, None, :]).reshape(c, -1)
+            S2[k] += (Fx**2).T @ ((Fy**2)[:, :, None] * (Fz**2)[:, None, :]).reshape(c, -1)
         done += c
     out = {}
     for k in keys:
         a = (S1[k] / n).reshape(K, K, K)
-        var = (S2[k] / n).reshape(K, K, K) - a ** 2
+        var = (S2[k] / n).reshape(K, K, K) - a**2
         out[k] = (a, np.sqrt(np.maximum(var, 0) / n))
     return out
 
@@ -86,7 +88,7 @@ def ctrue(R, sx, sy, sz):
     beta = np.linalg.solve(R[1:, 1:], sig)
     s2 = 1 - sig @ beta
     mu = beta[0] * sy + beta[1] * sz
-    return np.exp(-0.5 * (sx - mu) ** 2 / s2 + 0.5 * sx ** 2) / np.sqrt(s2)
+    return np.exp(-0.5 * (sx - mu) ** 2 / s2 + 0.5 * sx**2) / np.sqrt(s2)
 
 
 def ctrue_grid(G, R):
@@ -119,9 +121,9 @@ def scenario_specs(cfg):
 # ------------------------------------------------------------------ model tensors
 def model_N(G, a, m):
     F = G.F[:, : m + 1]
-    T = np.tensordot(F, a, axes=(1, 0))        # (x,j,k)
-    T = np.tensordot(T, F, axes=(1, 1))        # (x,k,a)
-    return np.tensordot(T, F, axes=(1, 1))     # (x,a,b)
+    T = np.tensordot(F, a, axes=(1, 0))  # (x,j,k)
+    T = np.tensordot(T, F, axes=(1, 1))  # (x,k,a)
+    return np.tensordot(T, F, axes=(1, 1))  # (x,a,b)
 
 
 def model_D(F, a0):
@@ -145,17 +147,20 @@ def gold_for(G, R, Ct, specs, cfg):
     if fb:
         ns, smax = cfg["gold_fallback"]["nodes"], cfg["gold_fallback"]["smax"]
         s = np.linspace(-smax, smax, ns)
-        tw = np.full(ns, s[1] - s[0]); tw[[0, -1]] *= 0.5
+        tw = np.full(ns, s[1] - s[0])
+        tw[[0, -1]] *= 0.5
         y = ndtr(s)
-        phi = np.exp(-0.5 * s ** 2) / np.sqrt(2 * np.pi)
+        phi = np.exp(-0.5 * s**2) / np.sqrt(2 * np.pi)
         W = np.outer(tw * phi, tw * phi)
         Qs = np.stack([(q_on(specs[names[i]], y) * W).ravel() for i in fb], 1)
-        sig = R[0, 1:]; beta = np.linalg.solve(R[1:, 1:], sig); s2 = 1 - sig @ beta
+        sig = R[0, 1:]
+        beta = np.linalg.solve(R[1:, 1:], sig)
+        s2 = 1 - sig @ beta
         syy, szz = np.meshgrid(s, s, indexing="ij")
         mu = (beta[0] * syy + beta[1] * szz).ravel()
         res = np.empty((G.n, len(fb)))
         for ix, sx in enumerate(G.sx):
-            c = np.exp(-0.5 * (sx - mu) ** 2 / s2 + 0.5 * sx ** 2) / np.sqrt(s2)
+            c = np.exp(-0.5 * (sx - mu) ** 2 / s2 + 0.5 * sx**2) / np.sqrt(s2)
             res[ix] = c @ Qs
         for j, i in enumerate(fb):
             out[names[i]] = (res[:, j].copy(), abs(G.w @ res[:, j] - 1), "normal-score")
@@ -204,7 +209,7 @@ def evaluate(G, a, m, R, scen_specs, cfg, eps_list, gold_fn, want_dens=False):
     qs = {nm: q_on(specs[nm], G.u) for nm in names}
     gold = gold_fn(specs)
     Qw = np.stack([(qs[nm] * G.W2).ravel() for nm in names], 1)
-    okD = (D >= floor)
+    okD = D >= floor
     defined = {nm: bool(D[qs[nm] >= srel * qs[nm].max()].min() >= floor) for nm in names}
     # EXACT_UNCAL (expectation of the ratio), integrated over cells with D>=floor; never regularised
     Cu = N / np.where(okD, D, 1.0)
@@ -243,21 +248,44 @@ def evaluate(G, a, m, R, scen_specs, cfg, eps_list, gold_fn, want_dens=False):
         mI_d, mm_d, mv_d = moments(G, du)
         mI_u, mm_u, mv_u = moments(G, un_n)
         mI_g, mm_g, mv_g = moments(G, gv)
-        b = dict(base, defined=int(d_), quadrature_limited=int(gerr > cfg["gold_tol"]), gold_norm_err=float(gerr),
-                 gold_method=gmeth, int_duda=mI_d, int_uncal=mI_u if d_ else NAN, int_gold=mI_g,
-                 mean_duda=mm_d, var_duda=mv_d, mean_uncal=mm_u if d_ else NAN, var_uncal=mv_u if d_ else NAN,
-                 mean_gold=mm_g, var_gold=mv_g, E_q_D=eqD[nm],
-                 neg_mass_duda=float(-(G.w @ np.minimum(du, 0))),
-                 d_denom=tv(G, du, un) if d_ else NAN,
-                 d_total=tv(G, du, gv),
-                 dmean_vs_uncal=abs(mm_d - mm_u) if d_ else NAN,
-                 relvar_vs_uncal=(mv_d - mv_u) / mv_u if d_ else NAN,
-                 dmean_vs_gold=abs(mm_d - mm_g), relvar_vs_gold=(mv_d - mv_g) / mv_g,
-                 d_model_uncal=tv(G, un, gv) if d_ else NAN)
+        b = dict(
+            base,
+            defined=int(d_),
+            quadrature_limited=int(gerr > cfg["gold_tol"]),
+            gold_norm_err=float(gerr),
+            gold_method=gmeth,
+            int_duda=mI_d,
+            int_uncal=mI_u if d_ else NAN,
+            int_gold=mI_g,
+            mean_duda=mm_d,
+            var_duda=mv_d,
+            mean_uncal=mm_u if d_ else NAN,
+            var_uncal=mv_u if d_ else NAN,
+            mean_gold=mm_g,
+            var_gold=mv_g,
+            E_q_D=eqD[nm],
+            neg_mass_duda=float(-(G.w @ np.minimum(du, 0))),
+            d_denom=tv(G, du, un) if d_ else NAN,
+            d_total=tv(G, du, gv),
+            dmean_vs_uncal=abs(mm_d - mm_u) if d_ else NAN,
+            relvar_vs_uncal=(mv_d - mv_u) / mv_u if d_ else NAN,
+            dmean_vs_gold=abs(mm_d - mm_g),
+            relvar_vs_gold=(mv_d - mv_g) / mv_g,
+            d_model_uncal=tv(G, un, gv) if d_ else NAN,
+        )
         for eps in eps_list:
             ca = cal[eps][:, j]
-            rows.append(dict(b, eps=eps, d_neg=tv(G, un, ca) if d_ else NAN, d_model_cal=tv(G, ca, gv),
-                             d_dc=tv(G, du, ca), int_cal=moments(G, ca)[0], runtime_s=rt))
+            rows.append(
+                dict(
+                    b,
+                    eps=eps,
+                    d_neg=tv(G, un, ca) if d_ else NAN,
+                    d_model_cal=tv(G, ca, gv),
+                    d_dc=tv(G, du, ca),
+                    int_cal=moments(G, ca)[0],
+                    runtime_s=rt,
+                )
+            )
             if want_dens:
                 dens[(nm, eps)] = dict(x=G.u, gold=gv, uncal=un_n, cal=ca, duda=du)
     return rows, dens

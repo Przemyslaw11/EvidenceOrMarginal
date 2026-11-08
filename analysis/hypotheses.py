@@ -3,6 +3,7 @@
     python -m analysis.hypotheses
 Each hypothesis yields a verdict (supported / not supported / inconclusive), the evaluable cells and the evidence.
 """
+
 import json
 import math
 import os
@@ -10,7 +11,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from analysis.common import BOOT_SEED, B_BOOT, SUMMARY, boot_idx, crossing, load, median_curve, onset_negative, seed_matrix
+from analysis.common import B_BOOT, BOOT_SEED, SUMMARY, boot_idx, load, median_curve, onset_negative, seed_matrix
 
 LOG2 = math.log(2.0)
 
@@ -61,8 +62,7 @@ def h1a_h2a_h2b_pop(pop):
         o = {int(r.m): r.neg_onset for r in g.itertuples()}
         if not all(m in o for m in (2, 4, 6)):
             continue
-        cells.append(dict(type=typ, k=int(k), basis=basis, onset_m2=o[2], onset_m4=o[4], onset_m6=o[6],
-                          sig=bool(o[6] < o[4] < o[2])))
+        cells.append(dict(type=typ, k=int(k), basis=basis, onset_m2=o[2], onset_m4=o[4], onset_m6=o[6], sig=bool(o[6] < o[4] < o[2])))
     s = sum(c["sig"] for c in cells)
     out["H2a"] = dict(verdict=verdict(s, len(cells)), significant=s, cells=cells)
     cells = []
@@ -109,17 +109,23 @@ def h1b_h2b_gauss(g):
 
 
 def powerlaw(curves, typ, basis):
-    c = curves[(curves.type == typ) & (curves.basis == basis) & (curves.m == 4) & (curves.belief == "S2")
-               & np.isclose(curves.eps, 0.01)]
-    c = c[np.isfinite(c.d_denom_med) & (c.d_denom_med > 0) & (c.chi_D_med > 0) & (c.share_undefined < 0.5)
-          & (c.d_denom_below_share.fillna(1) < 0.5)]
+    c = curves[(curves.type == typ) & (curves.basis == basis) & (curves.m == 4) & (curves.belief == "S2") & np.isclose(curves.eps, 0.01)]
+    c = c[np.isfinite(c.d_denom_med) & (c.d_denom_med > 0) & (c.chi_D_med > 0) & (c.share_undefined < 0.5) & (c.d_denom_below_share.fillna(1) < 0.5)]
     if len(c) < 3:
         return None
     x, y = np.log(c.chi_D_med.to_numpy()), np.log(c.d_denom_med.to_numpy())
     beta, logC = np.polyfit(x, y, 1)
     res = y - (logC + beta * x)
-    return dict(beta=float(beta), C=float(math.exp(logC)), n=len(c), within2=float(np.mean(np.abs(res) <= LOG2)),
-                k=c.k.tolist(), rho=c.rho_S.tolist(), chi=c.chi_D_med.tolist(), d=c.d_denom_med.tolist())
+    return dict(
+        beta=float(beta),
+        C=float(math.exp(logC)),
+        n=len(c),
+        within2=float(np.mean(np.abs(res) <= LOG2)),
+        k=c.k.tolist(),
+        rho=c.rho_S.tolist(),
+        chi=c.chi_D_med.tolist(),
+        d=c.d_denom_med.tolist(),
+    )
 
 
 def h1c(curves_pop):
@@ -127,11 +133,20 @@ def h1c(curves_pop):
     for (typ, basis), _ in curves_pop.groupby(["type", "basis"]):
         f = powerlaw(curves_pop, typ, basis)
         if f is not None:
-            cells.append(dict(type=typ, basis=basis, **{k: v for k, v in f.items() if k in ("beta", "C", "n", "within2")},
-                              verdict=share_verdict(f["within2"], 0.9, 0.5)))
+            cells.append(
+                dict(
+                    type=typ,
+                    basis=basis,
+                    **{k: v for k, v in f.items() if k in ("beta", "C", "n", "within2")},
+                    verdict=share_verdict(f["within2"], 0.9, 0.5),
+                )
+            )
     vs = [c["verdict"] for c in cells]
-    v = "supported" if vs and all(x == "supported" for x in vs) else (
-        "not supported" if vs and all(x == "not supported" for x in vs) else "inconclusive")
+    v = (
+        "supported"
+        if vs and all(x == "supported" for x in vs)
+        else ("not supported" if vs and all(x == "not supported" for x in vs) else "inconclusive")
+    )
     return dict(verdict=v, cells=cells)
 
 
@@ -175,8 +190,21 @@ def h3(gauss, fam, lkj, curves_g):
         pr, br, _ = boot_onset(rs, idx=idx_r)
         lo, hi = ci(bg - br)
         inside, outside = lo >= -0.05 and hi <= 0.05, hi < -0.05 or lo > 0.05
-        cells_a.append(dict(family=famname, type=typ, k=int(k), basis=basis, onset=pg, onset_gauss=pr, diff=pg - pr,
-                            ci=[lo, hi], inside=bool(inside), outside=bool(outside), paired=paired))
+        cells_a.append(
+            dict(
+                family=famname,
+                type=typ,
+                k=int(k),
+                basis=basis,
+                onset=pg,
+                onset_gauss=pr,
+                diff=pg - pr,
+                ci=[lo, hi],
+                inside=bool(inside),
+                outside=bool(outside),
+                paired=paired,
+            )
+        )
         rg, _, Vg = seed_matrix(gs, "d_denom")
         rr, _, Vr = seed_matrix(rs, "d_denom")
         bel_g = gs.groupby("rho_S").d_denom_below.mean()
@@ -187,24 +215,34 @@ def h3(gauss, fam, lkj, curves_g):
             jr = list(rr).index(rho)
             if bel_g.get(rho, 1) >= 0.5 or bel_r.get(rho, 1) >= 0.5:
                 continue
-            mg, mr = median_curve(Vg[:, j: j + 1])[0], median_curve(Vr[:, jr: jr + 1])[0]
+            mg, mr = median_curve(Vg[:, j : j + 1])[0], median_curve(Vr[:, jr : jr + 1])[0]
             if not (np.isfinite(mg) and np.isfinite(mr)) or mr <= 0:
                 continue
-            bgv = np.array([median_curve(Vg[i, j: j + 1])[0] for i in idx_g])
-            brv = np.array([median_curve(Vr[i, jr: jr + 1])[0] for i in idx_r])
+            bgv = np.array([median_curve(Vg[i, j : j + 1])[0] for i in idx_g])
+            brv = np.array([median_curve(Vr[i, jr : jr + 1])[0] for i in idx_r])
             with np.errstate(divide="ignore", invalid="ignore"):
                 ratio = bgv / brv
             ratio = np.where(np.isnan(ratio), np.inf, ratio)
             lo, hi = ci(ratio)
-            cells_b.append(dict(family=famname, type=typ, k=int(k), basis=basis, rho_S=float(rho), ratio=mg / mr, ci=[lo, hi],
-                                inside=bool(lo >= 0.5 and hi <= 2), outside=bool(hi < 0.5 or lo > 2)))
+            cells_b.append(
+                dict(
+                    family=famname,
+                    type=typ,
+                    k=int(k),
+                    basis=basis,
+                    rho_S=float(rho),
+                    ratio=mg / mr,
+                    ci=[lo, hi],
+                    inside=bool(lo >= 0.5 and hi <= 2),
+                    outside=bool(hi < 0.5 or lo > 2),
+                )
+            )
     for name, cells in (("H3a", cells_a), ("H3b", cells_b)):
         if not cells:
             out[name] = dict(verdict="inconclusive", cells=[])
             continue
         v = "supported" if all(c["inside"] for c in cells) else ("not supported" if any(c["outside"] for c in cells) else "inconclusive")
-        out[name] = dict(verdict=v, n=len(cells), n_inside=sum(c["inside"] for c in cells),
-                         n_outside=sum(c["outside"] for c in cells), cells=cells)
+        out[name] = dict(verdict=v, n=len(cells), n_inside=sum(c["inside"] for c in cells), n_outside=sum(c["outside"] for c in cells), cells=cells)
     cells = []
     if lkj is not None:
         L = prim(lkj)
@@ -215,9 +253,19 @@ def h3(gauss, fam, lkj, curves_g):
                 continue
             pred = f["C"] * g.chi_D.to_numpy() ** f["beta"]
             w = np.abs(np.log(g.d_denom.to_numpy() / pred)) <= LOG2
-            cells.append(dict(basis=basis, n=int(len(g)), within2=float(w.mean()), beta=f["beta"], C=f["C"],
-                              by_k_eta={f"{int(k)}_{int(e)}": float(np.mean(w[(g.k == k).to_numpy() & (g.eta == e).to_numpy()]))
-                                        for k, e in g[["k", "eta"]].drop_duplicates().itertuples(index=False)}))
+            cells.append(
+                dict(
+                    basis=basis,
+                    n=len(g),
+                    within2=float(w.mean()),
+                    beta=f["beta"],
+                    C=f["C"],
+                    by_k_eta={
+                        f"{int(k)}_{int(e)}": float(np.mean(w[(g.k == k).to_numpy() & (g.eta == e).to_numpy()]))
+                        for k, e in g[["k", "eta"]].drop_duplicates().itertuples(index=False)
+                    },
+                )
+            )
     share = np.mean([c["within2"] for c in cells]) if cells else float("nan")
     out["H3c"] = dict(verdict=share_verdict(share, 0.8, 0.5) if cells else "inconclusive", share=share, cells=cells)
     return out
@@ -225,12 +273,23 @@ def h3(gauss, fam, lkj, curves_g):
 
 # ---------------------------------------------------------------- Q4
 def h4a(curves_g):
-    c = curves_g[(curves_g.m == 4) & np.isclose(curves_g.eps, 0.01) & (curves_g.basis == "pair") & curves_g.k.isin([2, 8, 32])
-                 & curves_g.belief.isin(["S2", "S3c", "S4"]) & (curves_g.rho_S > 0) & (curves_g.share_undefined < 0.5)
-                 & np.isfinite(curves_g.d_denom_sd)]
+    c = curves_g[
+        (curves_g.m == 4)
+        & np.isclose(curves_g.eps, 0.01)
+        & (curves_g.basis == "pair")
+        & curves_g.k.isin([2, 8, 32])
+        & curves_g.belief.isin(["S2", "S3c", "S4"])
+        & (curves_g.rho_S > 0)
+        & (curves_g.share_undefined < 0.5)
+        & np.isfinite(curves_g.d_denom_sd)
+    ]
     share = float((c.d_denom_sd > c.d_denom_mcse).mean()) if len(c) else float("nan")
-    return dict(verdict=share_verdict(share, 0.9, 0.5) if len(c) else "inconclusive", share=share, n=int(len(c)),
-                median_sd_over_mcse=float((c.d_denom_sd / c.d_denom_mcse).median()) if len(c) else float("nan"))
+    return dict(
+        verdict=share_verdict(share, 0.9, 0.5) if len(c) else "inconclusive",
+        share=share,
+        n=len(c),
+        median_sd_over_mcse=float((c.d_denom_sd / c.d_denom_mcse).median()) if len(c) else float("nan"),
+    )
 
 
 # ---------------------------------------------------------------- Q5
@@ -249,9 +308,17 @@ def paired_change(before, after, value, keys, sign=-1):
         med = np.median(ch[idx], axis=1)
         lo, hi = ci(med)
         sig = hi < 0 if sign < 0 else lo > 0
-        cells.append(dict(zip(keys, [k.item() if hasattr(k, "item") else k for k in (key if isinstance(key, tuple) else (key,))]),
-                          n=len(ch), median_change=float(np.median(ch)), ci=[float(lo), float(hi)], sig=bool(sig),
-                          before=float(np.median(g.b)), after=float(np.median(g.a))))
+        cells.append(
+            dict(
+                zip(keys, [k.item() if hasattr(k, "item") else k for k in (key if isinstance(key, tuple) else (key,))]),
+                n=len(ch),
+                median_change=float(np.median(ch)),
+                ci=[float(lo), float(hi)],
+                sig=bool(sig),
+                before=float(np.median(g.b)),
+                after=float(np.median(g.a)),
+            )
+        )
     return cells
 
 
@@ -267,8 +334,17 @@ def h5(net):
         v = g.ratio.to_numpy()
         med = np.median(v[boot_idx(len(v))], axis=1)
         lo, hi = ci(med)
-        cells.append(dict(k=int(key[0]), rho_S=float(key[1]), basis=key[2], belief=key[3], ratio=float(np.median(v)),
-                          ci=[float(lo), float(hi)], sig=bool(lo > 1)))
+        cells.append(
+            dict(
+                k=int(key[0]),
+                rho_S=float(key[1]),
+                basis=key[2],
+                belief=key[3],
+                ratio=float(np.median(v)),
+                ci=[float(lo), float(hi)],
+                sig=bool(lo > 1),
+            )
+        )
     s = sum(c["sig"] for c in cells)
     out["H5a"] = dict(verdict=verdict(s, len(cells)), significant=s, n=len(cells), cells=cells)
     n1 = net[(net.table == "neuron1") & np.isclose(net.eps, 0.01) & (net.belief == "S2")].copy()
@@ -293,8 +369,7 @@ def h5(net):
     for L in (1, 2, 3, 4):
         hb = held[(held.run == "direct") & (held.layer == L)].groupby(["k", "rho_S", "basis", "seed"]).d_total.mean().reset_index()
         for opt in ("adam", "lbfgs"):
-            ha = held[(held.run == f"e2e{L}_{opt}_direct") & (held.layer == L)].groupby(
-                ["k", "rho_S", "basis", "seed"]).d_total.mean().reset_index()
+            ha = held[(held.run == f"e2e{L}_{opt}_direct") & (held.layer == L)].groupby(["k", "rho_S", "basis", "seed"]).d_total.mean().reset_index()
             if ha.empty:
                 continue
             for c in paired_change(hb, ha, "d_total", ["k", "rho_S", "basis"]):
@@ -323,6 +398,7 @@ def main():
     conv = os.path.join(SUMMARY, "convergence.csv")
     if os.path.exists(conv):
         from analysis.convergence import m13
+
         ok, det = m13()
         res["H4b"] = dict(verdict="supported" if ok else "not supported", detail=det)
     net = load("network")

@@ -6,6 +6,7 @@ then training from the direct estimates and from a flat-D control initialisation
     end-to-end loss (e2e) x (adam, lbfgs) for every L in 1..4, trained on the beliefs S2, S3c, S4.
 Every run is evaluated on all beliefs (training beliefs and the held-out beliefs S3a, S3b, S3d).
 """
+
 import math
 import time
 
@@ -71,12 +72,12 @@ def run_network_job(spec, cfg, device, rng_for):
         for i, nm in enumerate(nc["beliefs"]):
             r = rng(f"{s}", 50 + i)
             if nm == "S4":
-                Y = teacher.sample(r, 2 ** 16, 1)["y"]
+                Y = teacher.sample(r, 2**16, 1)["y"]
             elif nm == "S2":
-                Y = r.random((2 ** 16, k))
+                Y = r.random((2**16, k))
             else:
                 ab = np.array([cfg["beliefs"][nm][j % len(cfg["beliefs"][nm])] for j in range(k)], float)
-                Y = r.beta(ab[:, 0], ab[:, 1], size=(2 ** 16, k))
+                Y = r.beta(ab[:, 0], ab[:, 1], size=(2**16, k))
             bel_F[nm] = input_basis(torch.as_tensor(Y, dtype=DT, device=device), m)
             tgt[nm] = {}
             for L in nc["L"]:
@@ -98,8 +99,7 @@ def run_network_job(spec, cfg, device, rng_for):
                 P = Params(base, rows="all")
                 lf = {s: make_loss_e2e(L, e2e[s][0], {b: t[L] for b, t in e2e[s][1].items()}) for s in splits}
                 rec = train(P, lambda mods, data, st: lf[data_split(data, splits)](mods, data, st), splits, opt, ocfg[opt])
-                evaluate(P.models()[:L] + base[L:], dict(run=f"e2e{L}_{opt}_{init}", loss="e2e", opt=opt, init=init,
-                                                         L_train=L, **rec))
+                evaluate(P.models()[:L] + base[L:], dict(run=f"e2e{L}_{opt}_{init}", loss="e2e", opt=opt, init=init, L_train=L, **rec))
     df = pd.DataFrame(rows)
     df["rho_S"] = rho
     return df

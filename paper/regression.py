@@ -6,6 +6,7 @@ Not pre-registered and not a study result. Gaussian teacher, type SUM, m = 4, co
 study's truth (the Jeffrey answer). Output moments are B^T E_q[features]: the run-time form of the moment message, with no denominator.
 REG1 has additive features, REG2 adds the two-input products of the pair family. p_EU drops belief samples with D < .01, as in the study.
 """
+
 import json
 import os
 import sys
@@ -71,13 +72,23 @@ def run(k, rho, rng):
         mu = ndtri(np.clip(Y, 1e-15, 1 - 1e-15)) @ beta
         gold = np.zeros_like(s)
         for i in range(0, Q, 1 << 13):
-            gold += (np.exp(-0.5 * ((s[None] - mu[i:i + (1 << 13), None]) / sd) ** 2) / (sd * np.sqrt(2 * np.pi))).sum(0)
+            gold += (np.exp(-0.5 * ((s[None] - mu[i : i + (1 << 13), None]) / sd) ** 2) / (sd * np.sqrt(2 * np.pi))).sum(0)
         gold /= Q
         pm = P.mean(0)
         c2, c1 = pm @ reg2, pm[:k1] @ reg1
-        tv = lambda c: float(0.5 * hs * np.abs((c @ FX.T) * phi - gold).sum())  # noqa: E731
-        rows.append(dict(k=k, rho=rho, belief=name, low_share=float((~ok).mean()), cd=tv(A.mean(0) / D.mean()), eu=tv((A[ok] / D[ok, None]).mean(0)),
-                         reg1=tv(c1 / c1[0]), reg2=tv(c2 / c2[0])))
+        tv = lambda c: float(0.5 * hs * np.abs((c @ FX.T) * phi - gold).sum())
+        rows.append(
+            dict(
+                k=k,
+                rho=rho,
+                belief=name,
+                low_share=float((~ok).mean()),
+                cd=tv(A.mean(0) / D.mean()),
+                eu=tv((A[ok] / D[ok, None]).mean(0)),
+                reg1=tv(c1 / c1[0]),
+                reg2=tv(c2 / c2[0]),
+            )
+        )
     return rows
 
 

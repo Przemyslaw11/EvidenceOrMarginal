@@ -9,6 +9,7 @@ blocks, the four output densities are
 Both coefficient forms use the same samples, so the covariance identity holds in-sample.
 All TV, integrals, means and variances are evaluated on a trapezoid grid in normal-score s.
 """
+
 import math
 
 import numpy as np
@@ -29,10 +30,9 @@ class Grid:
         self.w = torch.full_like(self.s, h)
         self.w[0] = self.w[-1] = h / 2
         t = torch.linspace(0, 1, 17, dtype=DT, device=device)[:, None]  # cubic Lagrange weights on nodes -1, 0, 1, 2
-        self._L = torch.cat([-t * (t - 1) * (t - 2) / 6, (t + 1) * (t - 1) * (t - 2) / 2,
-                             -(t + 1) * t * (t - 2) / 2, (t + 1) * t * (t - 1) / 6], 1)
+        self._L = torch.cat([-t * (t - 1) * (t - 2) / 6, (t + 1) * (t - 1) * (t - 2) / 2, -(t + 1) * t * (t - 2) / 2, (t + 1) * t * (t - 1) / 6], 1)
         self.x = torch.special.ndtr(self.s)
-        self.phi = torch.exp(-0.5 * self.s ** 2) / math.sqrt(2 * math.pi)
+        self.phi = torch.exp(-0.5 * self.s**2) / math.sqrt(2 * math.pi)
         self.F = legendre(self.x, m_max)
         self.xg, self.wg = gauss_legendre(x_gl, device)
         self.Fg = legendre(self.xg, m_max)
@@ -120,7 +120,7 @@ def sample_beliefs(rngs, M, k, cfg_b, names):
 def _starts(k, n, rng, extra):
     pts = []
     if k <= 10:
-        corners = ((np.arange(2 ** k)[:, None] >> np.arange(k)) & 1).astype(float)
+        corners = ((np.arange(2**k)[:, None] >> np.arange(k)) & 1).astype(float)
     else:
         corners = rng.integers(0, 2, (256, k)).astype(float)
     pts.append(corners)
@@ -176,8 +176,7 @@ class DStack:
         self.w1 = torch.stack([pad(x["W1"][0], (1,)).reshape(-1) for x in b])
         self.pa, self.pb = pa, pb
         self.w2 = torch.stack([pad(x["W2"][0], (1, 2)).reshape(-1) for x in b]) if b[0]["W2"] is not None else None
-        self.w3 = (torch.stack([pad(x["W3"][0], (1, 2, 4)).reshape(len(pa) * m * m, k * m) for x in b])
-                   if b[0]["W3"] is not None else None)
+        self.w3 = torch.stack([pad(x["W3"][0], (1, 2, 4)).reshape(len(pa) * m * m, k * m) for x in b]) if b[0]["W3"] is not None else None
 
     def __call__(self, Y):
         G, n, k = Y.shape
@@ -209,20 +208,19 @@ def min_D_batch(models, rng, cfg_md, extras=None, device="cpu", supp=None, group
     lo, hi = (0.0, 1.0) if supp is None else (1e-12, 1 - 1e-12)
     out = []
     for g0 in range(0, len(models), group):
-        ms, ss = models[g0: g0 + group], starts[g0: g0 + group]
+        ms, ss = models[g0 : g0 + group], starts[g0 : g0 + group]
         n = max(len(s) for s in ss)
         # equal row counts per model: pad with copies of the first start, excluded from the result
-        Y = torch.tensor(np.stack([np.concatenate([s, np.repeat(s[:1], n - len(s), 0)]) for s in ss]),
-                         dtype=DT, device=device)
+        Y = torch.tensor(np.stack([np.concatenate([s, np.repeat(s[:1], n - len(s), 0)]) for s in ss]), dtype=DT, device=device)
         valid = torch.tensor(np.stack([np.arange(n) < len(s) for s in ss]), device=device)
         f = DStack(ms)
         logq = thr = None
         if supp is not None:
-            terms = [_beta_terms(ab, device) for ab, _ in supp[g0: g0 + group]]
+            terms = [_beta_terms(ab, device) for ab, _ in supp[g0 : g0 + group]]
             am, bm = (torch.stack([t[i] for t in terms])[:, None] for i in (0, 1))
             c = torch.stack([t[2] for t in terms])[:, None]
-            thr = torch.tensor([th for _, th in supp[g0: g0 + group]], dtype=DT, device=device)[:, None]
-            logq = lambda Z: _beta_eval(Z, am, bm, c)  # noqa: E731
+            thr = torch.tensor([th for _, th in supp[g0 : g0 + group]], dtype=DT, device=device)[:, None]
+            logq = lambda Z: _beta_eval(Z, am, bm, c)
         with torch.no_grad():
             Y.clamp_(lo, hi)
         if logq is not None:
@@ -276,8 +274,7 @@ class _Acc:
         self.low_Y = None
 
     def host(self):
-        self.n_bad, self.n_drop, self.n_Dneg, self.n_Nneg = (int(v) for v in (self.n_bad, self.n_drop, self.n_Dneg,
-                                                                                self.n_Nneg))
+        self.n_bad, self.n_drop, self.n_Dneg, self.n_Nneg = (int(v) for v in (self.n_bad, self.n_drop, self.n_Dneg, self.n_Nneg))
         self.min_mc = float(self.min_mc)
 
 
@@ -312,7 +309,7 @@ def mc_pass(model6, cop, beliefs, grid, cfg, degrees, device):
         acc = {m: _Acc(R, m, len(eps_list), G, grid.xg.shape[0], device) for m in degrees}
         for r in range(R):
             for st in range(r * block, (r + 1) * block, chunk):
-                Yc = Y[st: st + chunk]
+                Yc = Y[st : st + chunk]
                 Fy = input_basis(Yc, model6.m)
                 gold_c = cop.cond_s(grid.s, Yc)
                 insupp = (logq(Yc) >= thr) if logq is not None else torch.ones(Yc.shape[0], dtype=torch.bool, device=device)
@@ -343,7 +340,7 @@ def mc_pass(model6, cop, beliefs, grid, cfg, degrees, device):
                         a.CALg[r, e] += (w / Z) @ Ngc
                     if name == "S2":
                         a.n_Dneg += (A0 < 0).sum()
-                        Fx = legendre(src["X"][st: st + chunk], m)
+                        Fx = legendre(src["X"][st : st + chunk], m)
                         a.n_Nneg += ((Fx * A).sum(1) < 0).sum()
                     if name != "S1":  # lowest-D samples in supp q seed the optimiser
                         Dm = torch.where(insupp, A0, torch.full_like(A0, math.inf))
@@ -357,16 +354,22 @@ def mc_pass(model6, cop, beliefs, grid, cfg, degrees, device):
             a.host()
         stats[name] = acc
 
-    return dict(models=models, names=names, stats=stats, degrees=degrees, mind={},
-                M={n: int(beliefs["S2" if n == "S1" else n]["Y"].shape[0]) for n in names},
-                supp={n: (beliefs[n]["logq"].ab, beliefs[n]["thr"]) for n in names if n.startswith("S3")})
+    return dict(
+        models=models,
+        names=names,
+        stats=stats,
+        degrees=degrees,
+        mind={},
+        M={n: int(beliefs["S2" if n == "S1" else n]["Y"].shape[0]) for n in names},
+        supp={n: (beliefs[n]["logq"].ab, beliefs[n]["thr"]) for n in names if n.startswith("S3")},
+    )
 
 
 def solve_mind(passes, cfg, rng_md, device):
     """min D of every case in `passes` (from `mc_pass`): over the cube (S1, S2, S4, negativity) and over supp q for
     the Beta beliefs; all cube searches of all cases and degrees as one stacked problem, then all constrained ones."""
     md, floor = cfg["numerics"]["mind"], cfg["D_floor"]
-    finite = lambda a: a.low_Y[torch.isfinite(a.low_D)]  # noqa: E731
+    finite = lambda a: a.low_Y[torch.isfinite(a.low_D)]
     cube_models, extras = [], []
     for p in passes:
         for m in p["degrees"]:
@@ -391,9 +394,14 @@ def solve_mind(passes, cfg, rng_md, device):
                     else:
                         tasks.append((p, m, n))
     if tasks:
-        res_all = min_D_batch([p["models"][m] for p, m, _ in tasks], rng_md, md,
-                              [finite(p["stats"][n][m]).cpu().numpy() for p, m, n in tasks], device,
-                              [p["supp"][n] for p, _, n in tasks])
+        res_all = min_D_batch(
+            [p["models"][m] for p, m, _ in tasks],
+            rng_md,
+            md,
+            [finite(p["stats"][n][m]).cpu().numpy() for p, m, n in tasks],
+            device,
+            [p["supp"][n] for p, _, n in tasks],
+        )
         for (p, m, n), res in zip(tasks, res_all):
             a = p["stats"][n][m]
             best = min(res[0], a.min_mc) if not math.isnan(res[0]) else a.min_mc
@@ -427,22 +435,48 @@ def case_rows(p, grid, cfg, dens=None):
             Wt, W2t = float(SW[-1]), float(a.SW2.sum())
             ess = Wt * Wt / W2t if W2t > 0 else NAN
             EqD = float(a.SWD.sum() / SW[-1])
-            sdD = math.sqrt(max(float(a.SWD2.sum() / SW[-1]) - EqD ** 2, 0.0))
-            base = dict(m=m, belief=name, n_coef=models[m].n_coef, chi_D=models[m].chi_D(),
-                        minD=mc[0], minD_opt=mc[1], minD_mc=mc[2], minD_natt=mc[3], minD_nfeas=mc[4],
-                        minD_supp=ms[0], minD_supp_opt=ms[1], minD_supp_mc=ms[2],
-                        minD_supp_method=ms[5] if len(ms) > 5 else "cube",
-                        P_Dneg_u=stats["S2"][m].n_Dneg / p["M"]["S2"] if "S2" in stats else NAN,
-                        frac_Nneg=stats["S2"][m].n_Nneg / p["M"]["S2"] if "S2" in stats else NAN,
-                        q_valid=int(q_valid), defined=int(defined), n_bad=a.n_bad, n_drop=a.n_drop,
-                        M=p["M"][name],
-                        ess=ess, E_q_D=EqD, sd_q_D=sdD)
+            sdD = math.sqrt(max(float(a.SWD2.sum() / SW[-1]) - EqD**2, 0.0))
+            base = dict(
+                m=m,
+                belief=name,
+                n_coef=models[m].n_coef,
+                chi_D=models[m].chi_D(),
+                minD=mc[0],
+                minD_opt=mc[1],
+                minD_mc=mc[2],
+                minD_natt=mc[3],
+                minD_nfeas=mc[4],
+                minD_supp=ms[0],
+                minD_supp_opt=ms[1],
+                minD_supp_mc=ms[2],
+                minD_supp_method=ms[5] if len(ms) > 5 else "cube",
+                P_Dneg_u=stats["S2"][m].n_Dneg / p["M"]["S2"] if "S2" in stats else NAN,
+                frac_Nneg=stats["S2"][m].n_Nneg / p["M"]["S2"] if "S2" in stats else NAN,
+                q_valid=int(q_valid),
+                defined=int(defined),
+                n_bad=a.n_bad,
+                n_drop=a.n_drop,
+                M=p["M"][name],
+                ess=ess,
+                E_q_D=EqD,
+                sd_q_D=sdD,
+            )
             base["mc_limited"] = int(ess / base["M"] < cfg["mc_limited_ess"])
             if dens is not None:
                 CALg = torch.cat([a.CALg, a.CALg.sum(0)[None]]) / SW[:, None, None]
-                dens[(name, m)] = dict(cd_c=cd_c[-1], eu_c=eu_c[-1], CD=CD[-1], EU=EU[-1], CAL=CAL[-1], GOLD=GOLD[-1],
-                                       CALg=CALg[-1], defined=defined, q_valid=q_valid, n_drop=a.n_drop,
-                                       all=dict(cd_c=cd_c, eu_c=eu_c, CAL=CAL, CALg=CALg, GOLD=GOLD))  # rows: R replicates, pooled
+                dens[(name, m)] = dict(
+                    cd_c=cd_c[-1],
+                    eu_c=eu_c[-1],
+                    CD=CD[-1],
+                    EU=EU[-1],
+                    CAL=CAL[-1],
+                    GOLD=GOLD[-1],
+                    CALg=CALg[-1],
+                    defined=defined,
+                    q_valid=q_valid,
+                    n_drop=a.n_drop,
+                    all=dict(cd_c=cd_c, eu_c=eu_c, CAL=CAL, CALg=CALg, GOLD=GOLD),
+                )  # rows: R replicates, pooled
             if not q_valid:
                 for eps in eps_list:
                     rows.append({**base, "eps": eps})

@@ -1,14 +1,19 @@
 """Stage 5: threshold table (+ decomposition summary)."""
-import sys, os
+
+import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import numpy as np, pandas as pd
-from hcr import ROOT, load_cfg
+import numpy as np
+import pandas as pd
+from hcr import ROOT
 
 
 def first_crossing(rho, v, thr, absval=True, below=False):
     """Smallest rho (linear interpolation) where |v|>=thr (or v<=thr if below). Only over defined (non-NaN) neighbours.
     Returns (value or nan, note)."""
-    rho = np.asarray(rho, float); v = np.asarray(v, float)
+    rho = np.asarray(rho, float)
+    v = np.asarray(v, float)
     f = (lambda x: np.abs(x)) if absval else (lambda x: x)
     hit = (lambda x: x <= thr) if below else (lambda x: x >= thr)
     for i in range(len(rho)):
@@ -30,8 +35,12 @@ def thresholds(df):
             continue
         gg = g.sort_values("rho_S")
         r = dict(type=typ, m=m, scenario=sc)
-        for name, col, thr in [("denom_1pct", "d_denom", 0.01), ("denom_5pct", "d_denom", 0.05),
-                               ("relvar_5pct", "relvar_vs_uncal", 0.05), ("relvar_20pct", "relvar_vs_uncal", 0.20)]:
+        for name, col, thr in [
+            ("denom_1pct", "d_denom", 0.01),
+            ("denom_5pct", "d_denom", 0.05),
+            ("relvar_5pct", "relvar_vs_uncal", 0.05),
+            ("relvar_20pct", "relvar_vs_uncal", 0.20),
+        ]:
             val, note = first_crossing(gg.rho_S, gg[col], thr)
             r[name], r[name + "_note"] = val, note
         # S1 rows beyond validity are NaN already; for undefined S1 rows the NaN rule applies
@@ -51,5 +60,6 @@ if __name__ == "__main__":
     df = pd.read_csv(ROOT + "/results/results.csv")
     t = thresholds(df)
     t.to_csv(ROOT + "/results/thresholds.csv", index=False)
-    pd.set_option("display.width", 250); pd.set_option("display.max_columns", 30)
+    pd.set_option("display.width", 250)
+    pd.set_option("display.max_columns", 30)
     print(t[["type", "m", "scenario", "denom_1pct", "denom_5pct", "relvar_5pct", "relvar_20pct", "rho_minD_lt0"]].round(2).to_string(index=False))

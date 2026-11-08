@@ -38,3 +38,32 @@ constraint-dependencies = [
     "pyyaml==6.0.3",
     "torch==2.14.1; python_version >= '3.13'",
 ]
+
+[tool.ruff]
+line-length = 150  # the code base was written to about 150 columns; the formatter then rewraps only the outliers
+target-version = "py310"  # the production cluster runs Python 3.10
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "N", "RUF", "PT", "C4", "PIE", "NPY", "PLE", "PLW"]
+ignore = [
+    "N802",    # test functions are named M1-M14, as in the paper
+    "N803",    # arguments follow the paper's notation (R, M, V, D)
+    "N806",    # so do local variables
+    "N812",    # short module aliases (C for copulas, F for figures) read like the formulas
+    "N816",    # globals in the paper's notation (FX, Lg)
+    "E731",    # one-line local formulas are clearer as lambdas
+    "E741",    # l is the layer index, as in the paper
+    "B023",    # loop closures are called within the iteration that defines them
+    "B905",    # zip(strict=) would add noise: the zipped sequences have equal length by construction
+    "C408",    # dict(key=value) is the house style for records
+    "RUF001",  # typographic characters (en dash, times, rho, micro) in report text are intended
+    "RUF002",  # the same in docstrings
+    "RUF005",  # list concatenation reads like the formula it implements
+    "SIM108",  # if-else blocks around long numeric expressions read better than ternaries
+    "SIM300",  # upper-case names are matrices in the paper's notation (D, A0), not constants: no yoda reordering
+]
+
+[tool.ruff.lint.per-file-ignores]
+"!tests/**" = ["PT"]  # pytest style rules apply to the pytest tests only
+"three_input_study/tests/run_tests.py" = ["E402"]  # the self-contained study puts its src/ on sys.path before importing it
+"three_input_study/src/report.py" = ["E501"]  # report prose: each long line is one paragraph of the generated text

@@ -3,6 +3,7 @@
 Per configuration: wall time per forward and CUDA kernel names and times from torch.profiler, so kernel selection and
 GPU-bound vs dispatch-bound can be told apart. Not an energy measurement. Writes results/energy/probe_mlp_<jobid>.csv.
 """
+
 import os
 import time
 
@@ -13,8 +14,11 @@ from torch.profiler import ProfilerActivity, profile
 from gpu.energy import OUT, build
 
 CALLS = 2000
-CASES = [(dt, tf32, k, B) for k, B in ((2, 16384), (2, 4096), (2, 65536), (2, 256), (8, 16384))
-         for dt, tf32 in ((torch.float32, False), (torch.float32, True), (torch.float64, False))]
+CASES = [
+    (dt, tf32, k, B)
+    for k, B in ((2, 16384), (2, 4096), (2, 65536), (2, 256), (8, 16384))
+    for dt, tf32 in ((torch.float32, False), (torch.float32, True), (torch.float64, False))
+]
 
 
 def probe(dtype, tf32, k, B):
@@ -33,8 +37,11 @@ def probe(dtype, tf32, k, B):
             fwd()
         torch.cuda.synchronize()
     base = dict(dtype=str(dtype)[6:], tf32=tf32, k=k, B=B, inputs=desc, wall_ms=wall_ms)
-    rows = [dict(base, kernel=e.key, calls_per_forward=e.count / CALLS, kernel_ms=e.self_device_time_total / 1e3 / CALLS)
-            for e in prof.key_averages() if e.self_device_time_total > 0]
+    rows = [
+        dict(base, kernel=e.key, calls_per_forward=e.count / CALLS, kernel_ms=e.self_device_time_total / 1e3 / CALLS)
+        for e in prof.key_averages()
+        if e.self_device_time_total > 0
+    ]
     gpu_ms = sum(r["kernel_ms"] for r in rows)
     print(f"\n{base['dtype']} tf32={tf32} k={k} B={B} ({desc}): wall {wall_ms:.4f} ms, kernels {gpu_ms:.4f} ms", flush=True)
     for r in sorted(rows, key=lambda r: -r["kernel_ms"]):

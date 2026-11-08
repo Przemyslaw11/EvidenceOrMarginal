@@ -13,6 +13,7 @@ involved. k = 4, 8 use the pair basis and Monte Carlo over the belief, also belo
 flip() repeats the three problems beyond the pair family (post hoc): the full tensor at k = 3, 4 and the triple family at k = 3, 4, 8. It has its
 own random stream, so the rows above do not depend on it, and it asserts min D > 0 at each setting.
 """
+
 import itertools
 import json
 import math
@@ -32,7 +33,7 @@ from gpu.core import input_basis, legendre, population_model  # noqa: E402
 m = 4
 s = np.linspace(-8, 8, 1601)
 hs = s[1] - s[0]
-phi = np.exp(-0.5 * s ** 2) / math.sqrt(2 * math.pi)
+phi = np.exp(-0.5 * s**2) / math.sqrt(2 * math.pi)
 FX = legendre(torch.tensor(ndtr(s)), m).numpy()
 Z, W = nph.hermegauss(48)
 W = W / W.sum()
@@ -65,7 +66,7 @@ def teacher(k, rho):
 
 def row(mod, Ryy, beta, sig2, tau, rng, nodes):
     k = len(beta)
-    t2 = tau ** 2
+    t2 = tau**2
     V = np.linalg.inv(np.linalg.inv(Ryy) + np.eye(k) / t2)
     o = np.linalg.cholesky(Ryy) @ rng.standard_normal(k) + tau * rng.standard_normal(k)
     mu = V @ o / t2
@@ -101,8 +102,8 @@ class Full:
             Wt = np.multiply.outer(Wt, w).ravel()
         h, T, step = d // 2, 0, 1 << 18
         for i in range(0, len(G), step):
-            F = [legendre(torch.tensor(ndtr(G[i:i + step] @ L[a])), m).numpy() for a in range(d)]
-            T = T + (self.outer(F[:h]) * Wt[i:i + step, None]).T @ self.outer(F[h:])
+            F = [legendre(torch.tensor(ndtr(G[i : i + step] @ L[a])), m).numpy() for a in range(d)]
+            T = T + (self.outer(F[:h]) * Wt[i : i + step, None]).T @ self.outer(F[h:])
         self.T = torch.tensor(T.reshape((m + 1,) * d).reshape(m + 1, -1))  # rows: f_i(x); columns: the input multi-index
 
     @staticmethod
@@ -146,7 +147,7 @@ def flip():
         md = min_d(mod, k, rng)
         assert md > 0, (model, k, rho, md)
         for tau in (0.5, 1.0):
-            mc = lambda mu, L: (mu + rng.standard_normal((1 << 15, k)) @ L.T, np.full(1 << 15, 2.0 ** -15))  # noqa: E731
+            mc = lambda mu, L: (mu + rng.standard_normal((1 << 15, k)) @ L.T, np.full(1 << 15, 2.0**-15))
             r = summary([row(mod, Ryy, beta, sig2, tau, rng, mc) for _ in range(60)])
             rows.append(dict(model=model, k=k, rho=rho, tau=tau, min_d=md, **r))
             print(model, k, rho, tau, round(md, 3), r, flush=True)
@@ -156,7 +157,7 @@ def flip():
 def main():
     rng = np.random.default_rng(20261105)
     out = dict(k2=[], kbig=[], missing=[], example={})
-    gh = lambda mu, L: (mu + G2 @ L.T, W2)  # noqa: E731
+    gh = lambda mu, L: (mu + G2 @ L.T, W2)
     for rho in (0.1, 0.2, 0.3, 0.4):
         R, Ryy, beta, sig2 = teacher(2, rho)
         mod = population_model(R, m, "triple", nodes=64)  # at k = 2 the triple family is the full tensor
@@ -182,7 +183,7 @@ def main():
         R, Ryy, beta, sig2 = teacher(k, rho)
         mod = population_model(R, m, "pair", nodes=64)
         for tau in (0.5, 1.0):
-            mc = lambda mu, L: (mu + rng.standard_normal((1 << 15, k)) @ L.T, np.full(1 << 15, 2.0 ** -15))  # noqa: E731
+            mc = lambda mu, L: (mu + rng.standard_normal((1 << 15, k)) @ L.T, np.full(1 << 15, 2.0**-15))
             r = summary([row(mod, Ryy, beta, sig2, tau, rng, mc) for _ in range(60)])
             out["kbig"].append(dict(k=k, rho=rho, tau=tau, **r))
             print(k, rho, tau, r, flush=True)

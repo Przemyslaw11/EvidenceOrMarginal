@@ -12,6 +12,7 @@ Gauss-Legendre grid in (h, w), with q_w uniform:
     EXACT_UNCAL  e_l,i = int int A_i/A_0 rho_(l-1)(h) dh dw, defined only if rho_(l-1) >= 0 and D_l >= D_floor on its support
     EXACT_CAL    rho_l(x) = int int max(N, eps)/Z rho_(l-1)(h) dh dw with the calibrated rho_(l-1)
 """
+
 import math
 
 import numpy as np
@@ -19,7 +20,7 @@ import torch
 
 from gpu import copulas as C
 from gpu.core import DT, Estimator, gauss_legendre, input_basis, legendre
-from gpu.propagate import Grid, evaluate_case, min_D, tv_stats
+from gpu.propagate import evaluate_case, min_D, tv_stats
 
 NAN = float("nan")
 
@@ -33,17 +34,17 @@ class Teacher:
         self.beta = np.linalg.solve(self.R1[1:, 1:], sig)
         self.s1 = math.sqrt(1 - sig @ self.beta)
         self.a, self.b = a_prev, b_side
-        e2 = 1 - a_prev ** 2 - b_side ** 2
+        e2 = 1 - a_prev**2 - b_side**2
         assert e2 > C.PD_TOL, "teacher noise variance must be positive"
         self.e = math.sqrt(e2)
         self.Lyy = np.linalg.cholesky(self.R1[1:, 1:])
 
     def sigma(self, L):
         """Conditional sd of s_hl given (y, w_2..w_l), l = 1..L."""
-        out, v = [], self.s1 ** 2
+        out, v = [], self.s1**2
         for l in range(1, L + 1):
             if l > 1:
-                v = self.a ** 2 * v + self.e ** 2
+                v = self.a**2 * v + self.e**2
             out.append(math.sqrt(v))
         return out
 
@@ -52,18 +53,20 @@ class Teacher:
         Z = rng.standard_normal((n, self.k + 2 * L))
         sy = Z[:, : self.k] @ self.Lyy.T
         sw = np.zeros((n, L))
-        sw[:, 1:] = Z[:, self.k + 1: self.k + L]
+        sw[:, 1:] = Z[:, self.k + 1 : self.k + L]
         sh = np.zeros((n, L))
         sh[:, 0] = sy @ self.beta + self.s1 * Z[:, self.k]
         for l in range(1, L):
             sh[:, l] = self.a * sh[:, l - 1] + self.b * sw[:, l] + self.e * Z[:, self.k + L + l]
         from scipy.special import ndtr
+
         cl = lambda v: np.clip(ndtr(v), 1e-15, 1 - 1e-15)
         return dict(y=cl(sy), w=cl(sw), h=cl(sh), sy=sy, sw=sw, sh=sh)
 
     def h_given_y(self, rng, Y, L):
         """Teacher samples of h_L for given input uniforms Y (used as e2e targets under non-data beliefs)."""
         from scipy.special import ndtr, ndtri
+
         sy = ndtri(np.clip(Y, 1e-15, 1 - 1e-15))
         sh = sy @ self.beta + self.s1 * rng.standard_normal(len(Y))
         for _ in range(1, L):
@@ -139,6 +142,7 @@ def poly_on(c, x):
 def gold_layers(teacher, Ys, Ws, sgrid, R):
     """GOLD_l on the s-grid for l = 1..L, rows: R replicates + pooled. Ys (M, k) belief samples of y, Ws (M, L)."""
     from scipy.special import ndtri
+
     L = Ws.shape[1]
     mu = torch.as_tensor(ndtri(Ys.cpu().numpy()) @ teacher.beta, dtype=DT, device=sgrid.s.device)
     sw = torch.special.ndtri(Ws)
@@ -173,7 +177,7 @@ def propagate_chain(models, teacher, beliefs, Ws, sgrid, lg, cfg, rng_md, device
     neuron = [dict(l=1, minD=rows1[0]["minD"], P_Dneg_u=rows1[0]["P_Dneg_u"])]
     kern, sq = [None], [None]
     xs = torch.linspace(0, 1, 2001, dtype=DT, device=device)
-    Uu = torch.as_tensor(np.random.default_rng(0).random((2 ** 18, 2)), device=device)
+    Uu = torch.as_tensor(np.random.default_rng(0).random((2**18, 2)), device=device)
     for l in range(1, L):
         kern.append(kernels(models[l], lg, sgrid, eps_list, floor))
         sq.append(min_on_square(models[l], device=device))
@@ -209,11 +213,17 @@ def propagate_chain(models, teacher, beliefs, Ws, sgrid, lg, cfg, rng_md, device
             CD, GOLD = sgrid.poly_s(cd), gold[l]
             EU = sgrid.poly_s(eu) if eu_ok else None
             cdx = poly_on(cd[-1], xs)
-            base = dict(layer=l + 1, belief=name, defined=int(eu_ok), neuron_minD=neuron[l]["minD"],
-                        neuron_P_Dneg_u=neuron[l]["P_Dneg_u"], min_cd=float(cdx.min()),
-                        neg_mass_cd=float((torch.clamp(-CD[-1], min=0) * sgrid.w).sum()),
-                        min_eu=float(poly_on(eu[-1], xs).min()) if eu_ok else NAN,
-                        neg_mass_eu=float((torch.clamp(-EU[-1], min=0) * sgrid.w).sum()) if eu_ok else NAN)
+            base = dict(
+                layer=l + 1,
+                belief=name,
+                defined=int(eu_ok),
+                neuron_minD=neuron[l]["minD"],
+                neuron_P_Dneg_u=neuron[l]["P_Dneg_u"],
+                min_cd=float(cdx.min()),
+                neg_mass_cd=float((torch.clamp(-CD[-1], min=0) * sgrid.w).sum()),
+                min_eu=float(poly_on(eu[-1], xs).min()) if eu_ok else NAN,
+                neg_mass_eu=float((torch.clamp(-EU[-1], min=0) * sgrid.w).sum()) if eu_ok else NAN,
+            )
             for key, P, Q in (("d_total", CD, GOLD), ("d_denom", CD, EU), ("d_model_uncal", EU, GOLD)):
                 if Q is None or P is None:
                     base.update({key: NAN, key + "_se": NAN, key + "_floor": NAN})

@@ -4,6 +4,7 @@ Samplers map *base variates* (numpy, generated once per chunk and shared by all 
 uniforms, which gives common random numbers across rho_S, neuron types and bases. Conditionals are
 returned in normal-score coordinates: p_s(s | y) = c(Phi(s) | y) phi(s).
 """
+
 import logging
 import math
 
@@ -110,8 +111,7 @@ def _phi(s):
 
 
 def _t_logpdf(z, nu):
-    return (math.lgamma((nu + 1) / 2) - math.lgamma(nu / 2) - 0.5 * math.log(nu * math.pi)
-            - (nu + 1) / 2 * torch.log1p(z * z / nu))
+    return math.lgamma((nu + 1) / 2) - math.lgamma(nu / 2) - 0.5 * math.log(nu * math.pi) - (nu + 1) / 2 * torch.log1p(z * z / nu)
 
 
 def _t_series(nu, extra=64):
@@ -223,6 +223,7 @@ class StudentT(Gaussian):
 
 class Clayton:
     """Exchangeable (k+1)-dimensional Clayton copula, theta > 0 (Marshall-Olkin sampler)."""
+
     kinds = ("E", "u")
 
     def __init__(self, theta, d, device):
@@ -237,14 +238,18 @@ class Clayton:
         th, k = self.theta, Uy.shape[1]
         T = 1 + (Uy ** (-th) - 1).sum(1)  # 1 + sum phi(y)
         lx = torch.log(torch.special.ndtr(s))
-        lc = (math.log1p(k * th) - (th + 1) * lx[None, :]
-              - (1 / th + k + 1) * torch.log(T[:, None] + torch.expm1(-th * lx)[None, :])
-              + (1 / th + k) * torch.log(T)[:, None])
+        lc = (
+            math.log1p(k * th)
+            - (th + 1) * lx[None, :]
+            - (1 / th + k + 1) * torch.log(T[:, None] + torch.expm1(-th * lx)[None, :])
+            + (1 / th + k) * torch.log(T)[:, None]
+        )
         return torch.exp(lc) * _phi(s)[None, :]
 
 
 class Gumbel:
     """Exchangeable (k+1)-dimensional Gumbel copula, theta >= 1 (Marshall-Olkin, positive-stable frailty)."""
+
     kinds = ("E", "th", "w")
 
     def __init__(self, theta, d, device):
@@ -285,11 +290,18 @@ class Gumbel:
         t = ((-torch.log(Uy)) ** th).sum(1)
         lx = torch.log(torch.special.ndtr(s))
         nlx = -lx
-        phx = nlx ** th
+        phx = nlx**th
         tt = t[:, None] + phx[None, :]
         lt_t = torch.log(tt)
-        lc = (self._log_g(k + 1, lt_t) - tt ** a - self._log_g(k, torch.log(t))[:, None] + (t ** a)[:, None]
-              + math.log(th) + (th - 1) * torch.log(nlx)[None, :] - lx[None, :])
+        lc = (
+            self._log_g(k + 1, lt_t)
+            - tt**a
+            - self._log_g(k, torch.log(t))[:, None]
+            + (t**a)[:, None]
+            + math.log(th)
+            + (th - 1) * torch.log(nlx)[None, :]
+            - lx[None, :]
+        )
         return torch.exp(lc) * _phi(s)[None, :]
 
 

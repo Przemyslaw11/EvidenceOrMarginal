@@ -1,13 +1,19 @@
 """Stage 4: full sweep -> long-format results table."""
-import sys, time, os
-import numpy as np
+
+import os
+import sys
+import time
+
 import pandas as pd
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from hcr import *
 
 
 def run_sweep(cfg, coeffs, nodes, types=None, rhos=None, ms=None, want_dens=False, log=print):
-    types = types or cfg["types"]; rhos = rhos or cfg["rho_S"]; ms = ms or cfg["degrees"]
+    types = types or cfg["types"]
+    rhos = rhos or cfg["rho_S"]
+    ms = ms or cfg["degrees"]
     G = Grid(nodes, cfg["mmax"])
     specs = scenario_specs(cfg)
     rows, dens_all = [], {}
@@ -37,9 +43,25 @@ def run_sweep(cfg, coeffs, nodes, types=None, rhos=None, ms=None, want_dens=Fals
                 rows += r
                 if wd:
                     dens_all.update({(rho,) + k: v for k, v in d.items()})
-            log(f"  [{nodes}] {typ} rho={rho} done in {time.time()-t0:.1f}s")
+            log(f"  [{nodes}] {typ} rho={rho} done in {time.time() - t0:.1f}s")
     df = pd.DataFrame(rows)
-    first = ["type", "rho_S", "m", "scenario", "eps", "defined", "quadrature_limited", "min_D", "frac_D_neg", "frac_joint_neg",
-             "d_denom", "d_neg", "d_model_uncal", "d_model_cal", "d_total", "d_dc"]
+    first = [
+        "type",
+        "rho_S",
+        "m",
+        "scenario",
+        "eps",
+        "defined",
+        "quadrature_limited",
+        "min_D",
+        "frac_D_neg",
+        "frac_joint_neg",
+        "d_denom",
+        "d_neg",
+        "d_model_uncal",
+        "d_model_cal",
+        "d_total",
+        "d_dc",
+    ]
     df = df[first + [c for c in df.columns if c not in first]]
     return df, dens_all

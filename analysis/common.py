@@ -1,5 +1,6 @@
 """Shared analysis tools: loading merged results, seed-median curves, thresholds and seed bootstraps
 (definitions: PREREGISTRATION.md, section 3)."""
+
 import os
 
 import numpy as np

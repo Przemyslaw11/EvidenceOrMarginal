@@ -4,6 +4,7 @@
 Writes results/merged/<exp>.parquet, <exp>_meta.csv (one row per job: wall time, GPU, versions, commit)
 and <exp>_status.json (expected / done / failed / missing job ids).
 """
+
 import glob
 import json
 import os
@@ -31,9 +32,20 @@ def merge(exp):
             continue
         frames.append(pd.read_parquet(f))
         meta = json.loads(pq.read_schema(f).metadata[b"hcr_meta"])
-        metas.append(dict(job_id=jid, wall_s=meta["wall_s"], est_s=meta["est_s"], gpu=meta["gpu"], host=meta["host"],
-                          git=meta["git"], torch=meta["torch"], numpy=meta["numpy"], nvidia_smi=meta.get("nvidia_smi", ""),
-                          expected_min=meta["spec"].get("expected_min")))
+        metas.append(
+            dict(
+                job_id=jid,
+                wall_s=meta["wall_s"],
+                est_s=meta["est_s"],
+                gpu=meta["gpu"],
+                host=meta["host"],
+                git=meta["git"],
+                torch=meta["torch"],
+                numpy=meta["numpy"],
+                nvidia_smi=meta.get("nvidia_smi", ""),
+                expected_min=meta["spec"].get("expected_min"),
+            )
+        )
     os.makedirs(os.path.join(RES, "merged"), exist_ok=True)
     if frames:
         df = pd.concat(frames, ignore_index=True)
@@ -42,12 +54,18 @@ def merge(exp):
         pd.DataFrame(metas).to_csv(os.path.join(RES, "merged", f"{exp}_meta.csv"), index=False)
     failed = sorted(i for i in ids - done if n_failures(i) >= MAX_ATTEMPTS)
     missing = sorted(ids - done - set(failed))
-    status = dict(exp=exp, expected=len(ids), done=len(done & ids), failed=failed, missing=missing, stray=stray,
-                  gpu_hours=sum(m["wall_s"] for m in metas) / 3600)
+    status = dict(
+        exp=exp,
+        expected=len(ids),
+        done=len(done & ids),
+        failed=failed,
+        missing=missing,
+        stray=stray,
+        gpu_hours=sum(m["wall_s"] for m in metas) / 3600,
+    )
     with open(os.path.join(RES, "merged", f"{exp}_status.json"), "w") as f:
         json.dump(status, f, indent=1)
-    print(f"{exp}: {status['done']}/{status['expected']} done, {len(failed)} failed, {len(missing)} missing, "
-          f"{status['gpu_hours']:.2f} GPU-h")
+    print(f"{exp}: {status['done']}/{status['expected']} done, {len(failed)} failed, {len(missing)} missing, {status['gpu_hours']:.2f} GPU-h")
     return status
 
 

@@ -5,8 +5,8 @@
 Same colours, markers and sizes as the paper mode of analysis/figures.py. Reads paper/semantics.json, paper/theory.json and
 results/summary/thresholds_*.csv, so nothing plotted here is typed by hand.
 """
+
 import json
-import math
 import os
 import sys
 
@@ -18,7 +18,7 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
 from matplotlib.patches import Patch  # noqa: E402
-from scipy.special import ndtr, ndtri  # noqa: E402
+from scipy.special import ndtri  # noqa: E402
 
 from analysis import figures as F  # noqa: E402
 
@@ -36,7 +36,7 @@ def f1(sem):
     s = ndtri(g)
     mu = np.array([1.2, -1.2]) / (1 + ex["tau"] ** 2)  # conflicting observations of the two inputs
     v = ex["tau"] ** 2 / (1 + ex["tau"] ** 2)
-    dens = lambda z, m: np.exp(-0.5 * (z - m) ** 2 / v + 0.5 * z ** 2)  # noqa: E731  density in y of a normal score belief
+    dens = lambda z, m: np.exp(-0.5 * (z - m) ** 2 / v + 0.5 * z**2)  # density in y of a normal score belief
     q = np.outer(dens(s, mu[0]), dens(s, mu[1]))
     t = q * D
     a.contourf(g, g, D.T, levels=np.linspace(0, 3.2, 9), cmap="Greys", alpha=0.45)
@@ -46,12 +46,25 @@ def f1(sem):
     a.set_ylabel("$y_2$")
     a.set_aspect("equal")
     a.grid(False)
-    a.legend(handles=[Line2D([], [], color=CD, ls="-", label="$q$"), Line2D([], [], color=EU, ls="--", label=r"$\tilde q\propto qD$"),
-                      Patch(color="0.7", label="$D$")], loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=3, columnspacing=1.0, handlelength=1.6)
+    a.legend(
+        handles=[
+            Line2D([], [], color=CD, ls="-", label="$q$"),
+            Line2D([], [], color=EU, ls="--", label=r"$\tilde q\propto qD$"),
+            Patch(color="0.7", label="$D$"),
+        ],
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.2),
+        ncol=3,
+        columnspacing=1.0,
+        handlelength=1.6,
+    )
     F.panel(a, "a", "the belief tilted by $D$")
     rows = [r for r in sem["k2"] if r["tau"] == 1.0]
     rho = [r["rho"] for r in rows]
-    for ax, key, tag, title in ((axs[1], "evidence", "b", "evidence: truth is $p(x\\mid o)$"), (axs[2], "marginal", "c", "marginal: truth is $\\mathrm{E}_q[p(x\\mid y)]$")):
+    for ax, key, tag, title in (
+        (axs[1], "evidence", "b", "evidence: truth is $p(x\\mid o)$"),
+        (axs[2], "marginal", "c", "marginal: truth is $\\mathrm{E}_q[p(x\\mid y)]$"),
+    ):
         ax.plot(rho, [r[key]["cd"] for r in rows], color=CD, marker="o", label=r"$p_{\mathrm{CD}}$")
         ax.plot(rho, [r[key]["eu"] for r in rows], color=EU, marker="s", ls="--", label=r"$p_{\mathrm{EU}}$")
         ax.set_xlabel(r"input correlation $\rho_S$")
@@ -91,8 +104,11 @@ def f2(th):
     F.panel(axs[0], "a", "the pre-registered variable")
     F.panel(axs[1], "b", "the closed forms")
     h = [Line2D([], [], ls="", marker="o", ms=SIZE[k] ** 0.5, color=F.OI[F.KCOL[k]], label=f"$k={k}$") for k in KS]
-    h += [Line2D([], [], ls="", marker="o", color=GREY, label="pair"), Line2D([], [], ls="", marker="^", color=GREY, label="triple"),
-          Line2D([], [], ls="", marker="o", color=GREY, mfc="none", label="CONTRAST (hollow)")]
+    h += [
+        Line2D([], [], ls="", marker="o", color=GREY, label="pair"),
+        Line2D([], [], ls="", marker="^", color=GREY, label="triple"),
+        Line2D([], [], ls="", marker="o", color=GREY, mfc="none", label="CONTRAST (hollow)"),
+    ]
     fig.legend(handles=h, loc="lower center", ncol=8, bbox_to_anchor=(0.5, -0.2), columnspacing=0.8, handletextpad=0.2)
     F.save(fig, "F2_scaling")
 
@@ -100,7 +116,7 @@ def f2(th):
 def f3(th):
     tg = pd.read_csv(os.path.join(ROOT, "results/summary/thresholds_gauss.csv"))
     tp = pd.read_csv(os.path.join(ROOT, "results/summary/thresholds_population.csv"))
-    sel = lambda t, b: t[(t.type == "SUM") & (t.m == 4) & (t.belief == "S2") & (t.basis == b)].sort_values("k")  # noqa: E731
+    sel = lambda t, b: t[(t.type == "SUM") & (t.m == 4) & (t.belief == "S2") & (t.basis == b)].sort_values("k")
     fig, axs = plt.subplots(1, 2, figsize=(11.5, 3.9), sharey=True, gridspec_kw=dict(wspace=0.08))
     floor = 2.2e-3
     for ax, b in zip(axs, ("pair", "triple")):
@@ -128,7 +144,9 @@ def f3(th):
         ax.minorticks_off()
         ax.set_ylim(floor, 0.8)
         ax.set_xlabel("number of inputs $k$")
-        ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=4 if b == "pair" else 3, handlelength=1.8, handletextpad=0.4, columnspacing=0.8)
+        ax.legend(
+            loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=4 if b == "pair" else 3, handlelength=1.8, handletextpad=0.4, columnspacing=0.8
+        )
         ax.text(0.03, 0.05 if b == "pair" else 0.32, r"$D>0$: $p_{\mathrm{EU}}$ exists", transform=ax.transAxes)
         F.panel(ax, "ab"[b == "triple"], f"{b} basis")
     axs[0].set_yticks([0.01, 0.1, 0.5], ["0.01", "0.1", "0.5"])

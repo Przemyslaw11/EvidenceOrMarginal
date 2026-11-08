@@ -16,6 +16,7 @@ Energy: NVML power sampled every 10 ms and integrated over each repeat (primary)
 check; idle power measured before the grid. Warm-up >= 3 s; 30 repeats of ~2 s each per configuration.
 Results never enter the error tables of the statistical study.
 """
+
 import argparse
 import glob
 import json
@@ -36,7 +37,7 @@ OUT = os.path.join(ROOT, "results", "energy")
 W_UNITS, M_DEG, S_SAMPLES, G_NODES, EPS = 64, 4, 64, 192, 0.01
 KS, BATCHES, LAYERS = (2, 8, 32), (256, 16384), ("HCR-CD", "HCR-CAL", "MLP", "KAN")
 REPEATS, REPEAT_S, WARM_S, IDLE_S = 30, 2.0, 3.0, 30.0
-ELEM_BUDGET = 2 ** 27  # elements of the largest intermediate tensor per chunk
+ELEM_BUDGET = 2**27  # elements of the largest intermediate tensor per chunk
 
 
 # ---------------------------------------------------------------- layers
@@ -48,10 +49,12 @@ class HCRLayer:
         P = len(pairs(k)[0])
         self.models = []
         for _ in range(W):
-            blocks = {"c": torch.cat([torch.ones(1), torch.zeros(m)]).double(),
-                      "W1": 0.1 * torch.randn(m + 1, k, m, generator=g, dtype=torch.float64),
-                      "W2": 0.1 * torch.randn(m + 1, P, m, m, generator=g, dtype=torch.float64) / math.sqrt(max(P, 1)),
-                      "W3": None}
+            blocks = {
+                "c": torch.cat([torch.ones(1), torch.zeros(m)]).double(),
+                "W1": 0.1 * torch.randn(m + 1, k, m, generator=g, dtype=torch.float64),
+                "W2": 0.1 * torch.randn(m + 1, P, m, m, generator=g, dtype=torch.float64) / math.sqrt(max(P, 1)),
+                "W3": None,
+            }
             self.models.append(Model(k, m, "pair", blocks))
         self.k, self.W, self.m = k, W, m
         self.n_params = W * self.models[0].n_coef
@@ -78,11 +81,11 @@ class HCRLayer:
     def exact_cal(self, Y):
         """Y: (B, S, k) samples of B beliefs -> (B, W, m+1) coefficients of the calibrated output density."""
         B, S, k = Y.shape
-        per = S * self.W * max(G_NODES, (len(self.pa) * self.m ** 2) // self.W + 1)
+        per = S * self.W * max(G_NODES, (len(self.pa) * self.m**2) // self.W + 1)
         bc = max(1, ELEM_BUDGET // per)
         out = []
         for st in range(0, B, bc):
-            Yc = Y[st: st + bc].reshape(-1, k)
+            Yc = Y[st : st + bc].reshape(-1, k)
             N = torch.clamp(self.A(input_basis(Yc, self.m)) @ self.Fx.T, min=EPS)  # (n, W, G)
             p = N / (N @ self.wg)[..., None]
             p = p.reshape(-1, S, self.W, G_NODES).mean(1)
@@ -105,8 +108,7 @@ class KANLayer(torch.nn.Module):
         t, xe = self.t, x[..., None]
         bases = ((xe >= t[:-1]) & (xe < t[1:])).to(x.dtype)
         for p in range(1, self.order + 1):
-            bases = ((xe - t[: -(p + 1)]) / (t[p:-1] - t[: -(p + 1)]) * bases[..., :-1]
-                     + (t[p + 1:] - xe) / (t[p + 1:] - t[1:-p]) * bases[..., 1:])
+            bases = (xe - t[: -(p + 1)]) / (t[p:-1] - t[: -(p + 1)]) * bases[..., :-1] + (t[p + 1 :] - xe) / (t[p + 1 :] - t[1:-p]) * bases[..., 1:]
         return torch.nn.functional.silu(x) @ self.base + bases.reshape(x.shape[0], -1) @ self.spline
 
 
@@ -147,6 +149,7 @@ def build(layer, k, B, dtype, device, seed=0):
     def fwd():
         with torch.no_grad():
             return net(x)
+
     return fwd, n_params(net), f"{B} inputs, hidden width {H}"
 
 
@@ -176,7 +179,7 @@ def check():
         t, xe = lk.t, x[..., None]
         bs = ((xe >= t[:-1]) & (xe < t[1:])).double()
         for p in range(1, 4):
-            bs = (xe - t[: -(p + 1)]) / (t[p:-1] - t[: -(p + 1)]) * bs[..., :-1] + (t[p + 1:] - xe) / (t[p + 1:] - t[1:-p]) * bs[..., 1:]
+            bs = (xe - t[: -(p + 1)]) / (t[p:-1] - t[: -(p + 1)]) * bs[..., :-1] + (t[p + 1 :] - xe) / (t[p + 1 :] - t[1:-p]) * bs[..., 1:]
         bases_sum = bs.sum(-1)
     assert torch.allclose(bases_sum, torch.ones_like(bases_sum), atol=1e-12), "B-spline basis not a partition of unity"
     for kk in KS:
@@ -192,6 +195,7 @@ def check():
 class Meter:
     def __init__(self, torch_device=0):
         import pynvml
+
         self.nv = pynvml
         pynvml.nvmlInit()
         torch.zeros(1, device=f"cuda:{torch_device}")  # create the context so this process appears in NVML
@@ -215,12 +219,18 @@ class Meter:
         procs = nv.nvmlDeviceGetComputeRunningProcesses(h)
         uuid = nv.nvmlDeviceGetUUID(h)
         bus = nv.nvmlDeviceGetPciInfo(h).busId
-        return dict(name=torch.cuda.get_device_name(0), uuid=uuid.decode() if isinstance(uuid, bytes) else uuid,
-                    pci_bus=bus.decode() if isinstance(bus, bytes) else bus, nvml_match=self.match,
-                    driver=nv.nvmlSystemGetDriverVersion(), power_limit_W=nv.nvmlDeviceGetEnforcedPowerLimit(h) / 1e3,
-                    max_sm_MHz=nv.nvmlDeviceGetMaxClockInfo(h, nv.NVML_CLOCK_SM),
-                    max_mem_MHz=nv.nvmlDeviceGetMaxClockInfo(h, nv.NVML_CLOCK_MEM),
-                    compute_procs=[int(p.pid) for p in procs], torch=torch.__version__)
+        return dict(
+            name=torch.cuda.get_device_name(0),
+            uuid=uuid.decode() if isinstance(uuid, bytes) else uuid,
+            pci_bus=bus.decode() if isinstance(bus, bytes) else bus,
+            nvml_match=self.match,
+            driver=nv.nvmlSystemGetDriverVersion(),
+            power_limit_W=nv.nvmlDeviceGetEnforcedPowerLimit(h) / 1e3,
+            max_sm_MHz=nv.nvmlDeviceGetMaxClockInfo(h, nv.NVML_CLOCK_SM),
+            max_mem_MHz=nv.nvmlDeviceGetMaxClockInfo(h, nv.NVML_CLOCK_MEM),
+            compute_procs=[int(p.pid) for p in procs],
+            torch=torch.__version__,
+        )
 
     def _loop(self):
         while self._run:
@@ -250,8 +260,11 @@ class Meter:
 
     def clocks(self):
         nv, h = self.nv, self.h
-        return (nv.nvmlDeviceGetClockInfo(h, nv.NVML_CLOCK_SM), nv.nvmlDeviceGetClockInfo(h, nv.NVML_CLOCK_MEM),
-                nv.nvmlDeviceGetTemperature(h, nv.NVML_TEMPERATURE_GPU))
+        return (
+            nv.nvmlDeviceGetClockInfo(h, nv.NVML_CLOCK_SM),
+            nv.nvmlDeviceGetClockInfo(h, nv.NVML_CLOCK_MEM),
+            nv.nvmlDeviceGetTemperature(h, nv.NVML_TEMPERATURE_GPU),
+        )
 
 
 # ---------------------------------------------------------------- measurement
@@ -266,10 +279,22 @@ def measure(dtype_name, replicate):
     time.sleep(IDLE_S)
     t1 = time.perf_counter()
     idle_J, idle_W = meter.energy(t1 - IDLE_S + 1.0, t1)
-    meta = dict(meter.info(), run_id=run_id, dtype=dtype_name, replicate=replicate, host=socket.gethostname(),
-                commit=subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip(),
-                idle_W=idle_W, W=W_UNITS, m=M_DEG, S=S_SAMPLES, G=G_NODES, repeats=REPEATS, repeat_s=REPEAT_S,
-                warmup_s=WARM_S)
+    meta = dict(
+        meter.info(),
+        run_id=run_id,
+        dtype=dtype_name,
+        replicate=replicate,
+        host=socket.gethostname(),
+        commit=subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip(),
+        idle_W=idle_W,
+        W=W_UNITS,
+        m=M_DEG,
+        S=S_SAMPLES,
+        G=G_NODES,
+        repeats=REPEATS,
+        repeat_s=REPEAT_S,
+        warmup_s=WARM_S,
+    )
     print(json.dumps(meta), flush=True)
     rows = []
     for k in KS:
@@ -292,16 +317,37 @@ def measure(dtype_name, replicate):
                     t1, e1 = time.perf_counter(), meter.counter()
                     E, Pw = meter.energy(t0, t1)
                     sm, mem, temp = meter.clocks()
-                    rows.append(dict(run_id=run_id, replicate=replicate, dtype=dtype_name, layer=layer, k=k, B=B,
-                                     params=P, inputs=desc, repeat=r, n_calls=n_calls, seconds=t1 - t0,
-                                     energy_J=E, energy_counter_J=e1 - e0, mean_power_W=Pw, sm_MHz=sm, mem_MHz=mem,
-                                     temp_C=temp))
+                    rows.append(
+                        dict(
+                            run_id=run_id,
+                            replicate=replicate,
+                            dtype=dtype_name,
+                            layer=layer,
+                            k=k,
+                            B=B,
+                            params=P,
+                            inputs=desc,
+                            repeat=r,
+                            n_calls=n_calls,
+                            seconds=t1 - t0,
+                            energy_J=E,
+                            energy_counter_J=e1 - e0,
+                            mean_power_W=Pw,
+                            sm_MHz=sm,
+                            mem_MHz=mem,
+                            temp_C=temp,
+                        )
+                    )
                 last = rows[-1]
-                print(f"{layer:8s} k={k:2d} B={B:5d} P={P:7d} {1e3 * last['seconds'] / n_calls:9.3f} ms/forward "
-                      f"{last['energy_J'] / n_calls:9.4f} J/forward {last['mean_power_W']:6.1f} W", flush=True)
+                print(
+                    f"{layer:8s} k={k:2d} B={B:5d} P={P:7d} {1e3 * last['seconds'] / n_calls:9.3f} ms/forward "
+                    f"{last['energy_J'] / n_calls:9.4f} J/forward {last['mean_power_W']:6.1f} W",
+                    flush=True,
+                )
                 del fwd
                 torch.cuda.empty_cache()
                 import pandas as pd  # written after every configuration so a cut slot keeps its data
+
                 pd.DataFrame(rows).to_csv(os.path.join(OUT, f"run_{run_id}.csv"), index=False)
     meter.stop()
     json.dump(meta, open(os.path.join(OUT, f"run_{run_id}.json"), "w"), indent=1)
@@ -310,6 +356,7 @@ def measure(dtype_name, replicate):
 # ---------------------------------------------------------------- summary
 def summarise():
     import pandas as pd
+
     runs = sorted(glob.glob(os.path.join(OUT, "run_*.csv")))
     metas = {json.load(open(p))["run_id"]: json.load(open(p)) for p in glob.glob(os.path.join(OUT, "run_*.json"))}
     df = pd.concat([pd.read_csv(p, dtype={"run_id": str}) for p in runs], ignore_index=True)
@@ -321,52 +368,76 @@ def summarise():
     df["counter_ratio"] = df.energy_counter_J / df.energy_J
     key = ["dtype", "layer", "k", "B"]
     rep = df.groupby(key + ["run_id"]).agg(ms=("ms", "median"), J=("J", "median")).reset_index()
-    spread = rep.groupby(key).agg(ms_lo=("ms", "min"), ms_hi=("ms", "max"), J_lo=("J", "min"), J_hi=("J", "max"),
-                                  n_runs=("run_id", "nunique"))
-    s = df.groupby(key).agg(params=("params", "first"), ms=("ms", "median"), J=("J", "median"),
-                            J_net=("J_net", "median"), power_W=("mean_power_W", "median"),
-                            sm_MHz=("sm_MHz", "median"), counter_ratio=("counter_ratio", "median"),
-                            n_repeats=("repeat", "size")).join(spread).reset_index()
+    spread = rep.groupby(key).agg(ms_lo=("ms", "min"), ms_hi=("ms", "max"), J_lo=("J", "min"), J_hi=("J", "max"), n_runs=("run_id", "nunique"))
+    s = (
+        df.groupby(key)
+        .agg(
+            params=("params", "first"),
+            ms=("ms", "median"),
+            J=("J", "median"),
+            J_net=("J_net", "median"),
+            power_W=("mean_power_W", "median"),
+            sm_MHz=("sm_MHz", "median"),
+            counter_ratio=("counter_ratio", "median"),
+            n_repeats=("repeat", "size"),
+        )
+        .join(spread)
+        .reset_index()
+    )
     s["uJ_per_param"] = 1e6 * s.J / s.params
     s["uJ_per_sample"] = 1e6 * s.J / s.B
     s.to_csv(os.path.join(OUT, "summary.csv"), index=False)
 
     m0 = next(iter(metas.values()))
-    L = ["# Stage 7: time and energy of one forward pass (HCR layer vs MLP and KAN)\n",
-         f"*Generated by `python -m gpu.energy --summarise` from {len(metas)} runs "
-         f"({', '.join(sorted(metas))}); separate from the statistical study.*\n",
-         f"GPU {m0['name']}, driver {m0['driver']}, power limit {m0['power_limit_W']:.0f} W, max SM clock "
-         f"{m0['max_sm_MHz']} MHz (clocks not locked; median SM clock per row below). Idle power "
-         + ", ".join(f"{v['idle_W']:.0f} W" for v in metas.values()) + f". W = {W_UNITS} units, HCR pair basis m = {M_DEG}, "
-         f"EXACT_CAL with S = {S_SAMPLES} samples per belief and {G_NODES} x-nodes; MLP and KAN are k -> H -> W with H "
-         f"chosen to match the HCR parameter count. Medians over {REPEATS} repeats x runs; range = min-max of the "
-         f"run medians. Energy = NVML power sampled every 10 ms and integrated; `counter` = device energy counter / "
-         f"sampled energy. TF32 off.\n"]
+    L = [
+        "# Stage 7: time and energy of one forward pass (HCR layer vs MLP and KAN)\n",
+        f"*Generated by `python -m gpu.energy --summarise` from {len(metas)} runs "
+        f"({', '.join(sorted(metas))}); separate from the statistical study.*\n",
+        f"GPU {m0['name']}, driver {m0['driver']}, power limit {m0['power_limit_W']:.0f} W, max SM clock "
+        f"{m0['max_sm_MHz']} MHz (clocks not locked; median SM clock per row below). Idle power "
+        + ", ".join(f"{v['idle_W']:.0f} W" for v in metas.values())
+        + f". W = {W_UNITS} units, HCR pair basis m = {M_DEG}, "
+        f"EXACT_CAL with S = {S_SAMPLES} samples per belief and {G_NODES} x-nodes; MLP and KAN are k -> H -> W with H "
+        f"chosen to match the HCR parameter count. Medians over {REPEATS} repeats x runs; range = min-max of the "
+        f"run medians. Energy = NVML power sampled every 10 ms and integrated; `counter` = device energy counter / "
+        f"sampled energy. TF32 off.\n",
+    ]
     for dt in sorted(s.dtype.unique()):
-        L += [f"## {dt}\n", "| layer | k | B | params | ms / forward (range) | J / forward (range) | J net of idle | "
-              "µJ / param | µJ / input | power W | SM MHz | counter |", "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+        L += [
+            f"## {dt}\n",
+            "| layer | k | B | params | ms / forward (range) | J / forward (range) | J net of idle | "
+            "µJ / param | µJ / input | power W | SM MHz | counter |",
+            "|---|---|---|---|---|---|---|---|---|---|---|---|",
+        ]
         for r in s[s.dtype == dt].sort_values(["k", "B", "layer"]).itertuples():
-            L.append(f"| {r.layer} | {r.k} | {r.B} | {r.params} | {r.ms:.3g} ({r.ms_lo:.3g}–{r.ms_hi:.3g}) | "
-                     f"{r.J:.3g} ({r.J_lo:.3g}–{r.J_hi:.3g}) | {r.J_net:.3g} | {r.uJ_per_param:.3g} | "
-                     f"{r.uJ_per_sample:.3g} | {r.power_W:.0f} | {r.sm_MHz:.0f} | {r.counter_ratio:.3f} |")
+            L.append(
+                f"| {r.layer} | {r.k} | {r.B} | {r.params} | {r.ms:.3g} ({r.ms_lo:.3g}–{r.ms_hi:.3g}) | "
+                f"{r.J:.3g} ({r.J_lo:.3g}–{r.J_hi:.3g}) | {r.J_net:.3g} | {r.uJ_per_param:.3g} | "
+                f"{r.uJ_per_sample:.3g} | {r.power_W:.0f} | {r.sm_MHz:.0f} | {r.counter_ratio:.3f} |"
+            )
         L.append("")
 
     cr, full = df.counter_ratio, df[df.B == max(BATCHES)]
     rel = rep.pivot_table(index=key[:1] + key[1:], columns="run_id", values="J")
-    rel = pd.concat([x.dropna(axis=1).pipe(lambda t: t.div(t.mean(axis=1), axis=0)).mean()
-                     for _, x in rel.groupby(level="dtype")])
-    L += ["## Checks\n",
-          f"- Counter vs sampled energy over {len(df)} repeats: median {cr.median():.3f}, 1st-99th percentile "
-          f"{cr.quantile(.01):.3f}-{cr.quantile(.99):.3f}, extremes {cr.min():.3f}-{cr.max():.3f}.",
-          f"- Temperature {df.temp_C.min()}-{df.temp_C.max()} C. Repeats at >= 97.5 % of the power limit: "
-          f"{(df.mean_power_W >= .975 * m0['power_limit_W']).sum()}.",
-          f"- Configurations at B = {max(BATCHES)} with SM clock below maximum: "
-          + "; ".join(f"{dt} {ly} k = {k} (lowest {v.sm_MHz.min():.0f} MHz, median power {v.mean_power_W.median():.0f} W)"
-                      for (dt, ly, k), v in full[full.sm_MHz < m0["max_sm_MHz"]].groupby(["dtype", "layer", "k"])) + ".",
-          f"- Rows where idle power is over 90 % of the energy (J net of idle < 10 % of J; launch-bound, so J / forward "
-          f"mostly measures idle power): {(s.J_net < .1 * s.J).sum()} of {len(s)}.",
-          f"- Runs used {len({v['uuid'] for v in metas.values()})} physical GPUs. Mean energy of a run relative to the "
-          "mean of its dtype's runs, over all configurations:", ""]
+    rel = pd.concat([x.dropna(axis=1).pipe(lambda t: t.div(t.mean(axis=1), axis=0)).mean() for _, x in rel.groupby(level="dtype")])
+    L += [
+        "## Checks\n",
+        f"- Counter vs sampled energy over {len(df)} repeats: median {cr.median():.3f}, 1st-99th percentile "
+        f"{cr.quantile(0.01):.3f}-{cr.quantile(0.99):.3f}, extremes {cr.min():.3f}-{cr.max():.3f}.",
+        f"- Temperature {df.temp_C.min()}-{df.temp_C.max()} C. Repeats at >= 97.5 % of the power limit: "
+        f"{(df.mean_power_W >= 0.975 * m0['power_limit_W']).sum()}.",
+        f"- Configurations at B = {max(BATCHES)} with SM clock below maximum: "
+        + "; ".join(
+            f"{dt} {ly} k = {k} (lowest {v.sm_MHz.min():.0f} MHz, median power {v.mean_power_W.median():.0f} W)"
+            for (dt, ly, k), v in full[full.sm_MHz < m0["max_sm_MHz"]].groupby(["dtype", "layer", "k"])
+        )
+        + ".",
+        f"- Rows where idle power is over 90 % of the energy (J net of idle < 10 % of J; launch-bound, so J / forward "
+        f"mostly measures idle power): {(s.J_net < 0.1 * s.J).sum()} of {len(s)}.",
+        f"- Runs used {len({v['uuid'] for v in metas.values()})} physical GPUs. Mean energy of a run relative to the "
+        "mean of its dtype's runs, over all configurations:",
+        "",
+    ]
     L += ["| run | dtype | GPU | host | idle W | relative energy |", "|---|---|---|---|---|---|"]
     for rid, v in sorted(metas.items(), key=lambda kv: kv[1]["uuid"]):
         L.append(f"| {rid} | {v['dtype']} | {v['uuid'][4:12]} | {v['host']} | {v['idle_W']:.1f} | {rel[rid]:.3f} |")

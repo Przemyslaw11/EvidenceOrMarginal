@@ -11,6 +11,7 @@
 7. Scans main.tex and every generated file it includes for repository detail: the paper must not name files, commits or code.
 8. Recomputes the headline numbers of the post hoc additions (flip, regression message, pilot, support cut, convex bound) by a separate route.
 """
+
 import glob
 import hashlib
 import json
@@ -117,9 +118,13 @@ def tex_rows(name):
 
 def reports():
     rep = open(os.path.join(ROOT, "results", "report.txt")).read()
-    norm = lambda c: c.replace("—", "---").replace("–", "--").strip()  # noqa: E731
-    md = {tuple(c[:3]): [norm(x) for x in c[3:]] for c in
-          ([x.strip() for x in line.strip("|").split("|")] for line in rep.splitlines() if re.match(r"\| (SUM|CONTRAST) \| (pair|triple) \|", line))}
+    norm = lambda c: c.replace("—", "---").replace("–", "--").strip()
+    md = {
+        tuple(c[:3]): [norm(x) for x in c[3:]]
+        for c in (
+            [x.strip() for x in line.strip("|").split("|")] for line in rep.splitlines() if re.match(r"\| (SUM|CONTRAST) \| (pair|triple) \|", line)
+        )
+    }
     rows = tex_rows("thr_full")
     last = None
     n = 0
@@ -131,8 +136,14 @@ def reports():
     V = make_numbers.V
     for pat, key in ((r"\*\*(?:not )?supported\*\* \(4/4 cells", None),):
         check(re.search(pat, rep), "report H1a")
-    for txt, key in (("21/48 CIs inside, 27 entirely outside", "H3a"), ("73/236 inside, 156 outside", "H3b"), ("11/72; 51 cells", "H5a"),
-                     ("5/18 significant, 1 significant", "H5b"), ("24/78 significant, 19 significant", "H5c"), ("27/192 significant, 84 significant", "H5d")):
+    for txt, key in (
+        ("21/48 CIs inside, 27 entirely outside", "H3a"),
+        ("73/236 inside, 156 outside", "H3b"),
+        ("11/72; 51 cells", "H5a"),
+        ("5/18 significant, 1 significant", "H5b"),
+        ("24/78 significant, 19 significant", "H5c"),
+        ("27/192 significant, 84 significant", "H5d"),
+    ):
         a, b = (int(x) for x in re.findall(r"\d+", txt)[:2])
         if key in ("H3a", "H3b"):
             check((int(V[f"{key}.in"]), int(V[f"{key}.n"])) == (a, b), f"{key} vs report")
@@ -169,7 +180,7 @@ def parquet():
         print("parquet files absent: post hoc recomputation skipped")
         return
     V = make_numbers.V
-    n = lambda k: int(V[k].replace("{,}", ""))  # noqa: E731
+    n = lambda k: int(V[k].replace("{,}", ""))
     G = pd.read_parquet(p, columns=["basis", "k", "m", "E_q_D", "d_total"], filters=[("eps", "==", 0.01)])
     check(len(G) == n("ph.eqd.rows"), "rows")
     neg = G[G.E_q_D <= 0]
@@ -181,8 +192,11 @@ def parquet():
     Pp = pd.read_parquet(os.path.join(ROOT, "results", "merged", "population.parquet"), columns=["E_q_D"], filters=[("eps", "==", 0.01)])
     check((Pp.E_q_D <= 0).sum() == n("ph.eqd.pop.nonpos") and len(Pp) == n("ph.eqd.pop.rows"), "population E_q[D]")
     # headline of the truncation table, straight from the rows
-    D = pd.read_parquet(p, columns=["basis", "belief", "d_denom", "d_model_uncal", "d_model_cal"],
-                        filters=[("eps", "==", 0.01), ("m", "==", 4), ("defined", "==", 1), ("rho_S", ">", 0)])
+    D = pd.read_parquet(
+        p,
+        columns=["basis", "belief", "d_denom", "d_model_uncal", "d_model_cal"],
+        filters=[("eps", "==", 0.01), ("m", "==", 4), ("defined", "==", 1), ("rho_S", ">", 0)],
+    )
     for b, basis, nd in (("S3d", "pair", 0), ("S4", "pair", 1), ("S4", "triple", 2), ("S2", "triple", 2)):
         x = D[(D.belief == b) & (D.basis == basis)]
         check(f"{(x.d_model_uncal / x.d_denom).median():.{nd}f}" == V[f"tr.{b}.{basis}.ratio"], f"truncation ratio {b} {basis}")
@@ -198,11 +212,19 @@ def additions():
     V = make_numbers.V
     Sm = json.load(open(os.path.join(HERE, "semantics.json")))
     fl = Sm["flip"]
-    check(len(fl) == 10 and {(r["model"], r["k"]) for r in fl} == {("full", 3), ("full", 4), ("triple", 3), ("triple", 4), ("triple", 8)}, "flip settings")
+    check(
+        len(fl) == 10 and {(r["model"], r["k"]) for r in fl} == {("full", 3), ("full", 4), ("triple", 3), ("triple", 4), ("triple", 8)},
+        "flip settings",
+    )
     check(all(r["min_d"] > 0 for r in fl), "flip rows are below the onset")
     for r in fl:
         if r["tau"] == 1.0:
-            check(r["evidence"]["cd"] < r["evidence"]["eu"] and r["posterior"]["cd"] > r["posterior"]["eu"] and r["marginal"]["cd"] > r["marginal"]["eu"], f"flip at sigma 1: {r['model']} {r['k']}")
+            check(
+                r["evidence"]["cd"] < r["evidence"]["eu"]
+                and r["posterior"]["cd"] > r["posterior"]["eu"]
+                and r["marginal"]["cd"] > r["marginal"]["eu"],
+                f"flip at sigma 1: {r['model']} {r['k']}",
+            )
             check(V[f"sem.flip.{r['model']}.{r['k']}.1.0.evidence.cd"] == f"{r['evidence']['cd']:.3f}", "flip macro")
     R = json.load(open(os.path.join(HERE, "regression.json")))["rows"]
     check(len(R) == 64 and int(V["reg.n"]) == 64, "regression settings")
@@ -216,12 +238,18 @@ def additions():
     J = json.load(open(os.path.join(HERE, "pilot.json")))
     P = J["rows"]
     check(J["seeds"] == 10 and len({r["seed"] for r in P}) == 10, "pilot seeds")
-    mean = lambda v: sum(v) / len(v)  # noqa: E731
+    mean = lambda v: sum(v) / len(v)
     for sc in ("full", "missing", "noisy"):
         for form in ("cd", "eu", "reg"):
-            fam = [mean([r["mse_clip"] for r in P if r["scenario"] == sc and r["form"] == form and (r["basis"], r["m"]) == b]) for b in (("pair", 2), ("pair", 3), ("triple", 2), ("triple", 3))]
+            fam = [
+                mean([r["mse_clip"] for r in P if r["scenario"] == sc and r["form"] == form and (r["basis"], r["m"]) == b])
+                for b in (("pair", 2), ("pair", 3), ("triple", 2), ("triple", 3))
+            ]
             check(V[f"pilot.{sc}.{form}.lo"] == f"{min(fam):.3f}" and V[f"pilot.{sc}.{form}.hi"] == f"{max(fam):.3f}", f"pilot {sc} {form}")
-        check(V[f"pilot.{sc}.boost"] == f"{mean([r['mse_clip'] for r in P if r['scenario'] == sc and r['form'] == 'boost']):.3f}", f"pilot {sc} boosting")
+        check(
+            V[f"pilot.{sc}.boost"] == f"{mean([r['mse_clip'] for r in P if r['scenario'] == sc and r['form'] == 'boost']):.3f}",
+            f"pilot {sc} boosting",
+        )
         cd = {(r["seed"], r["basis"], r["m"]): r["mse_clip"] for r in P if r["scenario"] == sc and r["form"] == "cd"}
         eu = {(r["seed"], r["basis"], r["m"]): r["mse_clip"] for r in P if r["scenario"] == sc and r["form"] == "eu"}
         check(int(V[f"pilot.{sc}.win"]) == sum(cd[x] < eu[x] for x in cd), f"pilot {sc} wins")
@@ -231,13 +259,26 @@ def additions():
     check([r["k"] for r in Tj] == [8, 32, 128, 512, 2048] and all(a["k_rho"] < b["k_rho"] for a, b in zip(Tj, Tj[1:])), "convex bound rises")
     check(all(V[f"on.conv.kr.{r['k']}"] == f"{r['k_rho']:.3f}" for r in Tj), "convex bound macros")
     c = pd.read_csv(os.path.join(S, "curves_gauss.csv.gz"))
-    c = c[(c.m == 4) & ((c.eps - 0.01).abs() < 1e-12) & c.belief.isin(["S2", "S3c", "S4"]) & (c.rho_S > 0) & (c.share_undefined < 0.5)
-          & (c.d_denom_sd.abs() < math.inf)]
+    c = c[
+        (c.m == 4)
+        & ((c.eps - 0.01).abs() < 1e-12)
+        & c.belief.isin(["S2", "S3c", "S4"])
+        & (c.rho_S > 0)
+        & (c.share_undefined < 0.5)
+        & (c.d_denom_sd.abs() < math.inf)
+    ]
     check(int(V["H4a.n"]) == len(c[(c.basis == "pair") & c.k.isin([2, 8, 32])]), "H4a evaluation set: pair basis, k in {2, 8, 32}")
-    check(V["ph.H4a.all.n"] == str(len(c)) and V["ph.H4a.all.share"] == f"{100 * (c.d_denom_sd > c.d_denom_mcse).mean():.0f}\\,\\%", "H4a over all headline cells")
+    check(
+        V["ph.H4a.all.n"] == str(len(c)) and V["ph.H4a.all.share"] == f"{100 * (c.d_denom_sd > c.d_denom_mcse).mean():.0f}\\,\\%",
+        "H4a over all headline cells",
+    )
     p = os.path.join(ROOT, "results", "merged", "gauss.parquet")
     if os.path.exists(p):
-        G = pd.read_parquet(p, columns=["k", "basis", "belief", "m", "rho_S", "defined", "d_denom", "d_total", "d_model_cal", "E_q_D", "sd_q_D", "minD", "n_drop", "M"], filters=[("eps", "==", 0.01)])
+        G = pd.read_parquet(
+            p,
+            columns=["k", "basis", "belief", "m", "rho_S", "defined", "d_denom", "d_total", "d_model_cal", "E_q_D", "sd_q_D", "minD", "n_drop", "M"],
+            filters=[("eps", "==", 0.01)],
+        )
         G = G[G.belief != "S1"]
         a = G[(G.rho_S > 0) & (G.defined == 1)]
         check(f"{(a.sd_q_D / a.E_q_D.abs()).max():.3f}" == V["sel.cv.all"] and f"{a.d_denom.max():.3f}" == V["sel.dmax.all"], "selection over all m")
@@ -250,14 +291,51 @@ def additions():
 
 
 ALLOWED = {  # design constants and mathematics, never results
-    "0", "0.01", "0.02", "0.03", "0.05", "0.075", "0.1", "0.15", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "0.001", "0.003", "0.005", "0.0001",
-    "1", "1.5", "2", "4", "5", "10", "1%", "5%", "50%", "80%", "90%", "95%", "10%", "97.5", "97.5%", "2.5", "2.5%", "1.0", "4.0",
+    "0",
+    "0.01",
+    "0.02",
+    "0.03",
+    "0.05",
+    "0.075",
+    "0.1",
+    "0.15",
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.7",
+    "0.8",
+    "0.9",
+    "0.001",
+    "0.003",
+    "0.005",
+    "0.0001",
+    "1",
+    "1.5",
+    "2",
+    "4",
+    "5",
+    "10",
+    "1%",
+    "5%",
+    "50%",
+    "80%",
+    "90%",
+    "95%",
+    "10%",
+    "97.5",
+    "97.5%",
+    "2.5",
+    "2.5%",
+    "1.0",
+    "4.0",
 }
 
 
 def scan():
     t = open(os.path.join(HERE, "main.tex")).read()
-    t = t[t.index("\\begin{document}"):]
+    t = t[t.index("\\begin{document}") :]
     keys = re.findall(r"\\V\{([^}]*)\}", t)
     for k in keys:
         check(k in make_numbers.V, f"unknown key {k}")
@@ -266,11 +344,14 @@ def scan():
     x = re.sub(r"\\(V|ref|eqref|label|cite[tp]?|input|includegraphics|texttt|section|subsection)(\[[^\]]*\])*\{[^}]*\}", " ", x)
     x = x.replace("\\,", "").replace("PCT", "%")
     for m in re.finditer(r"(?<![\w.{^_-])\d+\.\d+%?|(?<![\w.{^_-])\d+%", x):
-        check(m.group(0) in ALLOWED, f"typed number {m.group(0)}: ...{x[max(0, m.start() - 40):m.end() + 20]!r}")
+        check(m.group(0) in ALLOWED, f"typed number {m.group(0)}: ...{x[max(0, m.start() - 40) : m.end() + 20]!r}")
 
 
-REPO = re.compile(r"\.md\b|\.py\b|\.csv\b|commit|\bgit\b|branch|repositor|README|version-controlled|(?-i:PREREGISTRATION)|\bresults/|\bgpu/|\bnetwork/|SeedSequence"
-                  r"|\\texttt\{[^}]*\b[0-9a-f]{7,40}\b|\b(?=[0-9a-f]*[a-f])(?=[0-9a-f]*[0-9])[0-9a-f]{7,40}\b|\bjob\b 3\d{6}", re.I)
+REPO = re.compile(
+    r"\.md\b|\.py\b|\.csv\b|commit|\bgit\b|branch|repositor|README|version-controlled|(?-i:PREREGISTRATION)|\bresults/|\bgpu/|\bnetwork/|SeedSequence"
+    r"|\\texttt\{[^}]*\b[0-9a-f]{7,40}\b|\b(?=[0-9a-f]*[a-f])(?=[0-9a-f]*[0-9])[0-9a-f]{7,40}\b|\bjob\b 3\d{6}",
+    re.I,
+)
 
 
 def repo_detail():
@@ -280,7 +361,7 @@ def repo_detail():
     check("generated/numbers.tex" in n and any("tab_hyp" in x for x in n), "included files")
     for name, x in [("main.tex", t)] + [(f, open(os.path.join(HERE, f if f.endswith(".tex") else f + ".tex")).read()) for f in n]:
         for m in REPO.finditer(x):
-            bad.append(f"repository detail in {name}: ...{x[max(0, m.start() - 30):m.end() + 20]!r}")
+            bad.append(f"repository detail in {name}: ...{x[max(0, m.start() - 30) : m.end() + 20]!r}")
         check(True, name)
 
 

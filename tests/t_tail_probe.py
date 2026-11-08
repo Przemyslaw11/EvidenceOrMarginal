@@ -5,6 +5,7 @@ moves, not the t functions: near F = 1, 1 - F takes only a few discrete values.
 Compares the lower tail itself (`_t_lower`, what t_cdf and t_ppf are built on) with scipy's stdtr(nu, -|x|), and repeats
 M7's metric for each sign of x, so a real error in the tail can be told from rounding of F = 1 - lower near 1.
 """
+
 import math
 
 import numpy as np
@@ -36,10 +37,13 @@ for nu in (1, 2, 3, 4, 5, 10):
         q = C.t_ppf(torch.as_tensor(ug, dtype=torch.float64, device=dev), nu).cpu().numpy()
         qr = stdtrit(nu, ug)
         eq = np.abs(q - qr) / np.maximum(np.abs(qr), 1.0)
-        print(f"nu={nu:2d} {dev:4s} lower-tail rel err {rel.max():.1e} (x={ax[rel.argmax()]:.3g}); "
-              f"M7 metric x<0 {m[~pos].max():.1e}, x>0 {m[pos].max():.1e}; worst x={xg[i]:.4g} F={F[i]!r} ref={ref[i]!r} "
-              f"true tail {true[i]:.3e}; max |F-ref| {np.abs(F - ref).max():.1e}; quantile rel err {eq.max():.1e} "
-              f"(u={ug[eq.argmax()]:.3g})", flush=True)
+        print(
+            f"nu={nu:2d} {dev:4s} lower-tail rel err {rel.max():.1e} (x={ax[rel.argmax()]:.3g}); "
+            f"M7 metric x<0 {m[~pos].max():.1e}, x>0 {m[pos].max():.1e}; worst x={xg[i]:.4g} F={F[i]!r} ref={ref[i]!r} "
+            f"true tail {true[i]:.3e}; max |F-ref| {np.abs(F - ref).max():.1e}; quantile rel err {eq.max():.1e} "
+            f"(u={ug[eq.argmax()]:.3g})",
+            flush=True,
+        )
     if "cuda" in devs:
         d = np.abs(out[nu, "cpu"] - out[nu, "cuda"]) / true
         print(f"nu={nu:2d} cpu vs cuda lower tail rel diff {d.max():.1e}", flush=True)

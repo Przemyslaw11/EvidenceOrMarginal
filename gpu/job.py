@@ -1,7 +1,8 @@
 """Run one fully specified job of the sweep and write one parquet file (atomically) with metadata.
 
-    python -m gpu.job --spec '<json>' --out results/jobs/<exp>/<id>.parquet [--device cuda]
+python -m gpu.job --spec '<json>' --out results/jobs/<exp>/<id>.parquet [--device cuda]
 """
+
 import argparse
 import json
 import math
@@ -56,10 +57,16 @@ def build_cases(spec, cfg, device):
                     break
                 n_rej += 1
             off = np.abs(R[1:, 1:][np.triu_indices(k, 1)]) if k > 1 else np.array([np.nan])
-            info = dict(lkj_idx=case["lkj_idx"], eta=spec["eta"], lkj_rejected=n_rej, min_eig=C.min_eig(R),
-                        mean_abs_ryy=float(off.mean()), mean_abs_rxy=float(np.abs(R[0, 1:]).mean()),
-                        rhoS_equiv_yy=float(np.mean(6 / math.pi * np.arcsin(off / 2))),
-                        R_json=json.dumps(np.round(R, 12).tolist()))
+            info = dict(
+                lkj_idx=case["lkj_idx"],
+                eta=spec["eta"],
+                lkj_rejected=n_rej,
+                min_eig=C.min_eig(R),
+                mean_abs_ryy=float(off.mean()),
+                mean_abs_rxy=float(np.abs(R[0, 1:]).mean()),
+                rhoS_equiv_yy=float(np.mean(6 / math.pi * np.arcsin(off / 2))),
+                R_json=json.dumps(np.round(R, 12).tolist()),
+            )
             out.append((C.Gaussian(R, device), info))
         else:
             cop, info = C.make_copula(spec["family"], spec["type"], k, case["rho_S"], device, cfg["couplings"])
@@ -100,6 +107,7 @@ def run_job(spec, cfg, device="cpu"):
     cfg = _merged(json.loads(json.dumps(cfg)), spec.get("override", {}))
     if spec["exp"] == "network":
         from network.job import run_network_job
+
         df = run_network_job(spec, cfg, device, rng_for)
         return _tag(df, spec, int(cfg["network"]["n_est"])), _meta(spec, t0, 0.0, device)
     num = cfg["numerics"]
@@ -119,8 +127,7 @@ def run_job(spec, cfg, device="cpu"):
     if n_est > 0:
         models = estimate(spec, cfg, cases, device, n_est)
     else:  # population coefficients: exact moments of the Gaussian copula
-        models = [(population_model(cop.R, cfg["m_max"], spec["basis"], num["gh_nodes"], device), None)
-                  for cop, _ in cases]
+        models = [(population_model(cop.R, cfg["m_max"], spec["basis"], num["gh_nodes"], device), None) for cop, _ in cases]
     t_est = time.time() - t_est
     grid = Grid(num["s_nodes"], num["s_max"], num["x_gl"], cfg["m_max"], device)
     names = cfg.get("beliefs_used", cfg["order"])
@@ -155,8 +162,14 @@ def run_job(spec, cfg, device="cpu"):
     for ci, ((cop, info), (model, se)) in enumerate(zip(cases, models)):
         t1 = time.time()
         r = case_rows(passes[ci], grid, cfg)
-        extra = dict(case=ci, **info, rhoS_emp_yy=_emp_yy(model), rhoS_emp_xy=_emp_xy(model),
-                     se_a011=_se_yy(se), runtime_case_s=t_case[ci] + t_mind + time.time() - t1)
+        extra = dict(
+            case=ci,
+            **info,
+            rhoS_emp_yy=_emp_yy(model),
+            rhoS_emp_xy=_emp_xy(model),
+            se_a011=_se_yy(se),
+            runtime_case_s=t_case[ci] + t_mind + time.time() - t1,
+        )
         for x in r:
             x.update(extra)
         rows += r
@@ -173,10 +186,20 @@ def _tag(df, spec, n_est):
 
 
 def _meta(spec, t0, t_est, device):
-    return dict(spec=spec, wall_s=time.time() - t0, est_s=t_est, device=device, host=socket.gethostname(),
-                gpu=torch.cuda.get_device_name(0) if device.startswith("cuda") else platform.processor(),
-                torch=torch.__version__, numpy=np.__version__, pandas=pd.__version__, git=_git(),
-                python=platform.python_version(), nvidia_smi=_smi() if device.startswith("cuda") else "")
+    return dict(
+        spec=spec,
+        wall_s=time.time() - t0,
+        est_s=t_est,
+        device=device,
+        host=socket.gethostname(),
+        gpu=torch.cuda.get_device_name(0) if device.startswith("cuda") else platform.processor(),
+        torch=torch.__version__,
+        numpy=np.__version__,
+        pandas=pd.__version__,
+        git=_git(),
+        python=platform.python_version(),
+        nvidia_smi=_smi() if device.startswith("cuda") else "",
+    )
 
 
 def _merged(cfg, over):
@@ -208,8 +231,9 @@ def _git():
 
 def _smi():
     try:
-        return subprocess.run(["nvidia-smi", "--query-gpu=name,driver_version,clocks.max.sm,power.limit",
-                               "--format=csv,noheader"], capture_output=True, text=True).stdout.strip()
+        return subprocess.run(
+            ["nvidia-smi", "--query-gpu=name,driver_version,clocks.max.sm,power.limit", "--format=csv,noheader"], capture_output=True, text=True
+        ).stdout.strip()
     except OSError:
         return ""
 
@@ -219,6 +243,7 @@ def write_atomic(df, meta, out):
     tmp = f"{out}.tmp.{os.getpid()}"
     import pyarrow as pa
     import pyarrow.parquet as pq
+
     t = pa.Table.from_pandas(df, preserve_index=False)
     t = t.replace_schema_metadata({**(t.schema.metadata or {}), b"hcr_meta": json.dumps(meta, default=str).encode()})
     pq.write_table(t, tmp)
@@ -227,6 +252,7 @@ def write_atomic(df, meta, out):
 
 def read_meta(path):
     import pyarrow.parquet as pq
+
     return json.loads(pq.read_schema(path).metadata[b"hcr_meta"])
 
 

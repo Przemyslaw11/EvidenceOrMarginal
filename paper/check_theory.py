@@ -6,6 +6,7 @@ Post hoc: nothing here is a study result or changes a verdict. Population moment
 from the latent-factor form Z_l = sqrt(r) W + sqrt(1 - r) e_l, with Gauss-Hermite in W and e; the triple-basis output moments
 use a three-dimensional Gauss-Hermite rule. Needs results/merged/population.parquet and results/summary/thresholds_*.csv.
 """
+
 import json
 import math
 import os
@@ -62,8 +63,8 @@ def amat(r, m):
 
 
 def e23(xi):
-    p1, p2, p3 = xi.sum(1), (xi ** 2).sum(1), (xi ** 3).sum(1)
-    return 0.5 * (p1 ** 2 - p2), (p1 ** 3 - 3 * p1 * p2 + 2 * p3) / 6
+    p1, p2, p3 = xi.sum(1), (xi**2).sum(1), (xi**3).sum(1)
+    return 0.5 * (p1**2 - p2), (p1**3 - 3 * p1 * p2 + 2 * p3) / 6
 
 
 def dpop(Y, r, m, basis):
@@ -166,6 +167,7 @@ def flat_expansion():
     Y = torch.tensor(rng.random((1 << 19, 2)))
     x, w = (torch.tensor(v) for v in (XG, WG))
     from gpu.core import legendre
+
     Fx = legendre(x, 4)
     res = {}
     for basis in ("pair", "triple"):
@@ -197,20 +199,38 @@ def flat_expansion():
     check("triple rows are not", ot > 1e-3)
 
     P = pop_rows(["k", "type", "basis", "rho_S", "d_denom", "d_denom_below", "chi_D", "defined"], m=4, eps=0.01, belief="S2")
-    g = P.groupby(["type", "basis", "k", "rho_S"]).agg(d=("d_denom", "median"), chi=("chi_D", "median"), und=("defined", lambda v: (v != 1).mean()),
-                                                       bl=("d_denom_below", "mean")).reset_index()
+    g = (
+        P.groupby(["type", "basis", "k", "rho_S"])
+        .agg(d=("d_denom", "median"), chi=("chi_D", "median"), und=("defined", lambda v: (v != 1).mean()), bl=("d_denom_below", "mean"))
+        .reset_index()
+    )
     g = g[(g.und < 0.5) & (g.bl < 0.5) & (g.chi > 0) & (g.d > 0)].copy()  # the point set of H1c
     g["pred"] = [t2_tv(r.type, r.k, r.rho_S) if r.basis == "pair" else t1_tv(r.type, r.k, r.rho_S) for r in g.itertuples()]
     g["ratio"] = g.d / g.pred
     cells = {}
     for (t, b), x in g.groupby(["type", "basis"]):
         lr = np.log(x.ratio)
-        cells[f"{t}/{b}"] = dict(n=len(x), within2=float(((x.ratio >= 0.5) & (x.ratio <= 2)).mean()), lo=float(x.ratio.min()), hi=float(x.ratio.max()),
-                                 med=float(x.ratio.median()), within125=float(((x.ratio >= 0.8) & (x.ratio <= 1.25)).mean()), sd_log=float(lr.std()))
+        cells[f"{t}/{b}"] = dict(
+            n=len(x),
+            within2=float(((x.ratio >= 0.5) & (x.ratio <= 2)).mean()),
+            lo=float(x.ratio.min()),
+            hi=float(x.ratio.max()),
+            med=float(x.ratio.median()),
+            within125=float(((x.ratio >= 0.8) & (x.ratio <= 1.25)).mean()),
+            sd_log=float(lr.std()),
+        )
     small = g[g.chi <= 0.2]
-    out["leading"] = dict(cells=cells, n=len(g), within2=float(((g.ratio >= 0.5) & (g.ratio <= 2)).mean()), lo=float(g.ratio.min()), hi=float(g.ratio.max()),
-                          small_n=len(small), small_lo=float(small.ratio.min()), small_hi=float(small.ratio.max()),
-                          points=g[["type", "basis", "k", "rho_S", "chi", "d", "pred"]].to_dict("records"))
+    out["leading"] = dict(
+        cells=cells,
+        n=len(g),
+        within2=float(((g.ratio >= 0.5) & (g.ratio <= 2)).mean()),
+        lo=float(g.ratio.min()),
+        hi=float(g.ratio.max()),
+        small_n=len(small),
+        small_lo=float(small.ratio.min()),
+        small_hi=float(small.ratio.max()),
+        points=g[["type", "basis", "k", "rho_S", "chi", "d", "pred"]].to_dict("records"),
+    )
     check("leading-order formula within a factor 2 at every H1c point", out["leading"]["within2"] == 1)
 
 
@@ -218,13 +238,14 @@ def data_belief():
     """Triple: under the data belief CD - 1 = T_1 / (1 + chi^2), and GOLD is uniform, so d_total = 0.5 ||T_1||_1 / (1 + chi^2)."""
     P = pop_rows(["k", "type", "basis", "rho_S", "d_total", "chi_D", "E_q_D"], m=4, eps=0.01, belief="S4")
     g = P.groupby(["type", "basis", "k", "rho_S"]).agg(d=("d_total", "median"), chi=("chi_D", "median"), eqd=("E_q_D", "median")).reset_index()
-    out["data_belief_eq_err"] = float((g.eqd - 1 - g.chi ** 2).abs().max() / (1 + g.chi ** 2).max())
+    out["data_belief_eq_err"] = float((g.eqd - 1 - g.chi**2).abs().max() / (1 + g.chi**2).max())
     t = g[(g.basis == "triple") & (g.rho_S > 0) & (g.rho_S <= 0.3)].copy()
-    t["pred"] = [t1_tv(r.type, r.k, r.rho_S) / (1 + r.chi ** 2) for r in t.itertuples()]
+    t["pred"] = [t1_tv(r.type, r.k, r.rho_S) / (1 + r.chi**2) for r in t.itertuples()]
     t = t[t.d > 0.003]  # above the Monte Carlo level of d_total
     t["ratio"] = t.d / t.pred
-    out["data_belief"] = dict(n=len(t), lo=float(t.ratio.min()), hi=float(t.ratio.max()), med=float(t.ratio.median()),
-                              pair_max=float(g[g.basis == "pair"].d.max()))
+    out["data_belief"] = dict(
+        n=len(t), lo=float(t.ratio.min()), hi=float(t.ratio.max()), med=float(t.ratio.median()), pair_max=float(g[g.basis == "pair"].d.max())
+    )
     check("data belief, triple: d_total matches T_1 / (1 + chi^2)", abs(math.log(out["data_belief"]["med"])) < 0.1)
 
 
@@ -247,8 +268,15 @@ def relax(k, r, m, iters=200):
         def grad(v):
             return k * k * (Fa @ (A @ (v @ Fa))) - 0.5 * k * pa
 
-        res = minimize(obj, w, jac=grad, bounds=[(0, 1)] * n, method="SLSQP", options=dict(maxiter=300, ftol=1e-14),
-                       constraints=[dict(type="eq", fun=lambda v: v.sum() - 1, jac=lambda v: np.ones(n))])
+        res = minimize(
+            obj,
+            w,
+            jac=grad,
+            bounds=[(0, 1)] * n,
+            method="SLSQP",
+            options=dict(maxiter=300, ftol=1e-14),
+            constraints=[dict(type="eq", fun=lambda v: v.sum() - 1, jac=lambda v: np.ones(n))],
+        )
         w = np.clip(res.x, 0, None)
         w /= w.sum()
         keep = w > 1e-9
@@ -331,16 +359,31 @@ def pair_onset():
             _, at, wt = relax(k, rs(lo), m)
             up = bisect(lambda x: local_min(k, rs(x), m, *relax(k, rs(x), m)[1:], rng), lo=lo * 0.98)
             on = float(th[(th.k == k) & (th.m == m)].neg_onset.iloc[0])
-            rows.append(dict(m=m, k=k, crude=crude, lower=lo, upper=up, measured=on, atoms=[float(a) for a in at], weights=[float(w) for w in wt],
-                             corner_neg=corner_onset(k, m, "pair")[0] is not None))
-            print(f"pair m={m} k={k:2d} crude {crude:.4f} lower {lo:.4f} upper {up:.4f} measured {on:.4f} atoms {np.round(sorted(at), 3)}", flush=True)
+            rows.append(
+                dict(
+                    m=m,
+                    k=k,
+                    crude=crude,
+                    lower=lo,
+                    upper=up,
+                    measured=on,
+                    atoms=[float(a) for a in at],
+                    weights=[float(w) for w in wt],
+                    corner_neg=corner_onset(k, m, "pair")[0] is not None,
+                )
+            )
+            print(
+                f"pair m={m} k={k:2d} crude {crude:.4f} lower {lo:.4f} upper {up:.4f} measured {on:.4f} atoms {np.round(sorted(at), 3)}", flush=True
+            )
     out["pair_onset"] = rows
     check("lower bound below the upper bound", all(r_["lower"] <= r_["upper"] * 1.0005 for r_ in rows))
     check("no pair corner goes negative", not any(r_["corner_neg"] for r_ in rows))
     b = [r_ for r_ in rows if r_["k"] >= 4]
-    out["pair_onset_gap"] = dict(max_rel_upper_lower=max(r_["upper"] / r_["lower"] - 1 for r_ in b),
-                                 max_rel_measured=max(abs(r_["measured"] / r_["lower"] - 1) for r_ in b),
-                                 max_rel_measured_m4=max(abs(r_["measured"] / r_["lower"] - 1) for r_ in b if r_["m"] == 4))
+    out["pair_onset_gap"] = dict(
+        max_rel_upper_lower=max(r_["upper"] / r_["lower"] - 1 for r_ in b),
+        max_rel_measured=max(abs(r_["measured"] / r_["lower"] - 1) for r_ in b),
+        max_rel_measured_m4=max(abs(r_["measured"] / r_["lower"] - 1) for r_ in b if r_["m"] == 4),
+    )
 
 
 def psi_min(k, rho, m, nodes=801):
@@ -353,8 +396,15 @@ def psi_min(k, rho, m, nodes=801):
     cuts = [np.zeros(m)]
     for _ in range(200):
         g = [k * k * (A @ u) for u in cuts]
-        res = linprog(c, A_ub=np.array([np.r_[F @ gi, -1.0] for gi in g]), b_ub=[gi @ u / 2 for gi, u in zip(g, cuts)], A_eq=eq, b_eq=[1],
-                      bounds=[(0, None)] * nodes + [(None, None)], method="highs")
+        res = linprog(
+            c,
+            A_ub=np.array([np.r_[F @ gi, -1.0] for gi in g]),
+            b_ub=[gi @ u / 2 for gi, u in zip(g, cuts)],
+            A_eq=eq,
+            b_eq=[1],
+            bounds=[(0, None)] * nodes + [(None, None)],
+            method="highs",
+        )
         mu, tau = res.x[:-1], res.x[-1]
         u = mu @ F
         q = k * k / 2 * u @ A @ u
@@ -381,6 +431,7 @@ def corner_onset(k, m, basis):
     def val(x):
         v = [dpop(np.r_[np.ones(n), np.zeros(k - n)], rs(x), m, basis) for n in range(k // 2 + 1)]
         return min(v), int(np.argmin(v))
+
     g = np.geomspace(0.002, 0.89, 70)
     v = [val(x)[0] for x in g]
     hit = [i for i in range(len(g)) if v[i] < 0]
@@ -399,7 +450,7 @@ def corner_formula():
             r = rs(x)
             g = latent(r, m)
             xp, xm = g @ fall(1.0, m)[1:], g @ fall(0.0, m)[1:]
-            M2, C11, M3, C21 = WW @ xp ** 2, WW @ (xp * xm), WW @ xp ** 3, WW @ (xp ** 2 * xm)
+            M2, C11, M3, C21 = WW @ xp**2, WW @ (xp * xm), WW @ xp**3, WW @ (xp**2 * xm)
             a, b = (M2 + C11) / 2, (M2 - C11) / 2
             kk = np.arange(2, 4098, 2)
             crit = min(crit, (1 + 0.5 * (kk * (kk - 1) * a - kk * b)).min())
@@ -413,7 +464,7 @@ def corner_formula():
                     if 2 * n == k:  # the triple term at the balanced corner, through the even and odd parts of xi_+ in w
                         xe, xo = (xp + xm) / 2, (xp - xm) / 2
                         h = n
-                        worst = max(worst, abs(dt - dp - h * (h - 1) * ((4 * h - 2) / 3 * (WW @ xe ** 3) - 2 * (WW @ (xe * xo ** 2)))))
+                        worst = max(worst, abs(dt - dp - h * (h - 1) * ((4 * h - 2) / 3 * (WW @ xe**3) - 2 * (WW @ (xe * xo**2)))))
     out["corner_formula"] = dict(err=float(worst), min_balanced_pair=float(crit))
     check("corner formula", worst < 1e-9)
     check("balanced pair corners stay positive for every even k up to 4096 on the grid", crit > 0)
@@ -432,10 +483,11 @@ def triple_onset():
     # at equal rho, corners against the production minimum: min D <= corner value must hold, and is it nearly equal?
     g = P[(P.m == 4) & (P.rho_S > 0)].groupby(["k", "rho_S"]).minD.median().reset_index()
     g = g[(g.k >= 4) & (g.minD > -0.1) & (g.minD < 0.9)].copy()  # up to just past the onset; further on the minimiser leaves the corners
-    g["corner"] = [min(dpop(np.r_[np.ones(n), np.zeros(int(r.k) - n)], rs(r.rho_S), 4, "triple") for n in range(int(r.k) // 2 + 1)) for r in g.itertuples()]
+    g["corner"] = [
+        min(dpop(np.r_[np.ones(n), np.zeros(int(r.k) - n)], rs(r.rho_S), 4, "triple") for n in range(int(r.k) // 2 + 1)) for r in g.itertuples()
+    ]
     out["triple_corner_grid"] = dict(n=len(g), max_abs=float((g.corner - g.minD).abs().max()), min_diff=float((g.corner - g.minD).min()))
-    check("m >= 4: corner onset within 7 % of the measured onset",
-          all(abs(r["corner"] / r["measured"] - 1) < 0.07 for r in rows if r["m"] >= 4))
+    check("m >= 4: corner onset within 7 % of the measured onset", all(abs(r["corner"] / r["measured"] - 1) < 0.07 for r in rows if r["m"] >= 4))
     check("m = 2: no triple corner goes negative", all(r["corner"] is None for r in rows if r["m"] == 2))
 
 
@@ -456,9 +508,14 @@ def belief_mass():
     s["th"] = [eqd(r.k, r.rho_S, r.m, r.basis, r.belief) for r in s.itertuples()]
     rel = (s.th - s.E_q_D).abs() / np.maximum(1, s.E_q_D.abs())
     pr = g[g.basis == "pair"]
-    out["eqd"] = dict(n=len(s), max_rel=float(rel.max()), med_abs=float((s.th - s.E_q_D).abs().median()),
-                      pair_same_min=float(pr[pr.belief != "S3c"].E_q_D.min()), pair_s3c_min=float(pr[pr.belief == "S3c"].E_q_D.min()),
-                      triple_min=float(g[g.basis == "triple"].E_q_D.min()))
+    out["eqd"] = dict(
+        n=len(s),
+        max_rel=float(rel.max()),
+        med_abs=float((s.th - s.E_q_D).abs().median()),
+        pair_same_min=float(pr[pr.belief != "S3c"].E_q_D.min()),
+        pair_s3c_min=float(pr[pr.belief == "S3c"].E_q_D.min()),
+        triple_min=float(g[g.basis == "triple"].E_q_D.min()),
+    )
     check("E_q[D] formula against the population rows", out["eqd"]["max_rel"] < 0.01)
     check("pair, identical marginals: E_q[D] >= 1 up to Monte Carlo", out["eqd"]["pair_same_min"] > 1 - 1e-3)
 
@@ -477,7 +534,7 @@ def noise_variance():
         v = sum(F[:, a].mean(0) @ f0[a] for a in range(k))
         v += sum((F[:, a] * (F[:, b] @ f0[b])[:, None]).mean(0) @ f0[a] for a, b in idx)
         vals[t] = v
-    s = (f0 ** 2).sum(1)
+    s = (f0**2).sum(1)
     K = s.sum() + sum(s[a] * s[b] for a, b in idx)
     out["noise_var"] = dict(ratio=float(vals.var() * n / K))
     check("noise variance formula", abs(out["noise_var"]["ratio"] - 1) < 0.08)
@@ -537,9 +594,11 @@ def surrogate(k, basis, m, reps, starts, rng):
                 elif v < bu:
                     bu, bd = v, float(np.mean((idx == 0) | (idx == len(U) - 1)))
         res.append((bc, min(bu, bc), bd))
-    K = k * T + math.comb(k, 2) * T ** 2 + (math.comb(k, 3) * T ** 3 if basis == "triple" else 0)
+    K = k * T + math.comb(k, 2) * T**2 + (math.comb(k, 3) * T**3 if basis == "triple" else 0)
     r = np.array(res)
-    return dict(z_corner=float(-np.median(r[:, 0]) / math.sqrt(K)), z_cube=float(-np.median(r[:, 1]) / math.sqrt(K)), boundary=float(np.median(r[:, 2])))
+    return dict(
+        z_corner=float(-np.median(r[:, 0]) / math.sqrt(K)), z_cube=float(-np.median(r[:, 1]) / math.sqrt(K)), boundary=float(np.median(r[:, 2]))
+    )
 
 
 def noise_extremes():
@@ -548,19 +607,27 @@ def noise_extremes():
     ph = {(r["basis"], r["k"]): r for r in json.load(open(os.path.join(ROOT, "paper/posthoc.json")))["noise"]}
     for basis, ks in (("pair", KS), ("triple", KS[1:4])):
         for k in ks:
-            r = surrogate(k, basis, 4, 20 if k <= 16 else 12, 20 if k <= 8 else 8, rng) if basis == "pair" or k <= 8 else surrogate(k, basis, 4, 6, 3, rng)
+            r = (
+                surrogate(k, basis, 4, 20 if k <= 16 else 12, 20 if k <= 8 else 8, rng)
+                if basis == "pair" or k <= 8
+                else surrogate(k, basis, 4, 6, 3, rng)
+            )
             r.update(basis=basis, k=k, union=math.sqrt(2 * k * math.log(2)), measured=ph[(basis, k)]["z"])
             rows.append(r)
             print(r, flush=True)
     out["noise_z"] = rows
     check("surrogate cube minimum at least as deep as corners", all(r["z_cube"] >= r["z_corner"] - 1e-9 for r in rows))
-    check("pair: measured z below the surrogate cube value at k = 32", ph[("pair", 32)]["z"] < [r for r in rows if r["basis"] == "pair" and r["k"] == 32][0]["z_cube"])
+    check(
+        "pair: measured z below the surrogate cube value at k = 32",
+        ph[("pair", 32)]["z"] < [r for r in rows if r["basis"] == "pair" and r["k"] == 32][0]["z_cube"],
+    )
 
 
 # ---------------------------------------------------------------- 5. the sharper TV bound
 def tv_bounds():
     rng = np.random.default_rng(6)
     from gpu.core import legendre
+
     x, w = torch.tensor(XG), torch.tensor(WG)
     Fx = legendre(x, 4)
     ab = {"S2": (1, 1), "S3a": (3, 3), "S3b": (4, 2), "S3d": (6, 6)}
@@ -586,17 +653,50 @@ def tv_bounds():
                         S2 = math.sqrt(float(h[:, 1:].var(0).sum()))
                         c1 = float((hx.abs() * w).sum(1).max())
                         e1 = float((D / D.mean() - 1).abs().mean())
-                        rows.append(dict(k=k, basis=basis, type=typ, rho=rho, belief=b, tv=tv, sharp=0.5 * cv * Sh, coef=0.5 * cv * S2, old=0.5 * cv, oldc=0.5 * c1 * cv, mid=0.5 * c1 * e1))
+                        rows.append(
+                            dict(
+                                k=k,
+                                basis=basis,
+                                type=typ,
+                                rho=rho,
+                                belief=b,
+                                tv=tv,
+                                sharp=0.5 * cv * Sh,
+                                coef=0.5 * cv * S2,
+                                old=0.5 * cv,
+                                oldc=0.5 * c1 * cv,
+                                mid=0.5 * c1 * e1,
+                            )
+                        )
     d = pd.DataFrame(rows)
     d = d[d.tv > 3e-4]  # above the Monte Carlo level at this sample size
-    out["tv_bound"] = dict(n=len(d), max_sharp=float((d.tv / d.sharp).max()), med_sharp=float((d.tv / d.sharp).median()), med_coef=float((d.tv / d.coef).median()),
-                           max_coef=float((d.tv / d.coef).max()), med_old=float((d.tv / d.old).median()), med_oldc=float((d.tv / d.oldc).median()),
-                           med_gain=float((d.oldc / d.sharp).median()))
+    out["tv_bound"] = dict(
+        n=len(d),
+        max_sharp=float((d.tv / d.sharp).max()),
+        med_sharp=float((d.tv / d.sharp).median()),
+        med_coef=float((d.tv / d.coef).median()),
+        max_coef=float((d.tv / d.coef).max()),
+        med_old=float((d.tv / d.old).median()),
+        med_oldc=float((d.tv / d.oldc).median()),
+        med_gain=float((d.oldc / d.sharp).median()),
+    )
     check("sharper bound holds on all cases", out["tv_bound"]["max_sharp"] <= 1 + 1e-9 and out["tv_bound"]["max_coef"] <= 1 + 1e-9)
 
 
 def main():
-    for f in (semantics, flat_expansion, data_belief, corner_formula, pair_onset, pair_onset_large, triple_onset, belief_mass, noise_variance, tv_bounds, noise_extremes):
+    for f in (
+        semantics,
+        flat_expansion,
+        data_belief,
+        corner_formula,
+        pair_onset,
+        pair_onset_large,
+        triple_onset,
+        belief_mass,
+        noise_variance,
+        tv_bounds,
+        noise_extremes,
+    ):
         print("---", f.__name__, flush=True)
         f()
         json.dump(out, open(os.path.join(ROOT, "paper/theory.json"), "w"), indent=1, sort_keys=True)

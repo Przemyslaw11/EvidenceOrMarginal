@@ -8,6 +8,7 @@ that the paper reports; a run writes there only when asked with --out tests/test
 Each test returns (pass, detail). A failing strict test is reported as failed. Tolerances were fixed before
 production; the one later change, to the reference of M7, is described in the paper.
 """
+
 import argparse
 import json
 import math
@@ -26,8 +27,20 @@ import torch
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 from gpu import copulas as C  # noqa: E402
-from gpu.core import (DT, Estimator, GaussianMoments, Model, count_formula, dense3_from_model, gauss_legendre,  # noqa: E402
-                      input_basis, legendre, masks, model_from_dense3, order_of, population_model)
+from gpu.core import (
+    DT,
+    Estimator,
+    Model,
+    count_formula,
+    dense3_from_model,
+    gauss_legendre,
+    input_basis,
+    legendre,
+    masks,
+    model_from_dense3,
+    order_of,
+    population_model,
+)
 from gpu.job import load_cfg, rng_for, run_job, setup_torch  # noqa: E402
 from gpu.propagate import Grid, beta_logq, evaluate_case, min_D, sample_beliefs  # noqa: E402
 
@@ -90,8 +103,12 @@ def M1():
     G = (F * w[:, None]).T @ F
     e1 = float((G - torch.eye(9, dtype=DT, device=DEV)).abs().max())
     u = x
-    ex = [math.sqrt(3) * (2 * u - 1), math.sqrt(5) * (6 * u ** 2 - 6 * u + 1),
-          math.sqrt(7) * (20 * u ** 3 - 30 * u ** 2 + 12 * u - 1), 3 * (70 * u ** 4 - 140 * u ** 3 + 90 * u ** 2 - 20 * u + 1)]
+    ex = [
+        math.sqrt(3) * (2 * u - 1),
+        math.sqrt(5) * (6 * u**2 - 6 * u + 1),
+        math.sqrt(7) * (20 * u**3 - 30 * u**2 + 12 * u - 1),
+        3 * (70 * u**4 - 140 * u**3 + 90 * u**2 - 20 * u + 1),
+    ]
     e2 = max(float((F[:, i + 1] - ex[i]).abs().max()) for i in range(4))
     return e1 < 1e-12 and e2 < 1e-12, f"Gram max err {e1:.2e}; explicit f1..f4 max err {e2:.2e}"
 
@@ -111,11 +128,11 @@ def M2():
             ok &= got == count_formula(k, m, basis)
     det.append("pair/triple counts match the formula for (k,m) in (2,2),(4,3),(8,4),(16,2),(32,2),(5,6)")
     import itertools
+
     k, m, cap = 3, 2, 3
     for basis in ("pair", "triple", "full"):
         o = order_of(basis, k)
-        brute = sum(1 for j in itertools.product(range(m + 1), repeat=k + 1)
-                    if sum(v > 0 for v in j) <= o and sum(j) <= cap)
+        brute = sum(1 for j in itertools.product(range(m + 1), repeat=k + 1) if sum(v > 0 for v in j) <= o and sum(j) <= cap)
         got = Model(k, m, basis, _zero_blocks(k, m, basis), cap=cap).n_coef
         ok &= got == brute
     det.append("degree-cap masks match brute-force enumeration (k=3, m=2, cap=3)")
@@ -136,7 +153,8 @@ def M2():
 def _zero_blocks(k, m, basis):
     mk = masks(k, m, basis, None, DEV)
     return {n: (None if v is None else torch.zeros(v.shape, dtype=DT, device=DEV)) for n, v in mk.items()} | {
-        "c": torch.zeros(m + 1, dtype=DT, device=DEV)}
+        "c": torch.zeros(m + 1, dtype=DT, device=DEV)
+    }
 
 
 # ---------------------------------------------------------------- M3
@@ -145,15 +163,16 @@ def M3():
     k, rho = 4, 0.3
     R, _ = C.coupled_R("SUM", k, rho)
     res = {}
-    for n in (10 ** 6, 10 ** 7):
+    for n in (10**6, 10**7):
         cop, (mod, se) = estimate_model(R, n, "pair", m=4, seed=3)
         res[n] = (mod, se)
-    mod, se = res[10 ** 6]
+    mod, se = res[10**6]
     b, s = mod.blocks, se
     ok &= abs(float(b["c"][0]) - 1) < 1e-15
     # pairwise a_(0,1,1) vs rho_S and vs the sample Spearman correlation of the same samples
-    _, U = gauss_samples(R, 10 ** 6, 3)
+    _, U = gauss_samples(R, 10**6, 3)
     from scipy.stats import rankdata
+
     Un = _np(U)
     rk = np.stack([rankdata(Un[:, i]) for i in range(1, k + 1)], 1)
     pa, pb = np.triu_indices(k, 1)
@@ -165,14 +184,16 @@ def M3():
     z_single = float((b["W1"][0].abs() / s["W1"][0]).max())
     z_x = float((b["c"][1:].abs() / s["c"][1:]).max())
     ok &= z_sp <= 5 and z_rho <= 5 and z_single <= 5 and z_x <= 5
-    det.append(f"a_0=1; max |a_(0,1,1)-Spearman|/SE={z_sp:.2f}, vs rho_S {z_rho:.2f}; single-index max |a|/SE: "
-               f"inputs {z_single:.2f}, output {z_x:.2f} (n=1e6, k=4, SUM, rho_S=0.3)")
-    ratio = float((res[10 ** 6][1]["W2"] / res[10 ** 7][1]["W2"]).median())
+    det.append(
+        f"a_0=1; max |a_(0,1,1)-Spearman|/SE={z_sp:.2f}, vs rho_S {z_rho:.2f}; single-index max |a|/SE: "
+        f"inputs {z_single:.2f}, output {z_x:.2f} (n=1e6, k=4, SUM, rho_S=0.3)"
+    )
+    ratio = float((res[10**6][1]["W2"] / res[10**7][1]["W2"]).median())
     ok &= abs(ratio / math.sqrt(10) - 1) < 0.05
     det.append(f"SE(1e6)/SE(1e7) median {ratio:.3f} (sqrt(10)={math.sqrt(10):.3f})")
     # population coefficients (Gauss-Hermite) vs MC estimates, and GH node convergence
     for basis in ("pair", "triple"):
-        cop, (mc, mse) = estimate_model(R, 10 ** 6, basis, m=4, seed=5)
+        cop, (mc, mse) = estimate_model(R, 10**6, basis, m=4, seed=5)
         gh = CFG["numerics"]["gh_nodes"]
         pop = population_model(R, 4, basis, gh, DEV)
         zmax = 0.0
@@ -198,6 +219,7 @@ def M3():
 def COP():
     det, ok = [], True
     from scipy.stats import kendalltau
+
     k = 3
     s = torch.linspace(-8, 8, 4001, dtype=DT, device=DEV)
     for fam, typ in (("gauss", "SUM"), ("t3", "SUM"), ("t10", "CONTRAST"), ("clayton", "EXCH"), ("gumbel", "EXCH")):
@@ -220,7 +242,7 @@ def COP():
     th, w = rng.random(200000) * math.pi, rng.standard_exponential(200000)
     a = g.alpha
     V = (np.sin(a * th) / np.sin(th) ** (1 / a)) * (np.sin((1 - a) * th) / w) ** ((1 - a) / a)
-    zs = [abs(np.exp(-t * V).mean() - math.exp(-t ** a)) / (np.exp(-t * V).std() / math.sqrt(len(V))) for t in (0.5, 1, 2)]
+    zs = [abs(np.exp(-t * V).mean() - math.exp(-(t**a))) / (np.exp(-t * V).std() / math.sqrt(len(V))) for t in (0.5, 1, 2)]
     ok &= max(zs) < 4
     det.append(f"positive-stable frailty Laplace transform max |z| {max(zs):.2f}")
     # analytic conditional vs finite-difference derivative of the closed-form conditional CDF (Clayton)
@@ -232,20 +254,22 @@ def COP():
     hx = 1e-6
     fd = (cdf(xs + hx) - cdf(xs - hx)) / (2 * hx)
     sx = torch.special.ndtri(xs)
-    an = cl.cond_s(sx, y)[0] / (torch.exp(-0.5 * sx ** 2) / math.sqrt(2 * math.pi))
+    an = cl.cond_s(sx, y)[0] / (torch.exp(-0.5 * sx**2) / math.sqrt(2 * math.pi))
     e = float(((an - fd) / fd).abs().max())
     ok &= e < 1e-6
     det.append(f"Clayton conditional vs d/dx conditional CDF rel err {e:.1e}")
     gm = C.Gumbel(1.8, 3, DEV)
     tt = ((-torch.log(y)) ** 1.8).sum()
-    cdfg = lambda x: torch.exp(gm._log_g(2, torch.log(tt + (-torch.log(x)) ** 1.8)) - (tt + (-torch.log(x)) ** 1.8) ** gm.alpha
-                               - gm._log_g(2, torch.log(tt)) + tt ** gm.alpha)
+    cdfg = lambda x: torch.exp(
+        gm._log_g(2, torch.log(tt + (-torch.log(x)) ** 1.8)) - (tt + (-torch.log(x)) ** 1.8) ** gm.alpha - gm._log_g(2, torch.log(tt)) + tt**gm.alpha
+    )
     fdg = (cdfg(xs + hx) - cdfg(xs - hx)) / (2 * hx)
-    ang = gm.cond_s(sx, y)[0] / (torch.exp(-0.5 * sx ** 2) / math.sqrt(2 * math.pi))
+    ang = gm.cond_s(sx, y)[0] / (torch.exp(-0.5 * sx**2) / math.sqrt(2 * math.pi))
     eg = float(((ang - fdg) / fdg).abs().max())
     ok &= eg < 1e-6
     det.append(f"Gumbel conditional vs d/dx conditional CDF rel err {eg:.1e}")
     from scipy.special import stdtr, stdtrit
+
     tc, _ = C.make_copula("t3", "SUM", 2, 0.5, DEV)
     ty = stdtrit(3, _np(y))[0]
     Q = ty @ np.linalg.solve(tc.R[1:, 1:], ty)
@@ -265,6 +289,7 @@ def COP():
     xg = np.logspace(-6, 6, 300)
     ug = np.concatenate([np.logspace(-14, np.log10(0.5), 200), 1 - np.logspace(-14, np.log10(0.5), 200)])
     with mpmath.workdps(50):
+
         def t_tail(nu, x):  # P(T > |x|)
             a = mpmath.mpf(float(abs(x)))
             return mpmath.betainc(nu / 2, mpmath.mpf(1) / 2, 0, nu / (nu + a * a), regularized=True) / 2
@@ -280,8 +305,9 @@ def COP():
             p = [min(mpmath.mpf(float(u)), 1 - mpmath.mpf(float(u))) for u in ug]
             eq = max(eq, max(float(abs(t_tail(nu, x) / b - 1)) for x, b in zip(q, p)))
     ok &= el < 1e-12 and eu < 1e-15 and eq < 1e-12
-    det.append(f"t CDF (nu = 3, 10) vs mpmath: lower tail rel err {el:.1e}, upper side abs err {eu:.1e}; "
-               f"quantile: rel err of its tail probability {eq:.1e}")
+    det.append(
+        f"t CDF (nu = 3, 10) vs mpmath: lower tail rel err {el:.1e}, upper side abs err {eu:.1e}; quantile: rel err of its tail probability {eq:.1e}"
+    )
     return bool(ok), "; ".join(det)
 
 
@@ -289,6 +315,7 @@ def COP():
 def M4(M):
     """k=2 MC engine fed with the d=3 coefficients vs the d=3 quadrature results."""
     from scipy.special import ndtr
+
     z = np.load(os.path.join(ROOT, "three_input_study", "results", "coeffs.npz"))
     old = pd.read_csv(os.path.join(ROOT, "three_input_study", "results", "results.csv"))
     cfg = small_cfg(M, R=16)
@@ -308,14 +335,15 @@ def M4(M):
             rows = evaluate_case(model, cop, bel, grid, cfg, np.random.default_rng(1), [2, 4, 6], DEV)
             new = pd.DataFrame(rows)
             for _, r in new.iterrows():
-                o = old[(old.type == typ) & np.isclose(old.rho_S, rho) & (old.m == r.m) & (old.scenario == r.belief)
-                        & np.isclose(old.eps, r.eps)]
+                o = old[(old.type == typ) & np.isclose(old.rho_S, rho) & (old.m == r.m) & (old.scenario == r.belief) & np.isclose(old.eps, r.eps)]
                 if len(o) != 1:
                     continue
                 o = o.iloc[0]
                 if int(o.defined) != int(r.defined):
-                    flagmis.append(f"{typ} {rho} m={r.m} {r.belief}: d3 defined={int(o.defined)} new={int(r.defined)} "
-                                   f"(d3 min_D={o.min_D:.4f}, new minD_supp={r.minD_supp:.4f})")
+                    flagmis.append(
+                        f"{typ} {rho} m={r.m} {r.belief}: d3 defined={int(o.defined)} new={int(r.defined)} "
+                        f"(d3 min_D={o.min_D:.4f}, new minD_supp={r.minD_supp:.4f})"
+                    )
                 for mt in metrics:
                     if pd.isna(o[mt]) or pd.isna(r[mt]):
                         continue
@@ -328,21 +356,24 @@ def M4(M):
                     n_cmp += 1
                     worst = max(worst, d / tol)
                     if d > tol:
-                        viol.append(f"{typ} {rho} m={r.m} {r.belief} eps={r.eps} {mt}: d3 {o[mt]:.5f} new {r[mt]:.5f} "
-                                    f"(tol {tol:.1e})")
+                        viol.append(f"{typ} {rho} m={r.m} {r.belief} eps={r.eps} {mt}: d3 {o[mt]:.5f} new {r[mt]:.5f} (tol {tol:.1e})")
     # quadrature-limited GOLD rows: deterministic reference on a 3000-node Gauss-Legendre x-grid
     ref_viol, ref_det = [], []
     xs, wx = np.polynomial.legendre.leggauss(3000)
     xs, wx = (xs + 1) / 2, wx / 2
     sgrid = np.linspace(-8, 8, 401)
-    tw = np.full(401, sgrid[1] - sgrid[0]); tw[[0, -1]] /= 2
-    phs = np.exp(-0.5 * sgrid ** 2) / math.sqrt(2 * math.pi)
+    tw = np.full(401, sgrid[1] - sgrid[0])
+    tw[[0, -1]] /= 2
+    phs = np.exp(-0.5 * sgrid**2) / math.sqrt(2 * math.pi)
     from scipy.stats import beta as bd
-    for (typ, rho, m, bel_n, eps, mt, ov, nv, nse) in ql_rows:
+
+    for typ, rho, m, bel_n, eps, mt, ov, nv, nse in ql_rows:
         if mt != "d_total":
             continue
         R, _ = C.coupled_R(typ, 2, rho)
-        sig = R[0, 1:]; bt = np.linalg.solve(R[1:, 1:], sig); s2 = 1 - sig @ bt
+        sig = R[0, 1:]
+        bt = np.linalg.solve(R[1:, 1:], sig)
+        s2 = 1 - sig @ bt
         yv = ndtr(sgrid)
         if bel_n == "S2":
             q = np.ones((401, 401))
@@ -357,7 +388,8 @@ def M4(M):
         Fy = np.asarray(legendre(torch.tensor(np.polynomial.legendre.leggauss(192)[0] / 2 + 0.5), m))
         wy = np.polynomial.legendre.leggauss(192)[1] / 2
         if bel_n == "S2":
-            bq = np.zeros((m + 1, m + 1)); bq[0, 0] = 1
+            bq = np.zeros((m + 1, m + 1))
+            bq[0, 0] = 1
         else:
             yg = np.polynomial.legendre.leggauss(192)[0] / 2 + 0.5
             qy = np.outer(bd.pdf(yg, *ab[0]), bd.pdf(yg, *ab[1 % len(ab)]))
@@ -370,11 +402,14 @@ def M4(M):
         if abs(nv - ref) > tol:
             ref_viol.append(ref_det[-1])
     ok = not viol and not ref_viol
-    det = (f"{n_cmp} TV comparisons, worst |diff|/tol {worst:.2f}, {len(viol)} violations; {n_flag} GOLD-based values in "
-           f"d3 quadrature-limited rows re-checked against a 3000-node x-grid reference: {len(ref_viol)} violations; "
-           f"defined-flag mismatches: {len(flagmis)}")
+    det = (
+        f"{n_cmp} TV comparisons, worst |diff|/tol {worst:.2f}, {len(viol)} violations; {n_flag} GOLD-based values in "
+        f"d3 quadrature-limited rows re-checked against a 3000-node x-grid reference: {len(ref_viol)} violations; "
+        f"defined-flag mismatches: {len(flagmis)}"
+    )
     return ok, det + (" | " + " | ".join(viol[:10]) if viol else "") + (" | REF " + " | ".join(ref_det[:8]) if ref_det else "") + (
-        " | FLAGS " + " | ".join(flagmis[:6]) if flagmis else "")
+        " | FLAGS " + " | ".join(flagmis[:6]) if flagmis else ""
+    )
 
 
 # ---------------------------------------------------------------- M5-M7
@@ -387,15 +422,16 @@ def _case(k, typ, rho, basis, M, names, n_est=200000, flat=False, pop=False):
         model = model.with_flat_D()
     bel = beliefs_for(k, M, 9, names, cop)
     dens = {}
-    rows = evaluate_case(model, cop, bel, Grid(801, 8.0, 192, 6, DEV), small_cfg(M, starts=500, steps=200),
-                         np.random.default_rng(2), [2, 4, 6], DEV, dens)
+    rows = evaluate_case(
+        model, cop, bel, Grid(801, 8.0, 192, 6, DEV), small_cfg(M, starts=500, steps=200), np.random.default_rng(2), [2, 4, 6], DEV, dens
+    )
     return model, cop, bel, pd.DataFrame(rows), dens
 
 
 def M5():
     worst, det = 0.0, []
     for k, basis, rho in ((2, "triple", 0.4), (4, "triple", 0.3), (8, "pair", 0.2)):
-        _, _, _, df, dens = _case(k, "SUM", rho, basis, 2 ** 15, ("S1", "S2", "S3a", "S3b", "S3c", "S3d", "S4"), flat=True)
+        _, _, _, df, dens = _case(k, "SUM", rho, basis, 2**15, ("S1", "S2", "S3a", "S3b", "S3c", "S3d", "S4"), flat=True)
         for (b, m), d in dens.items():
             worst = max(worst, float((d["cd_c"] - d["eu_c"]).abs().max()))
     return worst < 1e-10, f"flat-D control: max |CONST_DENOM - EXACT_UNCAL| coefficient diff {worst:.2e} over all beliefs, m, k in (2,4,8)"
@@ -404,7 +440,7 @@ def M5():
 def M6():
     worst, n = 0.0, 0
     for k, basis, typ, rho in ((2, "triple", "CONTRAST", 0.2), (4, "pair", "SUM", 0.2), (4, "triple", "CONTRAST", 0.1)):
-        model, cop, bel, df, dens = _case(k, typ, rho, basis, 2 ** 15, ("S1", "S2", "S3a", "S3c", "S3d", "S4"))
+        model, cop, bel, df, dens = _case(k, typ, rho, basis, 2**15, ("S1", "S2", "S3a", "S3c", "S3d", "S4"))
         for (b, m), d in dens.items():
             if not d["defined"] or d["n_drop"]:
                 continue
@@ -422,7 +458,7 @@ def M6():
 
 def M7():
     det, ok = [], True
-    _, _, _, df, dens = _case(4, "CONTRAST", 0.2, "triple", 2 ** 16, ("S1", "S2", "S3a", "S3b", "S3c", "S3d", "S4"))
+    _, _, _, df, dens = _case(4, "CONTRAST", 0.2, "triple", 2**16, ("S1", "S2", "S3a", "S3b", "S3c", "S3d", "S4"))
     grid = Grid(801, 8.0, 192, 6, DEV)
     c0 = max(max(abs(float(d["cd_c"][0]) - 1), abs(float(d["eu_c"][0]) - 1) if d["defined"] else 0) for d in dens.values())
     si = max(float(np.nanmax(np.abs(df[c] - 1))) for c in ("int_cd", "int_eu"))
@@ -430,10 +466,12 @@ def M7():
     cals = float(np.nanmax(np.abs(df.int_cal - 1)))
     gi = float(np.nanmax(np.abs(df.int_gold - 1)))
     ok &= c0 < 1e-8 and si < 1e-8 and calg < 1e-8 and gi < 1e-6
-    det.append(f"coefficient integrals |c0-1| {c0:.1e}; s-grid integrals CONST_DENOM/EXACT_UNCAL {si:.1e}; EXACT_CAL under "
-               f"its 192-node normaliser rule {calg:.1e} (on the 801-node s-grid {cals:.1e}, reported per row as int_cal); "
-               f"GOLD {gi:.1e}")
-    _, _, _, df0, _ = _case(4, "SUM", 0.0, "pair", 2 ** 20, ("S4",), pop=True)
+    det.append(
+        f"coefficient integrals |c0-1| {c0:.1e}; s-grid integrals CONST_DENOM/EXACT_UNCAL {si:.1e}; EXACT_CAL under "
+        f"its 192-node normaliser rule {calg:.1e} (on the 801-node s-grid {cals:.1e}, reported per row as int_cal); "
+        f"GOLD {gi:.1e}"
+    )
+    _, _, _, df0, _ = _case(4, "SUM", 0.0, "pair", 2**20, ("S4",), pop=True)
     tvu = float(df0.d_gold_unif.max())
     ok &= tvu <= 1e-3
     det.append(f"S4, population coefficients, rho_S=0: TV(GOLD, uniform) {tvu:.1e} (M=2^20)")
@@ -447,6 +485,7 @@ def M7():
 def M8():
     det, ok = [], True
     from scipy.stats import beta as bd
+
     grid = Grid(801, 8.0, 192, 6, DEV)
     xg, wg = gauss_legendre(400, DEV)
     worst = 0.0
@@ -466,11 +505,13 @@ def M8():
         for rho in (0.3, 0.6, 0.9):
             R, _ = C.coupled_R(typ, 2, rho)
             cop = C.Gaussian(R, DEV)
-            bel = beliefs_for(2, 2 ** 14, 4, ("S2", "S3c"))
+            bel = beliefs_for(2, 2**14, 4, ("S2", "S3c"))
             for b in bel.values():
                 p1 = cop.cond_s(grid.s, b["Y"]).mean(0)
                 p2 = cop.cond_s(g2.s, b["Y"]).mean(0)
-                c = torch.zeros(7, dtype=DT, device=DEV); c[0] = 1; c[2] = 0.3
+                c = torch.zeros(7, dtype=DT, device=DEV)
+                c[0] = 1
+                c[2] = 0.3
                 wd = max(wd, abs(float(grid.tv(grid.poly_s(c), p1)) - float(g2.tv(g2.poly_s(c), p2))))
     ok &= wd < 1e-6
     det.append(f"spiky GOLD (k=2, rho_S<=0.9): TV change 801->1601 s-nodes max {wd:.1e}")
@@ -504,8 +545,7 @@ def M9():
             opt = min_D(mod, np.random.default_rng(0), md, device=DEV)[0]
             e1 = max(e1, abs(opt - (1 - 3 * abs(a[0, 1, 1]))))
     for a1 in (0.0, 0.2, -0.4):
-        b = {"c": torch.tensor([1.0, 0.0], device=DEV), "W1": torch.tensor([[[a1]], [[0.0]]], dtype=DT, device=DEV),
-             "W2": None, "W3": None}
+        b = {"c": torch.tensor([1.0, 0.0], device=DEV), "W1": torch.tensor([[[a1]], [[0.0]]], dtype=DT, device=DEV), "W2": None, "W3": None}
         mod = Model(1, 1, "pair", b)
         opt = min_D(mod, np.random.default_rng(0), md, device=DEV)[0]
         e1 = max(e1, abs(opt - (1 - math.sqrt(3) * abs(a1))))
@@ -531,8 +571,7 @@ def M9():
                     worst_c = max(worst_c, opt - gmin)
                     lower += opt < gmin
     ok &= worst_c <= 1e-3
-    det.append(f"min over supp(q), Beta beliefs (48 cases): optimiser - 2001^2 grid <= {worst_c:.1e} (optimiser lower "
-               f"than the grid in {lower})")
+    det.append(f"min over supp(q), Beta beliefs (48 cases): optimiser - 2001^2 grid <= {worst_c:.1e} (optimiser lower than the grid in {lower})")
     return bool(ok), "; ".join(det)
 
 
@@ -549,8 +588,10 @@ def M10():
     ok &= worst > C.PD_TOL
     det.append(f"all sweep matrices PD (min eigenvalue {worst:.3e}), c reductions needed: {red}")
     import logging
+
     logs = []
-    h = logging.Handler(); h.emit = lambda r: logs.append(r.getMessage())
+    h = logging.Handler()
+    h.emit = lambda r: logs.append(r.getMessage())
     C.log.addHandler(h)
     R, info = C.coupled_R("SUM", 4, 0.0, c_max=1.0, c_scale=2.0)
     C.log.removeHandler(h)
@@ -576,9 +617,20 @@ def M10():
 # ---------------------------------------------------------------- M11
 def _tiny_spec(k, basis, seed, cases):
     from scheduler.make_jobs import with_id
-    s = dict(exp="gauss", k=k, family="gauss", type="SUM", basis=basis, seed=seed, n_est=100000, variant="base",
-             key=[1, k, seed], cases=[{"rho_S": r} for r in cases],
-             override={"numerics": {"M": 8192, "R": 8, "chunk_mc": 1024, "mind": {"starts": 300, "steps": 100}}})
+
+    s = dict(
+        exp="gauss",
+        k=k,
+        family="gauss",
+        type="SUM",
+        basis=basis,
+        seed=seed,
+        n_est=100000,
+        variant="base",
+        key=[1, k, seed],
+        cases=[{"rho_S": r} for r in cases],
+        override={"numerics": {"M": 8192, "R": 8, "chunk_mc": 1024, "mind": {"starts": 300, "steps": 100}}},
+    )
     return with_id(s)
 
 
@@ -603,8 +655,7 @@ def M11():
         with open(jl, "w") as f:
             for s in specs:
                 f.write(json.dumps(s) + "\n")
-        cmd = [sys.executable, os.path.join(ROOT, "scheduler", "launcher.py"), "--worker", "--device", DEV, "--jobs", jl,
-               "--stale", "0.05"]
+        cmd = [sys.executable, os.path.join(ROOT, "scheduler", "launcher.py"), "--worker", "--device", DEV, "--jobs", jl, "--stale", "0.05"]
         if mode == "killed":
             p = subprocess.Popen(cmd, env=env, cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             jd = os.path.join(tmp, "jobs", "gauss")
@@ -612,20 +663,21 @@ def M11():
             while time.time() - t0 < 600 and not (os.path.isdir(jd) and len([f for f in os.listdir(jd) if f.endswith(".parquet")]) >= 1):
                 time.sleep(0.5)
             time.sleep(1.0)
-            p.kill(); p.wait()
+            p.kill()
+            p.wait()
             subprocess.run(["pkill", "-f", tmp], check=False)  # the job subprocess of the killed worker
             n_claims = len(os.listdir(os.path.join(tmp, "claims"))) if os.path.isdir(os.path.join(tmp, "claims")) else 0
             time.sleep(4)  # older than --stale
             det.append(f"killed worker left {n_claims} claim(s)")
         subprocess.run(cmd, env=env, cwd=ROOT, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run([sys.executable, os.path.join(ROOT, "scheduler", "merge.py"), "gauss"], env=env, cwd=ROOT, check=True,
-                       stdout=subprocess.DEVNULL)
+        subprocess.run(
+            [sys.executable, os.path.join(ROOT, "scheduler", "merge.py"), "gauss"], env=env, cwd=ROOT, check=True, stdout=subprocess.DEVNULL
+        )
         merged.append(pd.read_parquet(os.path.join(tmp, "merged", "gauss.parquet")))
         shutil.rmtree(tmp, ignore_errors=True)
     num = [c for c in merged[0].columns if merged[0][c].dtype.kind == "f" and "runtime" not in c]
     a, b = merged[0][num].to_numpy(), merged[1][num].to_numpy()
-    same = a.shape == b.shape and bool(np.array_equal(np.isnan(a), np.isnan(b))) and bool(
-        np.nanmax(np.abs(a - b)) == 0 if a.size else True)
+    same = a.shape == b.shape and bool(np.array_equal(np.isnan(a), np.isnan(b))) and bool(np.nanmax(np.abs(a - b)) == 0 if a.size else True)
     ok &= same
     det.append(f"kill-and-resume merged results identical to a clean run: {same} ({len(merged[0])} rows)")
     return bool(ok), "; ".join(det)
@@ -646,10 +698,13 @@ def M12():
             est.add(C.Gaussian(RR, DEV).uniforms(base))
             out.append(est.model())
         (m1, s1), (m2, _) = out
-        a011.append(float(m1.blocks["W2"][0, 0, 0, 0])); se011.append(float(s1["W2"][0, 0, 0, 0]))
-        a110.append(float(m1.blocks["W1"][1, 0, 0])); se110.append(float(s1["W1"][1, 0, 0]))
+        a011.append(float(m1.blocks["W2"][0, 0, 0, 0]))
+        se011.append(float(s1["W2"][0, 0, 0, 0]))
+        a110.append(float(m1.blocks["W1"][1, 0, 0]))
+        se110.append(float(s1["W1"][1, 0, 0]))
         diff.append(float(m2.blocks["W2"][0, 0, 0, 0] - m1.blocks["W2"][0, 0, 0, 0]))
     from scipy.stats import chi2
+
     lo, hi = chi2.ppf(0.005, 49) / 49, chi2.ppf(0.995, 49) / 49
     for nm, v, se in (("a_(0,1,1)", a011, se011), ("a_(1,1,0)", a110, se110)):
         ratio = np.var(v, ddof=1) / np.mean(np.square(se))
@@ -661,8 +716,7 @@ def M12():
     return bool(ok), "; ".join(det)
 
 
-TESTS_PRE = {"M1": M1, "M2": M2, "M3": M3, "M4": None, "M5": M5, "M6": M6, "M7": M7, "M8": M8, "M9": M9, "M10": M10,
-             "M11": M11, "M12": M12}
+TESTS_PRE = {"M1": M1, "M2": M2, "M3": M3, "M4": None, "M5": M5, "M6": M6, "M7": M7, "M8": M8, "M9": M9, "M10": M10, "M11": M11, "M12": M12}
 
 
 def save(results):
@@ -691,21 +745,24 @@ def main():
             t0 = time.time()
             try:
                 if name == "M4":
-                    ok, det = M4(a.M4_samples or (2 ** 20 if DEV.startswith("cuda") else 2 ** 18))
+                    ok, det = M4(a.M4_samples or (2**20 if DEV.startswith("cuda") else 2**18))
                 else:
                     ok, det = TESTS_PRE[name]()
             except Exception as e:  # a crash is a failure, recorded with its message
                 import traceback
+
                 ok, det = False, f"ERROR {type(e).__name__}: {e} | {traceback.format_exc()[-1500:]}"
             results[name] = dict(pass_=bool(ok), detail=det, device=DEV, seconds=round(time.time() - t0, 1))
             print(f"{name}: {'PASS' if ok else 'FAIL'} ({time.time() - t0:.0f}s) {det}", flush=True)
     elif a.mode == "post":
         from analysis.convergence import m13
+
         ok, det = m13()
         results["M13"] = dict(pass_=bool(ok), detail=det)
         print("M13:", "PASS" if ok else "FAIL", det)
     else:
         from network.tests import m14
+
         ok, det = m14(DEV)
         results["M14"] = dict(pass_=bool(ok), detail=det, device=DEV)
         print("M14:", "PASS" if ok else "FAIL", det)

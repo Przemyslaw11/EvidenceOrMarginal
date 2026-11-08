@@ -8,6 +8,7 @@ Losses (all on fresh teacher samples; neuron l sees its true inputs for the loca
          polynomial and the target density projected on the basis (kernel-free); calibration-free forward pass.
 a_0 = 1 is never trained. For `val`, d loss / d a_(i>=2, .) is identically zero, so the all-rows variant equals it.
 """
+
 import math
 import time
 
@@ -67,8 +68,10 @@ class Params:
         for P, I in zip(self.P, self.init):
             for n in P:
                 d = (P[n] - I[n]).detach()
-                num += float((d ** 2).sum()); den += float((I[n] ** 2).sum())
-                num0 += float((d[0] ** 2).sum()); den0 += float((I[n][0] ** 2).sum()) - (1.0 if n == "c" else 0.0)
+                num += float((d**2).sum())
+                den += float((I[n] ** 2).sum())
+                num0 += float((d[0] ** 2).sum())
+                den0 += float((I[n][0] ** 2).sum()) - (1.0 if n == "c" else 0.0)
         return math.sqrt(num / den), math.sqrt(num0), math.sqrt(num0 / den0) if den0 > 1e-24 else float("nan")
 
 
@@ -77,6 +80,7 @@ class Data:
 
     def __init__(self, samples, L, m, device):
         from network.chain import neuron_inputs
+
         self.x, self.F, self.Fx = [], [], []
         for l in range(1, L + 1):
             x, Y = neuron_inputs(samples, l)
@@ -107,6 +111,7 @@ def make_loss_nll(eps, device):
             N = (data.Fx[l] * A).sum(1)
             tot = tot - torch.log(torch.clamp(N, min=eps) / Z).mean()
         return tot
+
     return loss
 
 
@@ -128,6 +133,7 @@ def make_loss_e2e(L, bel_F, targets):
             c = cd_chain(models[:L], Fy)
             tot = tot + ((c[1:] - targets[b][1:]) ** 2).sum()
         return tot
+
     return loss
 
 
@@ -166,8 +172,7 @@ def train(params, loss_fn, splits, opt, ocfg, upto=None):
                         status = "early_stop"
                         break
     else:
-        o = torch.optim.LBFGS(params.tensors(), lr=ocfg["lr"], max_iter=ocfg["max_iter"], history_size=ocfg["history"],
-                              line_search_fn="strong_wolfe")
+        o = torch.optim.LBFGS(params.tensors(), lr=ocfg["lr"], max_iter=ocfg["max_iter"], history_size=ocfg["history"], line_search_fn="strong_wolfe")
         state = {"nf": 0}
 
         def closure():
@@ -202,6 +207,15 @@ def train(params, loss_fn, splits, opt, ocfg, upto=None):
     with torch.no_grad():
         after = {s: ev(s) for s in splits}
     dist_all, dist_D_abs, dist_D = params.distance()
-    return dict(status=status, iters=it, n_nonfinite=n_nonfinite, n_cross=stats.get("cross", 0),
-                **{f"loss_{s}_before": v for s, v in before.items()}, **{f"loss_{s}_after": v for s, v in after.items()},
-                coef_dist=dist_all, coef_dist_D=dist_D, coef_dist_D_abs=dist_D_abs, train_s=time.time() - t0)
+    return dict(
+        status=status,
+        iters=it,
+        n_nonfinite=n_nonfinite,
+        n_cross=stats.get("cross", 0),
+        **{f"loss_{s}_before": v for s, v in before.items()},
+        **{f"loss_{s}_after": v for s, v in after.items()},
+        coef_dist=dist_all,
+        coef_dist_D=dist_D,
+        coef_dist_D_abs=dist_D_abs,
+        train_s=time.time() - t0,
+    )

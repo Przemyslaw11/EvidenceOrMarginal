@@ -1,7 +1,8 @@
 """Build paper/arxiv.tar.gz: main.tex, main.bbl, generated macros and tables, figures. Run after latexmk.
 
-    .venv/bin/python paper/make_arxiv.py
+.venv/bin/python paper/make_arxiv.py
 """
+
 import glob
 import gzip
 import os
@@ -20,8 +21,11 @@ def plain(ti):  # fixed metadata, so that the archive depends on the file conten
     return ti
 
 
-with open(os.path.join(HERE, "arxiv.tar.gz"), "wb") as raw, gzip.GzipFile(fileobj=raw, mode="wb", mtime=0, filename="") as gz, \
-        tarfile.open(fileobj=gz, mode="w", format=tarfile.USTAR_FORMAT) as t:
+with (
+    open(os.path.join(HERE, "arxiv.tar.gz"), "wb") as raw,
+    gzip.GzipFile(fileobj=raw, mode="wb", mtime=0, filename="") as gz,
+    tarfile.open(fileobj=gz, mode="w", format=tarfile.USTAR_FORMAT) as t,
+):
     for n in names:
         t.add(os.path.join(HERE, n), arcname=n, filter=plain)
 print(len(names), "files;", len(glob.glob(os.path.join(HERE, "figures", "*.pdf"))), "figures on disk")

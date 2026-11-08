@@ -9,34 +9,72 @@ gaps; points below 3x their MC noise floor are hollow markers; bands are 2.5-97.
 renders the same data for the paper at print size (text width, 1:1): no figure titles (the captions carry them), the paper's
 symbols and type, panel letters, hatched bars for greyscale, PDF only. Nothing plotted changes.
 """
+
 import os
 import re
 
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
-import numpy as np  # noqa: E402
-import pandas as pd  # noqa: E402
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
-from analysis.common import ROOT, SUMMARY, load  # noqa: E402
+from analysis.common import ROOT, SUMMARY, load
 
 OUT = os.environ.get("HCR_FIGURES", os.path.join(ROOT, "figures"))
 OI = ["#0072B2", "#E69F00", "#009E73", "#D55E00", "#CC79A7", "#56B4E9", "#000000"]
 MK = ["o", "s", "^", "D", "v", "P", "X"]
 KCOL = {2: 0, 4: 1, 8: 2, 16: 3, 32: 4}
-plt.rcParams.update({"font.size": 12, "axes.titlesize": 13, "axes.labelsize": 12, "legend.fontsize": 12,
-                     "axes.spines.top": False, "axes.spines.right": False, "axes.grid": True, "grid.alpha": 0.25,
-                     "lines.linewidth": 2, "lines.markersize": 7, "savefig.dpi": 200})
+plt.rcParams.update(
+    {
+        "font.size": 12,
+        "axes.titlesize": 13,
+        "axes.labelsize": 12,
+        "legend.fontsize": 12,
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+        "axes.grid": True,
+        "grid.alpha": 0.25,
+        "lines.linewidth": 2,
+        "lines.markersize": 7,
+        "savefig.dpi": 200,
+    }
+)
 PAPER = os.environ.get("HCR_PAPER") == "1"
-SYMBOLS = (("CONST_DENOM", r"$p_{\mathrm{CD}}$"), ("EXACT_UNCAL", r"$p_{\mathrm{EU}}$"), ("EXACT_CAL", r"$p_{\mathrm{EC}}$"),
-           ("GOLD", r"$p_{\mathrm{G}}$"), ("d_denom", r"$d_{\mathrm{denom}}$"), ("d_neg", r"$d_{\mathrm{neg}}$"),
-           ("d_model_cal", r"$d_{\mathrm{model,cal}}$"), ("d_total", r"$d_{\mathrm{total}}$"), ("ρ_S", r"$\rho_S$"),
-           ("n_est=1e7", r"$n=10^7$"), ("[0,1]^k", r"$[0,1]^k$"), ("E_q[N/D]", r"$E_q[N/D]$"), ("lbfgs", "L-BFGS"), ("adam", "Adam"),
-           ("min D", r"$\min D$"), ("P(D < 0)", "P(D<0)"), ("P(D<0)", r"$P(D<0)$"), ("D<0 onset", r"$D<0$ onset"), ("flat-D", r"flat-$D$"),
-           ("≥ 1 %", r"$\geq 1\,\%$"), ("95 %", r"$95\,\%$"), ("Kendall τ", r"Kendall's $\tau$"), ("number of inputs k", r"number of inputs $k$"),
-           ("layer l", r"layer $l$"), ("y uniform", r"$y$ uniform"), ("(TV)", ""), ("gauss", "Gaussian"), ("clayton", "Clayton"), ("gumbel", "Gumbel"),
-           ("t10", r"$t_{10}$"), ("t3", r"$t_3$"))
+SYMBOLS = (
+    ("CONST_DENOM", r"$p_{\mathrm{CD}}$"),
+    ("EXACT_UNCAL", r"$p_{\mathrm{EU}}$"),
+    ("EXACT_CAL", r"$p_{\mathrm{EC}}$"),
+    ("GOLD", r"$p_{\mathrm{G}}$"),
+    ("d_denom", r"$d_{\mathrm{denom}}$"),
+    ("d_neg", r"$d_{\mathrm{neg}}$"),
+    ("d_model_cal", r"$d_{\mathrm{model,cal}}$"),
+    ("d_total", r"$d_{\mathrm{total}}$"),
+    ("ρ_S", r"$\rho_S$"),
+    ("n_est=1e7", r"$n=10^7$"),
+    ("[0,1]^k", r"$[0,1]^k$"),
+    ("E_q[N/D]", r"$E_q[N/D]$"),
+    ("lbfgs", "L-BFGS"),
+    ("adam", "Adam"),
+    ("min D", r"$\min D$"),
+    ("P(D < 0)", "P(D<0)"),
+    ("P(D<0)", r"$P(D<0)$"),
+    ("D<0 onset", r"$D<0$ onset"),
+    ("flat-D", r"flat-$D$"),
+    ("≥ 1 %", r"$\geq 1\,\%$"),
+    ("95 %", r"$95\,\%$"),
+    ("Kendall τ", r"Kendall's $\tau$"),
+    ("number of inputs k", r"number of inputs $k$"),
+    ("layer l", r"layer $l$"),
+    ("y uniform", r"$y$ uniform"),
+    ("(TV)", ""),
+    ("gauss", "Gaussian"),
+    ("clayton", "Clayton"),
+    ("gumbel", "Gumbel"),
+    ("t10", r"$t_{10}$"),
+    ("t3", r"$t_3$"),
+)
 PAGE = 6.3  # text width in inches: paper figures are drawn at this size and included at scale 1
 CAP = 3
 HATCH = [None] * 4
@@ -45,13 +83,42 @@ if PAPER:
     CAP = 1.5
     BAR = [3, 1, 2, 0]  # d_denom keeps the colour it has in G2
     HATCH = [None, "////", "....", "xxxx"]
-    plt.rcParams.update({"font.family": "STIXGeneral", "mathtext.fontset": "stix", "font.size": 8, "axes.titlesize": 8, "axes.labelsize": 8,
-                         "legend.fontsize": 8, "xtick.labelsize": 8, "ytick.labelsize": 8, "lines.linewidth": 1, "lines.markersize": 3.2,
-                         "axes.linewidth": 0.5, "grid.linewidth": 0.4, "xtick.major.width": 0.5, "ytick.major.width": 0.5, "xtick.minor.width": 0.3,
-                         "ytick.minor.width": 0.3, "xtick.major.size": 2.5, "ytick.major.size": 2.5, "xtick.minor.size": 1.5, "ytick.minor.size": 1.5,
-                         "axes.titleweight": "bold", "axes.titlelocation": "left", "axes.titlepad": 3, "axes.labelpad": 2, "legend.frameon": False,
-                         "hatch.linewidth": 0.4, "pdf.fonttype": 42, "figure.subplot.left": 0.065, "figure.subplot.right": 0.995,
-                         "figure.subplot.bottom": 0.13, "figure.subplot.top": 0.92, "figure.subplot.wspace": 0.16})
+    plt.rcParams.update(
+        {
+            "font.family": "STIXGeneral",
+            "mathtext.fontset": "stix",
+            "font.size": 8,
+            "axes.titlesize": 8,
+            "axes.labelsize": 8,
+            "legend.fontsize": 8,
+            "xtick.labelsize": 8,
+            "ytick.labelsize": 8,
+            "lines.linewidth": 1,
+            "lines.markersize": 3.2,
+            "axes.linewidth": 0.5,
+            "grid.linewidth": 0.4,
+            "xtick.major.width": 0.5,
+            "ytick.major.width": 0.5,
+            "xtick.minor.width": 0.3,
+            "ytick.minor.width": 0.3,
+            "xtick.major.size": 2.5,
+            "ytick.major.size": 2.5,
+            "xtick.minor.size": 1.5,
+            "ytick.minor.size": 1.5,
+            "axes.titleweight": "bold",
+            "axes.titlelocation": "left",
+            "axes.titlepad": 3,
+            "axes.labelpad": 2,
+            "legend.frameon": False,
+            "hatch.linewidth": 0.4,
+            "pdf.fonttype": 42,
+            "figure.subplot.left": 0.065,
+            "figure.subplot.right": 0.995,
+            "figure.subplot.bottom": 0.13,
+            "figure.subplot.top": 0.92,
+            "figure.subplot.wspace": 0.16,
+        }
+    )
     _subplots = plt.subplots
 
     def _scaled(*a, figsize, **kw):
@@ -214,8 +281,15 @@ def g2(tg, tp):
                 n += 1
         c = sel(tg, type=typ, basis="pair", m=4, belief="S2").sort_values("k")
         y = c.denom_1pct.replace(np.inf, np.nan)
-        ax.errorbar(c.k, y, yerr=[(y - c.denom_1pct_lo).clip(lower=0), (c.denom_1pct_hi.replace(np.inf, np.nan) - y).clip(lower=0)],
-                    color=OI[3], marker=MK[3], capsize=CAP, label="d_denom ≥ 1 % (S2, pair)")
+        ax.errorbar(
+            c.k,
+            y,
+            yerr=[(y - c.denom_1pct_lo).clip(lower=0), (c.denom_1pct_hi.replace(np.inf, np.nan) - y).clip(lower=0)],
+            color=OI[3],
+            marker=MK[3],
+            capsize=CAP,
+            label="d_denom ≥ 1 % (S2, pair)",
+        )
         ax.set_xscale("log", base=2)
         ax.set_xticks([2, 4, 8, 16, 32], ["2", "4", "8", "16", "32"])
         ax.set_xlabel("number of inputs k")
@@ -266,8 +340,16 @@ def g4(cg):
             P = c.pivot_table(index="k", columns="rho_S", values="share_undefined")
             ax = axs[i, j]
             if PAPER:  # vector cells, same array and cell centres as the image below
-                im = ax.pcolormesh(np.arange(P.shape[1] + 1) - 0.5, np.arange(P.shape[0] + 1) - 0.5, P.to_numpy(), cmap="Blues", vmin=0, vmax=1,
-                                   edgecolors="face", linewidth=0.2)
+                im = ax.pcolormesh(
+                    np.arange(P.shape[1] + 1) - 0.5,
+                    np.arange(P.shape[0] + 1) - 0.5,
+                    P.to_numpy(),
+                    cmap="Blues",
+                    vmin=0,
+                    vmax=1,
+                    edgecolors="face",
+                    linewidth=0.2,
+                )
                 ax.grid(False)
             else:
                 im = ax.imshow(P.to_numpy(), aspect="auto", cmap="Blues", vmin=0, vmax=1, origin="lower")
@@ -287,8 +369,7 @@ def g4(cg):
 def g5(tf, cf):
     if tf is None:
         return
-    fams = [("gauss", "EXCH"), ("t10", "EXCH"), ("t3", "EXCH"), ("clayton", "EXCH"), ("gumbel", "EXCH"),
-            ("t3", "SUM"), ("t10", "SUM")]
+    fams = [("gauss", "EXCH"), ("t10", "EXCH"), ("t3", "EXCH"), ("clayton", "EXCH"), ("gumbel", "EXCH"), ("t3", "SUM"), ("t10", "SUM")]
     fig, axs = plt.subplots(1, 2, figsize=(14, 4.8))
     for bi, basis in enumerate(("pair", "triple")):
         for fi, (fam, typ) in enumerate(fams):
@@ -296,9 +377,15 @@ def g5(tf, cf):
             if c.empty:
                 continue
             y = c.neg_onset.replace(np.inf, np.nan)
-            axs[bi].errorbar(c.k * (1 + 0.03 * (fi - 3)), y, yerr=[(y - c.neg_onset_lo).clip(lower=0),
-                                                                  (c.neg_onset_hi.replace(np.inf, np.nan) - y).clip(lower=0)],
-                             color=OI[fi % 7], marker=MK[fi % 7], capsize=CAP, label=f"{fam} {typ}")
+            axs[bi].errorbar(
+                c.k * (1 + 0.03 * (fi - 3)),
+                y,
+                yerr=[(y - c.neg_onset_lo).clip(lower=0), (c.neg_onset_hi.replace(np.inf, np.nan) - y).clip(lower=0)],
+                color=OI[fi % 7],
+                marker=MK[fi % 7],
+                capsize=CAP,
+                label=f"{fam} {typ}",
+            )
         axs[bi].set_xscale("log", base=2)
         axs[bi].set_xticks([2, 4, 8], ["2", "4", "8"])
         axs[bi].set_title(f"{basis} basis")
@@ -379,15 +466,27 @@ def g8(net):
                 g = c.groupby("layer").d_total.median()
                 if g.empty:
                     continue
-                ax.plot(g.index, g.values, color=OI[ki], marker=MK[ri], ls=("-", "--", ":")[ki], alpha=0.5 + 0.5 * ri / 3,
-                        label=f"k={k}, ρ_S={rho}" if b == "S2" else None)
+                ax.plot(
+                    g.index,
+                    g.values,
+                    color=OI[ki],
+                    marker=MK[ri],
+                    ls=("-", "--", ":")[ki],
+                    alpha=0.5 + 0.5 * ri / 3,
+                    label=f"k={k}, ρ_S={rho}" if b == "S2" else None,
+                )
         ax.set_yscale("log")
         ax.set_xticks([1, 2, 3, 4])
         ax.set_xlabel("layer l")
         ax.set_title(f"belief {b}")
     axs[0].set_ylabel("d_total = TV(CONST_DENOM, GOLD), seed median")
-    fig.legend(*axs[0].get_legend_handles_labels(), loc="lower center", ncol=6, bbox_to_anchor=(0.5, -0.3 if PAPER else -0.2),
-               **(dict(handlelength=1.6, handletextpad=0.4, columnspacing=0.8) if PAPER else {}))
+    fig.legend(
+        *axs[0].get_legend_handles_labels(),
+        loc="lower center",
+        ncol=6,
+        bbox_to_anchor=(0.5, -0.3 if PAPER else -0.2),
+        **(dict(handlelength=1.6, handletextpad=0.4, columnspacing=0.8) if PAPER else {}),
+    )
     fig.suptitle("G8: depth compounding in the HCR chain (direct estimates, pair basis)")
     save(fig, "G8_depth")
 
@@ -398,8 +497,7 @@ def g9(net):
     n1 = net[(net.table == "neuron1") & (net.belief == "S2")]
     runs = [r for r in ("val_adam", "val_lbfgs", "nll_adam", "nll_lbfgs", "e2e4_adam", "e2e4_lbfgs")]
     fig, axs = plt.subplots(1, 2, figsize=(14, 5))
-    for ax, (metric, lab) in zip(axs, (("d_dc", "change of TV(CONST_DENOM, EXACT_CAL),\nneuron 1, S2"),
-                                       ("P_Dneg_u", "change of P(D<0), neuron 1"))):
+    for ax, (metric, lab) in zip(axs, (("d_dc", "change of TV(CONST_DENOM, EXACT_CAL),\nneuron 1, S2"), ("P_Dneg_u", "change of P(D<0), neuron 1"))):
         for ii, init in enumerate(("direct", "flat")):
             base = n1[n1.run == ("direct" if init == "direct" else "flat_init")].set_index(["k", "rho_S", "basis", "seed"])[metric]
             med, lo, hi = [], [], []
@@ -411,8 +509,16 @@ def g9(net):
                 hi.append(d.quantile(0.9) if len(d) else np.nan)
             x = np.arange(len(runs)) + (ii - 0.5) * 0.3
             med, lo, hi = map(np.array, (med, lo, hi))
-            ax.errorbar(x, med, yerr=[med - lo, hi - med], ls="none", marker=MK[ii], color=OI[ii], capsize=CAP,
-                        label="from direct estimates" if init == "direct" else "flat-D control")
+            ax.errorbar(
+                x,
+                med,
+                yerr=[med - lo, hi - med],
+                ls="none",
+                marker=MK[ii],
+                color=OI[ii],
+                capsize=CAP,
+                label="from direct estimates" if init == "direct" else "flat-D control",
+            )
         ax.axhline(0, color="0.3", lw=1)
         ax.set_xticks(range(len(runs)), [run_label(r) for r in runs])
         ax.set_ylabel(lab)
@@ -433,8 +539,7 @@ def onepager(cg, tg, tp, net):
             for ti, typ in enumerate(("SUM", "CONTRAST")):
                 c = sel(cg, type=typ, belief="S2", basis="pair", m=4, eps=0.01, k=k)
                 if len(c):
-                    curve(ax, c, "d_denom", OI[KCOL[k]], MK[KCOL[k]], f"k={k} {typ}", band=False,
-                          ls="-" if typ == "SUM" else "--")
+                    curve(ax, c, "d_denom", OI[KCOL[k]], MK[KCOL[k]], f"k={k} {typ}", band=False, ls="-" if typ == "SUM" else "--")
         ax.axhline(0.01, color="0.4", ls=":", lw=1)
         ax.legend(fontsize=12, ncol=2)
     ax.set_title("(a) constant-denominator error, flat belief")
@@ -445,8 +550,14 @@ def onepager(cg, tg, tp, net):
         for bi, basis in enumerate(("pair", "triple")):
             for ti, typ in enumerate(("SUM", "CONTRAST")):
                 c = sel(tg, type=typ, basis=basis, m=4, belief="S2").sort_values("k")
-                ax.plot(c.k, c.denom_1pct.replace(np.inf, np.nan), color=OI[bi * 2], marker=MK[bi * 2],
-                        ls="-" if typ == "SUM" else "--", label=f"{basis} {typ}")
+                ax.plot(
+                    c.k,
+                    c.denom_1pct.replace(np.inf, np.nan),
+                    color=OI[bi * 2],
+                    marker=MK[bi * 2],
+                    ls="-" if typ == "SUM" else "--",
+                    label=f"{basis} {typ}",
+                )
         ax.set_xscale("log", base=2)
         ax.set_xticks([2, 4, 8, 16, 32], ["2", "4", "8", "16", "32"])
         ax.legend(fontsize=12)
@@ -494,8 +605,18 @@ def main():
     cg, tg, tp = csv("curves_gauss.csv.gz"), csv("thresholds_gauss.csv"), csv("thresholds_population.csv")
     tf, cf = csv("thresholds_families.csv"), csv("curves_families.csv.gz")
     net = net_frames()
-    for f, args in ((g1, (cg,)), (g2, (tg, tp)), (g3, (cg,)), (g4, (cg,)), (g5, (tf, cf)), (g6, (cg,)), (g7, (cg,)),
-                    (g8, (net,)), (g9, (net,)), (onepager, (cg, tg, tp, net))):
+    for f, args in (
+        (g1, (cg,)),
+        (g2, (tg, tp)),
+        (g3, (cg,)),
+        (g4, (cg,)),
+        (g5, (tf, cf)),
+        (g6, (cg,)),
+        (g7, (cg,)),
+        (g8, (net,)),
+        (g9, (net,)),
+        (onepager, (cg, tg, tp, net)),
+    ):
         if PAPER and f is onepager:
             continue
         if net is None and f in (g8, g9):

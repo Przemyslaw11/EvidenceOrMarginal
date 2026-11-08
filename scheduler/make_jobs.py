@@ -7,6 +7,7 @@ population and convergence experiments share keys, so their results are paired b
 
     python scheduler/make_jobs.py [gauss population families lkj convergence network]
 """
+
 import hashlib
 import json
 import math
@@ -39,8 +40,7 @@ def expected_minutes(spec, cfg, cost):
     if f"{fam}_{k}_{basis}" not in cells:  # family cost relative to the Gaussian, measured at k = 8 (triple)
         r = cells.get(f"{fam}_8_triple") or cells.get("t3_8_triple")
         g = cells["gauss_8_triple"]
-        c = dict(est_s_per_case=c["est_s_per_case"] * r["est_s_per_case"] / g["est_s_per_case"],
-                 case_s=c["case_s"] * r["case_s"] / g["case_s"])
+        c = dict(est_s_per_case=c["est_s_per_case"] * r["est_s_per_case"] / g["est_s_per_case"], case_s=c["case_s"] * r["case_s"] / g["case_s"])
     v = spec.get("variant", "base")
     est = 0.0 if spec["exp"] == "population" else c["est_s_per_case"] * spec["n_est"] / cost["n_est_ref"]
     case = c["case_s"]
@@ -72,9 +72,20 @@ def jobs(exp, cfg):
                 for basis in e["basis"]:
                     for seed in range(e["seeds"]):
                         for v in variants:
-                            out.append(dict(exp=exp, k=k, family="gauss", type=typ, basis=basis, seed=seed,
-                                            n_est=0 if exp == "population" else e["n_est"], variant=v,
-                                            key=[CODE["gauss"], k, seed], cases=rho_cases))
+                            out.append(
+                                dict(
+                                    exp=exp,
+                                    k=k,
+                                    family="gauss",
+                                    type=typ,
+                                    basis=basis,
+                                    seed=seed,
+                                    n_est=0 if exp == "population" else e["n_est"],
+                                    variant=v,
+                                    key=[CODE["gauss"], k, seed],
+                                    cases=rho_cases,
+                                )
+                            )
     elif exp == "families":
         for k in e["k"]:
             for fam, typ in e["combos"]:
@@ -82,8 +93,20 @@ def jobs(exp, cfg):
                     continue
                 for basis in e["basis"]:
                     for seed in range(e["seeds"]):
-                        out.append(dict(exp=exp, k=k, family=fam, type=typ, basis=basis, seed=seed, n_est=e["n_est"],
-                                        variant="base", key=[CODE["families"], k, seed], cases=rho_cases))
+                        out.append(
+                            dict(
+                                exp=exp,
+                                k=k,
+                                family=fam,
+                                type=typ,
+                                basis=basis,
+                                seed=seed,
+                                n_est=e["n_est"],
+                                variant="base",
+                                key=[CODE["families"], k, seed],
+                                cases=rho_cases,
+                            )
+                        )
     elif exp == "lkj":
         nb = math.ceil(e["matrices"] / e["per_job"])
         for k in e["k"]:
@@ -91,17 +114,41 @@ def jobs(exp, cfg):
                 for basis in e["basis"]:
                     for b in range(nb):
                         idx = range(b * e["per_job"], min((b + 1) * e["per_job"], e["matrices"]))
-                        out.append(dict(exp=exp, k=k, family="gauss", type="LKJ", basis=basis, seed=b, eta=eta,
-                                        n_est=e["n_est"], variant="base", key=[CODE["lkj"], k, eta, b],
-                                        key_lkj=[CODE["lkj"], k, eta], cases=[{"lkj_idx": i} for i in idx]))
+                        out.append(
+                            dict(
+                                exp=exp,
+                                k=k,
+                                family="gauss",
+                                type="LKJ",
+                                basis=basis,
+                                seed=b,
+                                eta=eta,
+                                n_est=e["n_est"],
+                                variant="base",
+                                key=[CODE["lkj"], k, eta, b],
+                                key_lkj=[CODE["lkj"], k, eta],
+                                cases=[{"lkj_idx": i} for i in idx],
+                            )
+                        )
     elif exp == "network":
         nc = cfg["network"]
         for k in nc["k"]:
             for rho in nc["rho_S"]:
                 for basis in nc["basis"]:
                     for seed in range(nc["seeds"]):
-                        out.append(dict(exp=exp, k=k, family="gauss", type="SUM", basis=basis, seed=seed, rho_S=rho,
-                                        variant="base", key=[CODE["network"], k, seed]))
+                        out.append(
+                            dict(
+                                exp=exp,
+                                k=k,
+                                family="gauss",
+                                type="SUM",
+                                basis=basis,
+                                seed=seed,
+                                rho_S=rho,
+                                variant="base",
+                                key=[CODE["network"], k, seed],
+                            )
+                        )
     else:
         raise ValueError(exp)
     return [with_id(s) for s in out]
@@ -112,10 +159,18 @@ def pilot_jobs(cfg):
     out = []
     for exp in ("gauss", "population", "families", "lkj"):
         for s in jobs(exp, cfg):
-            pick = (exp in ("gauss", "population") and s["seed"] == 0 and s["type"] == "SUM" and s["k"] in (2, 8, 32)
-                    or exp == "families" and s["seed"] == 0 and s["k"] == 8 and s["basis"] == "triple"
-                    and s["family"] in ("t3", "clayton", "gumbel") and s["type"] in ("SUM", "EXCH")
-                    or exp == "lkj" and s["seed"] == 0 and s["k"] == 8 and s["eta"] == 1)
+            pick = (
+                (exp in ("gauss", "population") and s["seed"] == 0 and s["type"] == "SUM" and s["k"] in (2, 8, 32))
+                or (
+                    exp == "families"
+                    and s["seed"] == 0
+                    and s["k"] == 8
+                    and s["basis"] == "triple"
+                    and s["family"] in ("t3", "clayton", "gumbel")
+                    and s["type"] in ("SUM", "EXCH")
+                )
+                or (exp == "lkj" and s["seed"] == 0 and s["k"] == 8 and s["eta"] == 1)
+            )
             if pick:
                 s = {kk: v for kk, v in s.items() if kk != "id"}
                 s["seed"] = 1000

@@ -1,21 +1,50 @@
 """Seed-median curves and thresholds with bootstrap CIs -> results/summary/curves_<exp>.csv.gz, thresholds_<exp>.csv
 
-    python -m analysis.thresholds [gauss population families lkj]
+python -m analysis.thresholds [gauss population families lkj]
 """
+
 import os
 import sys
 
 import numpy as np
 import pandas as pd
 
-from analysis.common import SUMMARY, boot_stat, crossing, load, median_curve, onset_negative, seed_matrix
+from analysis.common import SUMMARY, boot_stat, crossing, load, onset_negative, seed_matrix
 
 CELL = ["type", "family", "k", "basis", "m", "belief"]
 TV = ["d_denom", "d_neg", "d_model_uncal", "d_model_cal", "d_total", "d_dc"]
-COLS = CELL + ["seed", "rho_S", "eps", "defined", "q_valid", "minD", "P_Dneg_u", "frac_Nneg", "chi_D", "sd_q_D",
-               "relvar_vs_uncal", "relvar_vs_gold", "smean_vs_uncal", "smean_vs_gold", "dmean_vs_uncal", "dmean_vs_gold",
-               "neg_mass_cd", "int_gold", "d_gold_unif", "rhoS_emp_yy", "tau", "theta", "minD_supp"] + \
-       TV + [t + "_se" for t in TV] + [t + "_below" for t in TV] + [t + "_floor" for t in TV]
+COLS = (
+    CELL
+    + [
+        "seed",
+        "rho_S",
+        "eps",
+        "defined",
+        "q_valid",
+        "minD",
+        "P_Dneg_u",
+        "frac_Nneg",
+        "chi_D",
+        "sd_q_D",
+        "relvar_vs_uncal",
+        "relvar_vs_gold",
+        "smean_vs_uncal",
+        "smean_vs_gold",
+        "dmean_vs_uncal",
+        "dmean_vs_gold",
+        "neg_mass_cd",
+        "int_gold",
+        "d_gold_unif",
+        "rhoS_emp_yy",
+        "tau",
+        "theta",
+        "minD_supp",
+    ]
+    + TV
+    + [t + "_se" for t in TV]
+    + [t + "_below" for t in TV]
+    + [t + "_floor" for t in TV]
+)
 
 
 def curves(df):
@@ -26,8 +55,21 @@ def curves(df):
         r = dict(zip(keys, key))
         r["n_seeds"] = g.seed.nunique()
         r["share_undefined"] = float((g.defined != 1).mean())
-        for c in TV + ["minD", "P_Dneg_u", "frac_Nneg", "chi_D", "relvar_vs_uncal", "relvar_vs_gold", "smean_vs_uncal",
-                       "smean_vs_gold", "dmean_vs_uncal", "dmean_vs_gold", "neg_mass_cd", "sd_q_D", "rhoS_emp_yy"]:
+        for c in TV + [
+            "minD",
+            "P_Dneg_u",
+            "frac_Nneg",
+            "chi_D",
+            "relvar_vs_uncal",
+            "relvar_vs_gold",
+            "smean_vs_uncal",
+            "smean_vs_gold",
+            "dmean_vs_uncal",
+            "dmean_vs_gold",
+            "neg_mass_cd",
+            "sd_q_D",
+            "rhoS_emp_yy",
+        ]:
             if c not in g:
                 continue
             v = g[c].to_numpy(float)
@@ -54,13 +96,23 @@ def thresholds(df):
         g["abs_relvar"] = g.relvar_vs_uncal.abs()
         rhos, seeds, Vd = seed_matrix(g, "d_denom")
         r["n_seeds"] = len(seeds)
-        for name, V, level in (("denom_1pct", Vd, 0.01), ("denom_5pct", Vd, 0.05),
-                               ("relvar_5pct", seed_matrix(g, "abs_relvar")[2], 0.05),
-                               ("relvar_20pct", seed_matrix(g, "abs_relvar")[2], 0.20)):
+        for name, V, level in (
+            ("denom_1pct", Vd, 0.01),
+            ("denom_5pct", Vd, 0.05),
+            ("relvar_5pct", seed_matrix(g, "abs_relvar")[2], 0.05),
+            ("relvar_20pct", seed_matrix(g, "abs_relvar")[2], 0.20),
+        ):
             p, lo, hi, _ = boot_stat(V, lambda c, lv=level: crossing(rhos, c, lv))
             per = np.array([crossing(rhos, V[i], level) for i in range(V.shape[0])])
-            r.update({name: p, name + "_lo": lo, name + "_hi": hi, name + "_seed_med": np.median(per),
-                      name + "_seed_share_reached": float(np.isfinite(per).mean())})
+            r.update(
+                {
+                    name: p,
+                    name + "_lo": lo,
+                    name + "_hi": hi,
+                    name + "_seed_med": np.median(per),
+                    name + "_seed_share_reached": float(np.isfinite(per).mean()),
+                }
+            )
         _, _, Vm = seed_matrix(g, "minD", defined_col=None)
         p, lo, hi, _ = boot_stat(Vm, lambda c: onset_negative(rhos, c))
         per = np.array([onset_negative(rhos, Vm[i]) for i in range(Vm.shape[0])])
