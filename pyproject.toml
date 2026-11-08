@@ -78,3 +78,11 @@ ignore = [
 "three_input_study/tests/run_tests.py" = ["E402"]  # the self-contained study puts its src/ on sys.path before importing it
 "three_input_study/src/report.py" = ["E501"]  # report prose: each long line is one paragraph of the generated text
 "paper/make_numbers.py" = ["E501"]  # LaTeX table headers: one header row per line, as in the rendered table
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-m 'not slow and not parquet'"  # the default run takes seconds; `pytest -m slow` adds the golden checks
+markers = [
+    "slow: minutes on a CPU (validation tests, recomputed summaries)",
+    "parquet: needs the merged parquet files in results/merged/, which are not in the repository",
+]
