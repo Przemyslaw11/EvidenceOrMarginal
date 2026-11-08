@@ -22,4 +22,4 @@ jobs:
           python make_numbers.py
           python check_numbers.py
       - name: Fast validation tests on CPU
-        run: python tests/run_tests.py pre --device cpu --only M1,M2,M5,M6,M7,M8,M10 --out "$RUNNER_TEMP/test_results.json"
+        run: python -m densprop validate pre --device cpu --only M1,M2,M5,M6,M7,M8,M10 --out "$RUNNER_TEMP/test_results.json"

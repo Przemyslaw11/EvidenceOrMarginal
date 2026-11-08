@@ -1,12 +1,10 @@
-"""M14: validation of the Stage 4 chain (called from tests/run_tests.py network)."""
+"""M14: validation of the Stage 4 chain (`densprop validate network`)."""
 
 import math
-import os
 
 import numpy as np
 import torch
 
-from densprop.adapters.config import load_config
 from densprop.domain import copulas as C
 from densprop.domain.chain import LayerGrid, Teacher, cd_layer, estimate_student, gold_layers, kernels, poly_on, propagate_chain
 from densprop.domain.neuron import DT, input_basis, legendre
@@ -14,8 +12,7 @@ from densprop.domain.propagate import Grid, beta_logq, evaluate_case, sample_bel
 from densprop.domain.train import Data, Params, loss_val, make_loss_e2e, make_loss_nll
 
 
-def _setup(dev, k=4, rho=0.2, L=3, n_est=200000, M=2**15):
-    cfg = load_config(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config.yaml"))
+def _setup(dev, cfg, k=4, rho=0.2, L=3, n_est=200000, M=2**15):
     cfg = dict(cfg, degrees=[4], numerics=dict(cfg["numerics"], M=M, R=8, chunk_mc=2048, mind=dict(cfg["numerics"]["mind"], starts=500, steps=100)))
     t = Teacher(k, rho, 0.6, 0.5)
     rng = np.random.default_rng(1)
@@ -35,9 +32,9 @@ def _setup(dev, k=4, rho=0.2, L=3, n_est=200000, M=2**15):
     return cfg, t, models, bel, Ws
 
 
-def m14(dev):
+def m14(dev, cfg):
     det, ok = [], True
-    cfg, t, models, bel, Ws = _setup(dev)
+    cfg, t, models, bel, Ws = _setup(dev, cfg)
     sg = Grid(801, 8.0, 192, 4, dev)
     lg = LayerGrid(192, 4, dev)
     # (a) chain of length 1 == single-neuron engine

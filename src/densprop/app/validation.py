@@ -1,15 +1,14 @@
-"""Validation tests M1-M14 of the scaled-up study; results are merged into the file given by --out.
+"""Validation tests M1-M12 of the scaled-up study (M13: densprop.domain.convergence; M14: validation_chain).
 
-    python tests/run_tests.py pre  [--device cuda] [--only M4,M9]   # M1-M12, before production
-    python tests/run_tests.py post                                  # M13 from results/merged/convergence.parquet
-    python tests/run_tests.py network [--device cuda]               # M14 (Stage 4)
-The default --out is results/small/test_results.json. tests/test_results.json is the record of the GPU validation
-that the paper reports; a run writes there only when asked with --out tests/test_results.json.
+    densprop validate pre  [--device cuda] [--only M4,M9]   # M1-M12, before production
+    densprop validate post                                  # M13 from the merged convergence and gauss results
+    densprop validate network [--device cuda]               # M14 (Stage 4)
+Results are merged into the file given by --out, default results/small/test_results.json. tests/test_results.json is the
+record of the GPU validation that the paper reports; a run writes there only when asked with --out tests/test_results.json.
 Each test returns (pass, detail). A failing strict test is reported as failed. Tolerances were fixed before
 production; the one later change, to the reference of M7, is described in the paper.
 """
 
-import argparse
 import json
 import math
 import os
@@ -24,7 +23,6 @@ import numpy as np
 import pandas as pd
 import torch
 
-from densprop.adapters.config import load_config
 from densprop.domain import copulas as C
 from densprop.domain.jobs import rng_for, with_id
 from densprop.domain.neuron import (
@@ -42,14 +40,17 @@ from densprop.domain.neuron import (
     population_model,
 )
 from densprop.domain.propagate import Grid, beta_logq, evaluate_case, min_D, sample_beliefs
-from densprop.domain.sweep import run_job, setup_torch
+from densprop.domain.sweep import run_job
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)  # network/ for M14
-
-OUT = os.path.join(ROOT, "results", "small", "test_results.json")
+ROOT = "."  # the repository: the three-input study's stored results and the working directory of M11
 DEV = "cpu"
-CFG = load_config(os.path.join(ROOT, "config.yaml"))
+CFG: dict = {}
+
+
+def configure(cfg: dict, device: str, root: str) -> None:
+    """The study configuration, the device and the repository root of the tests; call before running them."""
+    global CFG, DEV, ROOT  # the tests read these as module settings, as they did when they were a script
+    CFG, DEV, ROOT = cfg, device, root
 
 
 def _np(x):
@@ -167,7 +168,7 @@ def M3():
     R, _ = C.coupled_R("SUM", k, rho)
     res = {}
     for n in (10**6, 10**7):
-        cop, (mod, se) = estimate_model(R, n, "pair", m=4, seed=3)
+        _, (mod, se) = estimate_model(R, n, "pair", m=4, seed=3)
         res[n] = (mod, se)
     mod, se = res[10**6]
     b, s = mod.blocks, se
@@ -585,7 +586,7 @@ def M10():
     for k in (2, 4, 8, 16, 32):
         for typ in ("SUM", "CONTRAST", "EXCH"):
             for rho in CFG["rho_S"]:
-                R, info = C.coupled_R(typ, k, rho)
+                _, info = C.coupled_R(typ, k, rho)
                 worst = min(worst, info["min_eig"])
                 red += info["c_reductions"]
     ok &= worst > C.PD_TOL
@@ -718,61 +719,20 @@ def M12():
 TESTS_PRE = {"M1": M1, "M2": M2, "M3": M3, "M4": None, "M5": M5, "M6": M6, "M7": M7, "M8": M8, "M9": M9, "M10": M10, "M11": M11, "M12": M12}
 
 
-def save(results):
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    old = json.load(open(OUT)) if os.path.exists(OUT) else {}
-    old.update(results)
-    with open(OUT, "w") as f:
-        json.dump(old, f, indent=1)
-
-
-def main():
-    global DEV, OUT
-    ap = argparse.ArgumentParser()
-    ap.add_argument("mode", choices=["pre", "post", "network"])
-    ap.add_argument("--device", default="cpu")
-    ap.add_argument("--only", default=None)
-    ap.add_argument("--M4-samples", type=int, default=None)
-    ap.add_argument("--out", default=OUT)
-    a = ap.parse_args()
-    DEV, OUT = a.device, os.path.abspath(a.out)
-    os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")  # deterministic cuBLAS
-    setup_torch(DEV)
+def run_pre(only: list[str] | None, m4_samples: int | None, log=print) -> dict:
+    """M1-M12 (or the selected ones): {name: {pass, detail, device, seconds}}; a crash is a failure with its message."""
     results = {}
-    if a.mode == "pre":
-        sel = a.only.split(",") if a.only else list(TESTS_PRE)
-        for name in sel:
-            t0 = time.time()
-            try:
-                if name == "M4":
-                    ok, det = M4(a.M4_samples or (2**20 if DEV.startswith("cuda") else 2**18))
-                else:
-                    ok, det = TESTS_PRE[name]()
-            except Exception as e:  # a crash is a failure, recorded with its message
-                import traceback
+    for name in only or list(TESTS_PRE):
+        t0 = time.time()
+        try:
+            if name == "M4":
+                ok, det = M4(m4_samples or (2**20 if DEV.startswith("cuda") else 2**18))
+            else:
+                ok, det = TESTS_PRE[name]()
+        except Exception as e:  # a crash is a failure, recorded with its message
+            import traceback
 
-                ok, det = False, f"ERROR {type(e).__name__}: {e} | {traceback.format_exc()[-1500:]}"
-            results[name] = dict(pass_=bool(ok), detail=det, device=DEV, seconds=round(time.time() - t0, 1))
-            print(f"{name}: {'PASS' if ok else 'FAIL'} ({time.time() - t0:.0f}s) {det}", flush=True)
-    elif a.mode == "post":
-        from densprop.adapters.parquet_store import ParquetStore
-        from densprop.adapters.records import FileRecords
-        from densprop.app.analysis import convergence
-
-        res = os.environ.get("HCR_RESULTS", os.path.join(ROOT, "results"))
-        ok, det = convergence(ParquetStore(res), FileRecords(os.path.join(res, "summary")))
-        results["M13"] = dict(pass_=bool(ok), detail=det)
-        print("M13:", "PASS" if ok else "FAIL", det)
-    else:
-        from network.tests import m14
-
-        ok, det = m14(DEV)
-        results["M14"] = dict(pass_=bool(ok), detail=det, device=DEV)
-        print("M14:", "PASS" if ok else "FAIL", det)
-    results = {k: {("pass" if kk == "pass_" else kk): vv for kk, vv in v.items()} for k, v in results.items()}
-    save(results)
-    sys.exit(0 if all(v["pass"] for v in results.values()) else 1)
-
-
-if __name__ == "__main__":
-    main()
+            ok, det = False, f"ERROR {type(e).__name__}: {e} | {traceback.format_exc()[-1500:]}"
+        results[name] = {"pass": bool(ok), "detail": det, "device": DEV, "seconds": round(time.time() - t0, 1)}
+        log(f"{name}: {'PASS' if ok else 'FAIL'} ({time.time() - t0:.0f}s) {det}")
+    return results

@@ -11,7 +11,6 @@ The manuscript is [`paper/main.pdf`](paper/main.pdf). The study protocol is [`PR
 ```
 paper/        manuscript, figures, generated numbers and tables, post hoc analyses
 src/densprop/domain/  density neuron, copulas, propagation, chains and training (PyTorch); thresholds and hypothesis tests
-network/      validation test of the chains (M14)
 src/densprop/  job specs, sweeps, worker, merge, analysis, study figures, report and command line
 scheduler/    cost model and Slurm scripts
 tests/        validation tests M1-M14
@@ -75,7 +74,7 @@ python -m densprop make-jobs gauss population convergence families lkj network
 sbatch -A <account> --array=0-39 scheduler/slurm_array.sh results/jobs_gauss.jsonl
 python -m densprop merge gauss population convergence families lkj network
 python -m densprop thresholds gauss population families
-python tests/run_tests.py post --out tests/test_results.json
+python -m densprop validate post --out tests/test_results.json
 python -m densprop hypotheses
 python -m densprop figures
 python -m densprop report

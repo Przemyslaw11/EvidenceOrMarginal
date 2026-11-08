@@ -9,6 +9,7 @@
     densprop thresholds [exp ...] | hypotheses | report                      # results/summary/, results/report.txt
     densprop figures [--paper] [--out DIR]                                   # G1-G9 (figures/, or the paper's)
     densprop energy --check | --dtype float32 --replicate 0 | --summarise    # time and energy benchmark, results/energy/
+    densprop validate pre | post | network [--device cuda] [--out FILE]      # validation tests M1-M14
 
 `python -m densprop` is the same. Results go to $HCR_RESULTS (default results/).
 """
@@ -194,6 +195,38 @@ def energy(a: argparse.Namespace) -> None:
         E.measure(meter, out, a.dtype, a.replicate, run_id, socket.gethostname(), git_commit(ROOT), log=lambda s: print(s, flush=True))
 
 
+def validate(a: argparse.Namespace) -> None:
+    from densprop.adapters.config import load_config
+    from densprop.adapters.records import FileRecords
+
+    setup(a.device)
+    cfg = load_config(CONFIG)
+    if a.mode == "pre":
+        from densprop.app import validation
+
+        validation.configure(cfg, a.device, ROOT)
+        results = validation.run_pre(a.only.split(",") if a.only else None, a.M4_samples, log=lambda s: print(s, flush=True))
+    elif a.mode == "post":
+        from densprop.adapters.parquet_store import ParquetStore
+        from densprop.app.analysis import convergence
+
+        ok, det = convergence(ParquetStore(results_dir()), summary_records())
+        results = {"M13": {"pass": bool(ok), "detail": det}}
+        print("M13:", "PASS" if ok else "FAIL", det)
+    else:
+        from densprop.app.validation_chain import m14
+
+        ok, det = m14(a.device, cfg)
+        results = {"M14": {"pass": bool(ok), "detail": det, "device": a.device}}
+        print("M14:", "PASS" if ok else "FAIL", det)
+    out = os.path.abspath(a.out or os.path.join(ROOT, "results", "small", "test_results.json"))
+    rec, name = FileRecords(os.path.dirname(out)), os.path.basename(out)
+    record = rec.read_json(name) if rec.exists(name) else {}
+    record.update(results)
+    rec.write_json(name, record, indent=1)
+    sys.exit(0 if all(v["pass"] for v in results.values()) else 1)
+
+
 def small(a: argparse.Namespace) -> None:
     """Small end-to-end reproduction on one GPU (or CPU), about 30 minutes on an A100, into results/small/ and figures/small/.
 
@@ -211,7 +244,7 @@ def small(a: argparse.Namespace) -> None:
     def run(*c: str) -> None:
         subprocess.run([sys.executable, *c], cwd=ROOT, env=env, check=True)
 
-    run("tests/run_tests.py", "pre", "--device", a.device, "--only", "M1,M2,M5,M6,M7,M8,M10")
+    run("-m", "densprop", "validate", "pre", "--device", a.device, "--only", "M1,M2,M5,M6,M7,M8,M10")
     cfg = load_config(CONFIG)
     exps = ("gauss", "population", "network")
     for exp in exps:
@@ -284,6 +317,14 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--dtype", default="float32", choices=["float32", "float64"])
     p.add_argument("--replicate", type=int, default=0)
     p.set_defaults(fn=energy)
+
+    p = sub.add_parser("validate", help="validation tests: M1-M12 (pre), M13 (post), M14 (network)")
+    p.add_argument("mode", choices=["pre", "post", "network"])
+    p.add_argument("--device", default="cpu")
+    p.add_argument("--only", default=None, help="e.g. M4,M9")
+    p.add_argument("--M4-samples", type=int, default=None)
+    p.add_argument("--out", default=None, help="default: results/small/test_results.json")
+    p.set_defaults(fn=validate)
 
     p = sub.add_parser("small", help="small end-to-end reproduction into results/small/")
     p.add_argument("--device", default="cuda")
