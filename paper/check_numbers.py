@@ -21,13 +21,13 @@ import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-sys.path.insert(0, HERE)
-import make_numbers  # noqa: E402
+import make_numbers  # noqa: E402  the sibling script; its directory is on sys.path when this one runs
 
 GEN = os.path.join(HERE, "generated")
 S = os.path.join(ROOT, "results", "summary")
@@ -36,7 +36,7 @@ n_ok = 0
 
 
 def check(cond, what):
-    global n_ok
+    global n_ok  # noqa: PLW0603  the count of passed checks, kept by every check of this script
     if cond:
         n_ok += 1
     else:
@@ -45,11 +45,11 @@ def check(cond, what):
 
 def regenerate():
     paths = sorted(glob.glob(os.path.join(GEN, "*")))
-    before = {p: open(p, "rb").read() for p in paths}
+    before = {p: Path(p).read_bytes() for p in paths}
     make_numbers.V.clear()
     make_numbers.main()
     for p in paths:
-        check(open(p, "rb").read() == before[p], f"regenerated file differs: {os.path.basename(p)}")
+        check(Path(p).read_bytes() == before[p], f"regenerated file differs: {os.path.basename(p)}")
     check(sorted(glob.glob(os.path.join(GEN, "*"))) == paths, "regeneration changed the file list")
 
 
@@ -65,7 +65,7 @@ def rule(sig, n):
 
 
 def hypotheses():
-    H = json.load(open(os.path.join(S, "hypotheses.json")))
+    H = json.loads(Path(os.path.join(S, "hypotheses.json")).read_text())
     want = {}
     for h in ("H1a", "H1b", "H2a", "H2b_population", "H2b_gauss", "H5a", "H5b", "H5c", "H5d"):
         c = H[h]["cells"]
@@ -94,7 +94,7 @@ def hypotheses():
     for h, w in want.items():
         check(w == H[h]["verdict"], f"{h}: rule gives {w}, file says {H[h]['verdict']}")
     # table rows, in file order, against the file
-    t = open(os.path.join(GEN, "tab_hyp.tex")).read()
+    t = Path(os.path.join(GEN, "tab_hyp.tex")).read_text()
     rows = re.findall(r"^(H\d[a-d]) & (.*?) & \\emph\{(.*?)\} & (.*?) \\\\$", t, re.M)
     keys = ["H1a", "H1b", "H1c", "H2a", "H2b_population", "H2b_gauss", "H2c", "H3a", "H3b", "H3c", "H4a", "H4b", "H5a", "H5b", "H5c", "H5d"]
     check(len(rows) == len(keys) == len(H), "hypothesis table has every outcome")
@@ -107,7 +107,7 @@ def hypotheses():
 
 
 def tex_rows(name):
-    t = open(os.path.join(GEN, f"tab_{name}.tex")).read()
+    t = Path(os.path.join(GEN, f"tab_{name}.tex")).read_text()
     rows = [[c.strip() for c in r.split(" & ")] for r in re.findall(r"^(.*?) \\\\$", t, re.M)][1:]
     for a, b in itertools.pairwise(rows):  # the tables leave repeated labels blank
         for i, c in enumerate(b):
@@ -118,7 +118,7 @@ def tex_rows(name):
 
 
 def reports():
-    rep = open(os.path.join(ROOT, "results", "report.txt")).read()
+    rep = Path(os.path.join(ROOT, "results", "report.txt")).read_text()
     norm = lambda c: c.replace("—", "---").replace("–", "--").strip()
     md = {
         tuple(c[:3]): [norm(x) for x in c[3:]]
@@ -157,7 +157,7 @@ def reports():
     m = re.search(r"S2 ([\d.]+), S3c ([\d.]+), S4 ([\d.]+);", rep)
     check(m.groups() == (V["H5a.ratio.S2"], V["H5a.ratio.S3c"], V["H5a.ratio.S4"]), "H5a ratios vs report")
     # energy: every row of both full tables against the energy report
-    en = open(os.path.join(ROOT, "results", "energy", "report.txt")).read()
+    en = Path(os.path.join(ROOT, "results", "energy", "report.txt")).read_text()
     secs = re.split(r"^## (float\d\d)$", en, flags=re.M)
     for dt, body in zip(secs[1::2], secs[2::2]):
         md = {}
@@ -201,7 +201,7 @@ def parquet():
         check(f"{(x.d_model_uncal / x.d_denom).median():.{nd}f}" == V[f"tr.{b}.{basis}.ratio"], f"truncation ratio {b} {basis}")
     w = D[D.belief != "S1"].groupby(["belief", "basis"]).apply(lambda x: (x.d_model_cal < x.d_model_uncal).mean(), include_groups=False)
     check(f"{100 * w.max():.0f}" in V["clip.max"], "clipping beats the reference, largest share")
-    st = [json.load(open(f)) for f in glob.glob(os.path.join(ROOT, "results/merged/*_status.json"))]
+    st = [json.loads(Path(f).read_text()) for f in glob.glob(os.path.join(ROOT, "results/merged/*_status.json"))]
     check(sum(s["done"] for s in st) == n("jobs") and not any(s["failed"] for s in st), "jobs")
     v = pd.read_csv(os.path.join(S, "convergence_violations.csv"))
     check(len(v) == n("H4b.viol") and (v.k == 8).sum() == n("H4b.k8") and (v.k == 32).sum() == n("H4b.k32"), "H4b violations")
@@ -209,7 +209,7 @@ def parquet():
 
 def additions():
     V = make_numbers.V
-    Sm = json.load(open(os.path.join(HERE, "semantics.json")))
+    Sm = json.loads(Path(os.path.join(HERE, "semantics.json")).read_text())
     fl = Sm["flip"]
     check(
         len(fl) == 10 and {(r["model"], r["k"]) for r in fl} == {("full", 3), ("full", 4), ("triple", 3), ("triple", 4), ("triple", 8)},
@@ -225,7 +225,7 @@ def additions():
                 f"flip at sigma 1: {r['model']} {r['k']}",
             )
             check(V[f"sem.flip.{r['model']}.{r['k']}.1.0.evidence.cd"] == f"{r['evidence']['cd']:.3f}", "flip macro")
-    R = json.load(open(os.path.join(HERE, "regression.json")))["rows"]
+    R = json.loads(Path(os.path.join(HERE, "regression.json")).read_text())["rows"]
     check(len(R) == 64 and int(V["reg.n"]) == 64, "regression settings")
     best = sum(r["reg2"] < min(r["cd"], r["eu"]) for r in R)
     check(V["reg.share"] == f"{100 * best / len(R):.1f}\\,\\%", "regression share")
@@ -234,7 +234,7 @@ def additions():
         for i, c in enumerate(("cd", "eu", "reg1", "reg2")):
             v = sorted(r[c] for r in R if r["k"] == k)
             check(f"{(v[7] + v[8]) / 2:.3f}" == rows[k][i], f"regression median k = {k} {c}")
-    J = json.load(open(os.path.join(HERE, "pilot.json")))
+    J = json.loads(Path(os.path.join(HERE, "pilot.json")).read_text())
     P = J["rows"]
     check(J["seeds"] == 10 and len({r["seed"] for r in P}) == 10, "pilot seeds")
     mean = lambda v: sum(v) / len(v)
@@ -254,7 +254,7 @@ def additions():
         check(int(V[f"pilot.{sc}.win"]) == sum(cd[x] < eu[x] for x in cd), f"pilot {sc} wins")
     for k, want in ((2, 6 / math.pi * math.asin(1 / 48)), (32, 6 / math.pi * math.asin(1 / 768))):
         check(V[f"on.arc.{k}"] == f"{want:.4f}", "explicit condition of the first bound")
-    Tj = json.load(open(os.path.join(HERE, "theory.json")))["pair_onset_large"]
+    Tj = json.loads(Path(os.path.join(HERE, "theory.json")).read_text())["pair_onset_large"]
     check([r["k"] for r in Tj] == [8, 32, 128, 512, 2048] and all(a["k_rho"] < b["k_rho"] for a, b in itertools.pairwise(Tj)), "convex bound rises")
     check(all(V[f"on.conv.kr.{r['k']}"] == f"{r['k_rho']:.3f}" for r in Tj), "convex bound macros")
     c = pd.read_csv(os.path.join(S, "curves_gauss.csv.gz"))
@@ -333,7 +333,7 @@ ALLOWED = {  # design constants and mathematics, never results
 
 
 def scan():
-    t = open(os.path.join(HERE, "main.tex")).read()
+    t = Path(os.path.join(HERE, "main.tex")).read_text()
     t = t[t.index("\\begin{document}") :]
     keys = re.findall(r"\\V\{([^}]*)\}", t)
     for k in keys:
@@ -355,10 +355,10 @@ REPO = re.compile(
 
 def repo_detail():
     """A reader meets a study, not a code base: file names, hashes and version-control words stay out of everything the PDF is built from."""
-    t = open(os.path.join(HERE, "main.tex")).read()
+    t = Path(os.path.join(HERE, "main.tex")).read_text()
     n = sorted(set(re.findall(r"\\input\{(generated/[^}]+)\}", t)))
     check("generated/numbers.tex" in n and any("tab_hyp" in x for x in n), "included files")
-    for name, x in [("main.tex", t)] + [(f, open(os.path.join(HERE, f if f.endswith(".tex") else f + ".tex")).read()) for f in n]:
+    for name, x in [("main.tex", t)] + [(f, Path(os.path.join(HERE, f if f.endswith(".tex") else f + ".tex")).read_text()) for f in n]:
         for m in REPO.finditer(x):
             bad.append(f"repository detail in {name}: ...{x[max(0, m.start() - 30) : m.end() + 20]!r}")
         check(True, name)
@@ -368,7 +368,7 @@ FROZEN_SHA256 = "55b88cae43d32e71e71900b98af8d38e9e526a0fcea2903ec5a6f14940fc302
 
 
 def frozen():
-    b = open(os.path.join(ROOT, "PREREGISTRATION.md"), "rb").read()
+    b = Path(os.path.join(ROOT, "PREREGISTRATION.md")).read_bytes()
     check(hashlib.sha256(b).hexdigest() == FROZEN_SHA256, "PREREGISTRATION.md changed")
     try:  # a full clone can also compare with the freeze commit itself; an archive export has no history
         a = subprocess.run(["git", "show", "8abbf12:PREREGISTRATION.md"], cwd=ROOT, capture_output=True, check=True).stdout

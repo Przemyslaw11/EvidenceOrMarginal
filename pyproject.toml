@@ -77,3 +77,4 @@ ignore = [
 "!tests/**" = ["PT"]  # pytest style rules apply to the pytest tests only
 "three_input_study/tests/run_tests.py" = ["E402"]  # the self-contained study puts its src/ on sys.path before importing it
 "three_input_study/src/report.py" = ["E501"]  # report prose: each long line is one paragraph of the generated text
+"paper/make_numbers.py" = ["E501"]  # LaTeX table headers: one header row per line, as in the rendered table

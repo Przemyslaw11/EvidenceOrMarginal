@@ -9,16 +9,15 @@ REG1 has additive features, REG2 adds the two-input products of the pair family.
 
 import json
 import os
-import sys
 
 import numpy as np
 import torch
 from scipy.special import ndtr, ndtri
 
+from densprop.domain import copulas as C
+from densprop.domain.neuron import legendre
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
-from densprop.domain import copulas as C  # noqa: E402
-from densprop.domain.neuron import legendre  # noqa: E402
 
 m, N, Q = 4, 1 << 20, 1 << 17
 s = np.linspace(-8, 8, 1201)
@@ -100,7 +99,8 @@ def main():
             rows += run(k, rho, rng)
             print(k, rho, flush=True)
     assert all(np.isfinite(r[c]) for r in rows for c in ("cd", "eu", "reg1", "reg2"))
-    json.dump(dict(m=m, n=N, belief_samples=Q, rows=rows), open(os.path.join(ROOT, "paper", "regression.json"), "w"), indent=0, sort_keys=True)
+    with open(os.path.join(ROOT, "paper", "regression.json"), "w") as fh:
+        json.dump(dict(m=m, n=N, belief_samples=Q, rows=rows), fh, indent=0, sort_keys=True)
 
 
 if __name__ == "__main__":

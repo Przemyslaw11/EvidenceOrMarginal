@@ -18,17 +18,16 @@ import itertools
 import json
 import math
 import os
-import sys
 
 import numpy as np
 import torch
 from numpy.polynomial import hermite_e as nph
 from scipy.special import ndtr
 
+from densprop.domain import copulas as C
+from densprop.domain.neuron import input_basis, legendre, population_model
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
-from densprop.domain import copulas as C  # noqa: E402
-from densprop.domain.neuron import input_basis, legendre, population_model  # noqa: E402
 
 m = 4
 s = np.linspace(-8, 8, 1601)
@@ -89,7 +88,7 @@ def summary(rows):
 
 
 class Full:
-    """Full tensor of degree m per variable, population coefficients by tensor Gauss-Hermite; A as in gpu.core.Model."""
+    """Full tensor of degree m per variable, population coefficients by tensor Gauss-Hermite; A as in densprop.domain.neuron.Model."""
 
     def __init__(self, R, nodes):
         d = len(R)
@@ -196,7 +195,8 @@ def main():
     D = mod.D(torch.tensor(Y)).numpy().reshape(100, 100)
     out["example"] = dict(rho=rho, tau=tau, g=g.tolist(), D=D.tolist())
     out["flip"] = flip()
-    json.dump(out, open(os.path.join(ROOT, "paper/semantics.json"), "w"), indent=0, sort_keys=True)
+    with open(os.path.join(ROOT, "paper/semantics.json"), "w") as fh:
+        json.dump(out, fh, indent=0, sort_keys=True)
 
 
 if __name__ == "__main__":

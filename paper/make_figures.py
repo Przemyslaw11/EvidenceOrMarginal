@@ -8,6 +8,7 @@ results/summary/thresholds_*.csv, so nothing plotted here is typed by hand.
 
 import json
 import os
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -152,8 +153,8 @@ def f3(th):
 
 
 def main():
-    sem = json.load(open(os.path.join(ROOT, "paper/semantics.json")))
-    th = json.load(open(os.path.join(ROOT, "paper/theory.json")))
+    sem = json.loads(Path(os.path.join(ROOT, "paper/semantics.json")).read_text())
+    th = json.loads(Path(os.path.join(ROOT, "paper/theory.json")).read_text())
     f1(sem)
     f2(th)
     f3(th)

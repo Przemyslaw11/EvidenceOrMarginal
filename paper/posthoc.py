@@ -10,6 +10,7 @@ import glob
 import json
 import math
 import os
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -318,7 +319,7 @@ def convergence(out):
 
 
 def network(out):
-    H = json.load(open(os.path.join(SUMMARY, "hypotheses.json")))
+    H = json.loads(Path(os.path.join(SUMMARY, "hypotheses.json")).read_text())
     N = primary(pd.read_parquet(os.path.join(MERGED, "network.parquet")))
     ch, n1 = N[N.table == "chain"], N[N.table == "neuron1"]
     d = ch[ch.run == "direct"]
@@ -437,7 +438,8 @@ def main():
     for f in (single_neuron, curves_stats, reframe, lkj, convergence, network, commits):
         f(out)
         print("done", f.__name__)
-    json.dump(out, open(os.path.join(ROOT, "paper", "posthoc.json"), "w"), indent=1, sort_keys=True)
+    with open(os.path.join(ROOT, "paper", "posthoc.json"), "w") as fh:
+        json.dump(out, fh, indent=1, sort_keys=True)
 
 
 if __name__ == "__main__":

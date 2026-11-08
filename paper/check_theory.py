@@ -11,6 +11,7 @@ import json
 import math
 import os
 import sys
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -21,10 +22,10 @@ from scipy import stats
 from scipy.optimize import brentq, linprog, minimize
 from scipy.special import ndtr
 
+from densprop.domain import copulas as C
+from densprop.domain.neuron import input_basis, population_model
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
-from densprop.domain import copulas as C  # noqa: E402
-from densprop.domain.neuron import input_basis, population_model  # noqa: E402
 
 KS = (2, 4, 8, 16, 32)
 MS = (2, 4, 6)
@@ -387,7 +388,8 @@ def pair_onset():
 
 
 def psi_min(k, rho, m, nodes=801):
-    """min of Psi_k over measures on a grid by Kelley's cutting planes: a linear program in the weights, with an epigraph variable for the quadratic."""
+    """min of Psi_k over measures on a grid by Kelley's cutting planes: a linear program in the weights, with an epigraph
+    variable for the quadratic."""
     A = amat(rs(rho), m)
     F = fall(np.linspace(0, 1, nodes), m)[:, 1:]
     phi = np.einsum("np,pq,nq->n", F, A, F)
@@ -604,7 +606,7 @@ def surrogate(k, basis, m, reps, starts, rng):
 def noise_extremes():
     rng = np.random.default_rng(5)
     rows = []
-    ph = {(r["basis"], r["k"]): r for r in json.load(open(os.path.join(ROOT, "paper/posthoc.json")))["noise"]}
+    ph = {(r["basis"], r["k"]): r for r in json.loads(Path(os.path.join(ROOT, "paper/posthoc.json")).read_text())["noise"]}
     for basis, ks in (("pair", KS), ("triple", KS[1:4])):
         for k in ks:
             r = (
@@ -699,7 +701,8 @@ def main():
     ):
         print("---", f.__name__, flush=True)
         f()
-        json.dump(out, open(os.path.join(ROOT, "paper/theory.json"), "w"), indent=1, sort_keys=True)
+        with open(os.path.join(ROOT, "paper/theory.json"), "w") as fh:
+            json.dump(out, fh, indent=1, sort_keys=True)
     print("FAIL: " + "; ".join(fails) if fails else "PASS")
     sys.exit(bool(fails))
 

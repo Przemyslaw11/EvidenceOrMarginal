@@ -2,9 +2,11 @@
 
     .venv/bin/python paper/make_numbers.py
 
-Reads results/summary/, results/merged/*_status.json and *_meta.csv, results/energy/, results/run_record.json, three_input_study/results/report.txt,
-tests/test_results.json, config.yaml, paper/posthoc.json, paper/theory.json, paper/semantics.json, paper/regression.json and paper/pilot.json. Writes generated/numbers.tex (the macro table behind
-\\V{key}), generated/numbers.json (the same table, read by check_numbers.py) and generated/tab_*.tex. Nothing is typed by hand.
+Reads results/summary/, results/merged/*_status.json and *_meta.csv, results/energy/, results/run_record.json,
+three_input_study/results/report.txt, tests/test_results.json, config.yaml, paper/posthoc.json, paper/theory.json,
+paper/semantics.json, paper/regression.json and paper/pilot.json. Writes generated/numbers.tex (the macro table behind
+\\V{key}), generated/numbers.json (the same table, read by check_numbers.py) and generated/tab_*.tex. Nothing is typed
+by hand.
 """
 
 import glob
@@ -12,6 +14,7 @@ import json
 import math
 import os
 import re
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -75,7 +78,7 @@ def table(name, cols, rows, head, size="\\small", thin=0):
         last = c
         L.append(" & ".join(shown) + " \\\\")
     L += ["\\bottomrule", "\\end{tabular}"]
-    open(os.path.join(GEN, f"tab_{name}.tex"), "w").write("\n".join(L) + "\n")
+    Path(os.path.join(GEN, f"tab_{name}.tex")).write_text("\n".join(L) + "\n")
 
 
 def mc(*cells):
@@ -84,21 +87,21 @@ def mc(*cells):
 
 
 def load():
-    H = json.load(open(os.path.join(S, "hypotheses.json")))
+    H = json.loads(Path(os.path.join(S, "hypotheses.json")).read_text())
     tg = pd.read_csv(os.path.join(S, "thresholds_gauss.csv"))
     tp = pd.read_csv(os.path.join(S, "thresholds_population.csv"))
     conv = pd.read_csv(os.path.join(S, "convergence.csv"))
     cg = pd.read_csv(os.path.join(S, "curves_gauss.csv.gz"))
-    ph = json.load(open(os.path.join(HERE, "posthoc.json")))
+    ph = json.loads(Path(os.path.join(HERE, "posthoc.json")).read_text())
     return H, tg, tp, conv, cg, ph
 
 
 def compute_block():
-    st = {os.path.basename(p)[:-12]: json.load(open(p)) for p in sorted(glob.glob(os.path.join(ROOT, "results/merged/*_status.json")))}
+    st = {os.path.basename(p)[:-12]: json.loads(Path(p).read_text()) for p in sorted(glob.glob(os.path.join(ROOT, "results/merged/*_status.json")))}
     put("jobs", thou(sum(s["done"] for s in st.values())))
     put("failed", sum(len(s["failed"]) for s in st.values()))
     put("gpuh.jobs", f"{sum(s['gpu_hours'] for s in st.values()):.1f}")
-    rec = json.load(open(os.path.join(ROOT, "results", "run_record.json")))
+    rec = json.loads(Path(os.path.join(ROOT, "results", "run_record.json")).read_text())
     put("gpuh.billed", f"{rec['billed_gpu_hours'] + rec['final_validation_seconds'] / 3600:.2f}")
     meta = {e: pd.read_csv(os.path.join(ROOT, f"results/merged/{e}_meta.csv")) for e in st}
     order = ("6a98646", "8addd92", "9bac5d5", "b8e5341", "3dd5707")
@@ -264,7 +267,9 @@ def hypotheses(H, conv, ph, cg):
     for k, n in v.groupby("k").size().items():
         put(f"H4b.k{k}", thou(n))
     assert set(v.variant) == {"n2"} and len(v) == viol
-    assert viol == int(re.search(r"(\d+) violations", json.load(open(os.path.join(ROOT, "tests/test_results.json")))["M13"]["detail"]).group(1))
+    assert viol == int(
+        re.search(r"(\d+) violations", json.loads(Path(os.path.join(ROOT, "tests/test_results.json")).read_text())["M13"]["detail"]).group(1)
+    )
     for h in ("H5a", "H5b", "H5c", "H5d"):
         put(f"{h}.sig", H[h]["significant"])
         put(f"{h}.n", H[h]["n"])
@@ -663,7 +668,7 @@ def energy():
             "\\scriptsize",
             thin=2,
         )
-    t = open(os.path.join(ROOT, "results", "energy", "report.txt")).read()
+    t = Path(os.path.join(ROOT, "results", "energy", "report.txt")).read_text()
     m = re.search(r"Counter vs sampled energy over (\d+) repeats: median ([\d.]+), 1st-99th percentile ([\d.]+)-([\d.]+)", t)
     put("sw.driver", re.search(r"driver ([\d.]+),", t).group(1))
     put("en.repeats", thou(m.group(1)))
@@ -694,7 +699,7 @@ def energy():
 
 
 def validation():
-    T = json.load(open(os.path.join(ROOT, "tests", "test_results.json")))
+    T = json.loads(Path(os.path.join(ROOT, "tests", "test_results.json")).read_text())
     d = {k: v["detail"] for k, v in T.items()}
     what = {
         "M1": "orthonormality of the basis, explicit $f_1,\\dots,f_4$",
@@ -729,7 +734,7 @@ def validation():
 
 def d3():
     """Numbers of the earlier d = 3 study, read from three_input_study/results/report.txt (its own wording, one line each)."""
-    t = open(os.path.join(ROOT, "three_input_study", "results", "report.txt")).read()
+    t = Path(os.path.join(ROOT, "three_input_study", "results", "report.txt")).read_text()
     m = re.search(r"d_denom is ([\d.]+)% \(SUM\) and ([\d.]+)% \(CONTRAST\) at rho_S=0.2", t)
     put("d3.flat.sum", m.group(1) + "\\,\\%")
     put("d3.flat.con", m.group(2) + "\\,\\%")
@@ -745,7 +750,7 @@ def d3():
 
 
 def design():
-    c = yaml.safe_load(open(os.path.join(ROOT, "config.yaml")))
+    c = yaml.safe_load(Path(os.path.join(ROOT, "config.yaml")).read_text())
     g = c["numerics"]
     put("cfg.M", "2^{20}" if g["M"] == 2**20 else g["M"])
     put("cfg.R", g["R"])
@@ -764,8 +769,8 @@ def design():
 
 def theory(ph, H):
     """Numbers of the theory sections (paper/theory.json, paper/semantics.json) and of the post hoc tables built on them."""
-    T = json.load(open(os.path.join(HERE, "theory.json")))
-    Sm = json.load(open(os.path.join(HERE, "semantics.json")))
+    T = json.loads(Path(os.path.join(HERE, "theory.json")).read_text())
+    Sm = json.loads(Path(os.path.join(HERE, "semantics.json")).read_text())
     BEL = ("S2", "S3a", "S3b", "S3c", "S3d", "S4")
     # semantics illustration
     for r in Sm["k2"]:
@@ -1098,7 +1103,7 @@ def theory(ph, H):
 
 def regression():
     """The denominator-free message (paper/regression.py): post hoc."""
-    R = pd.DataFrame(json.load(open(os.path.join(HERE, "regression.json")))["rows"])
+    R = pd.DataFrame(json.loads(Path(os.path.join(HERE, "regression.json")).read_text())["rows"])
     med = R.groupby("k")[["cd", "eu", "reg1", "reg2"]].median()
     table(
         "reg",
@@ -1116,7 +1121,7 @@ def regression():
 
 def pilot():
     """The real-data pilot (paper/pilot.py): exploratory, read from its JSON so the build needs no scikit-learn."""
-    J = json.load(open(os.path.join(HERE, "pilot.json")))
+    J = json.loads(Path(os.path.join(HERE, "pilot.json")).read_text())
     d = pd.DataFrame(J["rows"])
     for key, v in (
         ("seeds", J["seeds"]),
@@ -1218,7 +1223,8 @@ def main():
         o.write("% generated; do not edit\n")
         for k, v in sorted(V.items()):
             o.write(f"\\expandafter\\def\\csname v@{k}\\endcsname{{{v}}}\n")
-    json.dump(V, open(os.path.join(GEN, "numbers.json"), "w"), indent=0, sort_keys=True)
+    with open(os.path.join(GEN, "numbers.json"), "w") as fh:
+        json.dump(V, fh, indent=0, sort_keys=True)
     print(len(V), "numbers,", len(glob.glob(os.path.join(GEN, "tab_*.tex"))), "tables")
 
 

@@ -8,9 +8,10 @@ import gzip
 import os
 import re
 import tarfile
+from pathlib import Path
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-tex = open(os.path.join(HERE, "main.tex")).read()
+tex = Path(os.path.join(HERE, "main.tex")).read_text()
 names = ["main.tex", "main.bbl", "generated/numbers.tex"]
 names += sorted(f"generated/{n}.tex" for n in set(re.findall(r"\\input\{generated/(tab_\w+)\.tex\}", tex)))
 names += sorted(f"figures/{n}" for n in set(re.findall(r"\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}", tex)))

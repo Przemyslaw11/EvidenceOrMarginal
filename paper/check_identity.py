@@ -3,13 +3,11 @@
 .venv/bin/python paper/check_identity.py        # prints the residuals; exits non-zero if a check fails
 """
 
-import os
 import sys
 
 import numpy as np
 import torch
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from densprop.domain import copulas as C
 from densprop.domain.neuron import DT, input_basis, legendre, population_model
 
