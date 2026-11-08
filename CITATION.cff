@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use this code or data, please cite it as below."
+title: "Evidence or Marginal? What Moment-Vector Propagation Computes in Polynomial Density Neurons"
+authors:
+  - family-names: Spyra
+    given-names: Przemysław
+version: 1.0.0
+date-released: "2026-11-08"
+license: Apache-2.0
+repository-code: "https://github.com/Przemyslaw11/EvidenceOrMarginal"
+type: software

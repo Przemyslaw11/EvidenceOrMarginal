@@ -68,4 +68,4 @@ The three-input study runs on one CPU core in a few minutes with `python three_i
 
 ## License
 
-MIT, see [`LICENSE`](LICENSE).
+The code is licensed under Apache-2.0 ([`LICENSE`](LICENSE)). The manuscript, figures and data are licensed under CC BY 4.0 ([`LICENSE-CC-BY-4.0`](LICENSE-CC-BY-4.0)). See [`NOTICE`](NOTICE); to cite, use [`CITATION.cff`](CITATION.cff).
