@@ -1,9 +1,12 @@
-"""Validation tests M1-M14 of the scaled-up study; results are merged into tests/test_results.json.
+"""Validation tests M1-M14 of the scaled-up study; results are merged into the file given by --out.
 
     python tests/run_tests.py pre  [--device cuda] [--only M4,M9]   # M1-M12, before production
     python tests/run_tests.py post                                  # M13 from results/merged/convergence.parquet
     python tests/run_tests.py network [--device cuda]               # M14 (Stage 4)
-Each test returns (pass, detail). A failing strict test is reported as failed, never loosened afterwards.
+The default --out is results/small/test_results.json. tests/test_results.json is the record of the GPU validation
+that the paper reports; a run writes there only when asked with --out tests/test_results.json.
+Each test returns (pass, detail). A failing strict test is reported as failed. Tolerances were fixed before
+production; the one later change, to the reference of M7, is described in the paper.
 """
 import argparse
 import json
@@ -28,7 +31,7 @@ from gpu.core import (DT, Estimator, GaussianMoments, Model, count_formula, dens
 from gpu.job import load_cfg, rng_for, run_job, setup_torch  # noqa: E402
 from gpu.propagate import Grid, beta_logq, evaluate_case, min_D, sample_beliefs  # noqa: E402
 
-OUT = os.path.join(ROOT, "tests", "test_results.json")
+OUT = os.path.join(ROOT, "results", "small", "test_results.json")
 DEV = "cpu"
 CFG = load_cfg()
 
@@ -663,6 +666,7 @@ TESTS_PRE = {"M1": M1, "M2": M2, "M3": M3, "M4": None, "M5": M5, "M6": M6, "M7":
 
 
 def save(results):
+    os.makedirs(os.path.dirname(OUT), exist_ok=True)
     old = json.load(open(OUT)) if os.path.exists(OUT) else {}
     old.update(results)
     with open(OUT, "w") as f:
@@ -670,14 +674,15 @@ def save(results):
 
 
 def main():
-    global DEV
+    global DEV, OUT
     ap = argparse.ArgumentParser()
     ap.add_argument("mode", choices=["pre", "post", "network"])
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--only", default=None)
     ap.add_argument("--M4-samples", type=int, default=None)
+    ap.add_argument("--out", default=OUT)
     a = ap.parse_args()
-    DEV = a.device
+    DEV, OUT = a.device, os.path.abspath(a.out)
     setup_torch(DEV)
     results = {}
     if a.mode == "pre":

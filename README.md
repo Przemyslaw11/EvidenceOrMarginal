@@ -56,7 +56,7 @@ python scheduler/make_jobs.py gauss population convergence families lkj network
 sbatch -A <account> --array=0-39 scheduler/slurm_array.sh results/jobs_gauss.jsonl
 python scheduler/merge.py gauss population convergence families lkj network
 python -m analysis.thresholds gauss population families
-python tests/run_tests.py post
+python tests/run_tests.py post --out tests/test_results.json
 python -m analysis.hypotheses
 python -m analysis.figures
 python -m analysis.report

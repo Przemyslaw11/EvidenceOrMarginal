@@ -22,6 +22,6 @@ export CUBLAS_WORKSPACE_CONFIG=:4096:8
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-8}"
 nvidia-smi --query-gpu=name,driver_version,clocks.max.sm,power.limit --format=csv,noheader
 git rev-parse HEAD
-srun python tests/run_tests.py pre --device cuda
-srun python tests/run_tests.py network --device cuda
+srun python tests/run_tests.py pre --device cuda --out tests/test_results.json
+srun python tests/run_tests.py network --device cuda --out tests/test_results.json
 srun python scheduler/profile_cost.py --device cuda
