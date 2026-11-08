@@ -24,9 +24,9 @@ import numpy as np
 import pandas as pd
 import torch
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
-from densprop.domain import copulas as C  # noqa: E402
+from densprop.adapters.config import load_config
+from densprop.domain import copulas as C
+from densprop.domain.jobs import rng_for, with_id
 from densprop.domain.neuron import (
     DT,
     Estimator,
@@ -41,12 +41,15 @@ from densprop.domain.neuron import (
     order_of,
     population_model,
 )
-from densprop.domain.propagate import Grid, beta_logq, evaluate_case, min_D, sample_beliefs  # noqa: E402
-from gpu.job import load_cfg, rng_for, run_job, setup_torch  # noqa: E402
+from densprop.domain.propagate import Grid, beta_logq, evaluate_case, min_D, sample_beliefs
+from densprop.domain.sweep import run_job, setup_torch
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)  # analysis/ and network/ for M13 and M14
 
 OUT = os.path.join(ROOT, "results", "small", "test_results.json")
 DEV = "cpu"
-CFG = load_cfg()
+CFG = load_config(os.path.join(ROOT, "config.yaml"))
 
 
 def _np(x):
@@ -616,8 +619,6 @@ def M10():
 
 # ---------------------------------------------------------------- M11
 def _tiny_spec(k, basis, seed, cases):
-    from scheduler.make_jobs import with_id
-
     s = dict(
         exp="gauss",
         k=k,
@@ -650,12 +651,12 @@ def M11():
     merged = []
     for mode in ("clean", "killed"):
         tmp = tempfile.mkdtemp(prefix=f"hcr_m11_{mode}_")
-        env = dict(os.environ, HCR_RESULTS=tmp, PYTHONPATH=ROOT)
+        env = dict(os.environ, HCR_RESULTS=tmp)
         jl = os.path.join(tmp, "jobs_gauss.jsonl")
         with open(jl, "w") as f:
             for s in specs:
                 f.write(json.dumps(s) + "\n")
-        cmd = [sys.executable, os.path.join(ROOT, "scheduler", "launcher.py"), "--worker", "--device", DEV, "--jobs", jl, "--stale", "0.05"]
+        cmd = [sys.executable, "-m", "densprop", "launch", "--worker", "--device", DEV, "--jobs", jl, "--stale", "0.05"]
         if mode == "killed":
             p = subprocess.Popen(cmd, env=env, cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             jd = os.path.join(tmp, "jobs", "gauss")
@@ -670,9 +671,7 @@ def M11():
             time.sleep(4)  # older than --stale
             det.append(f"killed worker left {n_claims} claim(s)")
         subprocess.run(cmd, env=env, cwd=ROOT, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run(
-            [sys.executable, os.path.join(ROOT, "scheduler", "merge.py"), "gauss"], env=env, cwd=ROOT, check=True, stdout=subprocess.DEVNULL
-        )
+        subprocess.run([sys.executable, "-m", "densprop", "merge", "gauss"], env=env, cwd=ROOT, check=True, stdout=subprocess.DEVNULL)
         merged.append(pd.read_parquet(os.path.join(tmp, "merged", "gauss.parquet")))
         shutil.rmtree(tmp, ignore_errors=True)
     num = [c for c in merged[0].columns if merged[0][c].dtype.kind == "f" and "runtime" not in c]
@@ -737,6 +736,7 @@ def main():
     ap.add_argument("--out", default=OUT)
     a = ap.parse_args()
     DEV, OUT = a.device, os.path.abspath(a.out)
+    os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")  # deterministic cuBLAS
     setup_torch(DEV)
     results = {}
     if a.mode == "pre":

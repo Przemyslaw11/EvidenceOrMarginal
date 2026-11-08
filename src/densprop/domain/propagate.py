@@ -116,6 +116,17 @@ def sample_beliefs(rngs, M, k, cfg_b, names):
     return out
 
 
+def belief_tensors(d, supp_rel, device):
+    """One sampled belief of `sample_beliefs` on the device; a Beta belief also gets its log density and support threshold."""
+    b = dict(Y=torch.as_tensor(d["Y"], device=device))
+    if "X" in d:
+        b["X"] = torch.as_tensor(d["X"], device=device)
+    if "ab" in d:
+        lq, lmax = beta_logq(d["ab"])
+        b.update(logq=lq, thr=lmax + math.log(supp_rel))
+    return b
+
+
 # ---------------------------------------------------------------- min D
 def _starts(k, n, rng, extra):
     pts = []

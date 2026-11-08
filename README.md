@@ -10,10 +10,12 @@ The manuscript is [`paper/main.pdf`](paper/main.pdf). The study protocol is [`PR
 
 ```
 paper/        manuscript, figures, generated numbers and tables, post hoc analyses
-gpu/          density neuron, copulas, propagation and energy benchmark (PyTorch)
-network/      chains of neurons and training
+src/densprop/domain/  density neuron, copulas, propagation, chains and training (PyTorch)
+gpu/          energy benchmark
+network/      validation test of the chains (M14)
 analysis/     thresholds, hypothesis tests, study figures and report
-scheduler/    job lists, launcher and Slurm scripts
+src/densprop/  job specs, sweeps, worker, merge and command line
+scheduler/    cost model and Slurm scripts
 tests/        validation tests M1-M14
 results/      merged results and summaries of the study
 config.yaml   study settings
@@ -24,7 +26,7 @@ three_input_study/   the earlier three-input study
 
 ## Requirements
 
-Python 3.10 or later and the packages in `requirements.txt`; `requirements-lock.txt` pins the versions of the production runs. PyTorch is needed for the study (writing the job lists with `make_jobs.py` excepted), the tests, and `semantics.py`, `regression.py`, `check_theory.py` and `check_identity.py` in `paper/`; rebuilding the paper from the stored results does not need it.
+Python 3.10 or later and the packages in `requirements.txt`; `requirements-lock.txt` pins the versions of the production runs. PyTorch is needed for the study (writing the job lists excepted), the tests, and `semantics.py`, `regression.py`, `check_theory.py` and `check_identity.py` in `paper/`; rebuilding the paper from the stored results does not need it.
 
 ## Rebuild the paper
 
@@ -65,15 +67,15 @@ The outputs of the first four steps (`paper/*.json`) are in the repository, so t
 A reduced grid, under 30 minutes on one GPU:
 
 ```bash
-python run_small.py              # --device cpu also works, more slowly
+python -m densprop small         # --device cpu also works, more slowly
 ```
 
 The full study, on a Slurm cluster with PyTorch installed:
 
 ```bash
-python scheduler/make_jobs.py gauss population convergence families lkj network
+python -m densprop make-jobs gauss population convergence families lkj network
 sbatch -A <account> --array=0-39 scheduler/slurm_array.sh results/jobs_gauss.jsonl
-python scheduler/merge.py gauss population convergence families lkj network
+python -m densprop merge gauss population convergence families lkj network
 python -m analysis.thresholds gauss population families
 python tests/run_tests.py post --out tests/test_results.json
 python -m analysis.hypotheses
@@ -81,7 +83,7 @@ python -m analysis.figures
 python -m analysis.report
 ```
 
-`sbatch` is repeated for each experiment's job list. A job counts as done once its result file exists, so an array can be resubmitted until `merge.py` reports nothing missing. The Slurm scripts are site-specific: they load the cluster's Python and CUDA modules and expect a virtual environment in `venv/`.
+`sbatch` is repeated for each experiment's job list. A job counts as done once its result file exists, so an array can be resubmitted until the merge reports nothing missing. The Slurm scripts are site-specific: they load the cluster's Python and CUDA modules and expect a virtual environment in `venv/`.
 
 The time and energy benchmark runs with `sbatch -A <account> scheduler/slurm_energy.sh <float32|float64> <replicate>`, once per setting and replicate; `python -m gpu.energy --summarise` then writes `results/energy/summary.csv` and `report.txt`.
 

@@ -23,6 +23,9 @@ dependencies = [
 torch = ["torch>=2.4.0"]
 gpu = ["torch>=2.4.0", "nvidia-ml-py"]  # NVML for the energy benchmark
 
+[project.scripts]
+densprop = "densprop.cli:main"
+
 [dependency-groups]
 dev = ["pytest>=8", "ruff>=0.13"]
 

@@ -7,7 +7,6 @@ then training from the direct estimates and from a flat-D control initialisation
 Every run is evaluated on all beliefs (training beliefs and the held-out beliefs S3a, S3b, S3d).
 """
 
-import math
 import time
 
 import numpy as np
@@ -16,7 +15,7 @@ import torch
 
 from densprop.domain.chain import LayerGrid, Teacher, estimate_student, propagate_chain
 from densprop.domain.neuron import DT, input_basis, legendre
-from densprop.domain.propagate import Grid, beta_logq, sample_beliefs
+from densprop.domain.propagate import Grid, belief_tensors, sample_beliefs
 from densprop.domain.train import Data, Params, loss_val, make_loss_e2e, make_loss_nll, train
 
 
@@ -41,14 +40,7 @@ def run_network_job(spec, cfg, device, rng_for):
         if nm == "S4":
             beliefs[nm] = dict(Y=torch.as_tensor(teacher.sample(rngs["S4"], M, 1)["y"], dtype=DT, device=device))
             continue
-        d = raw[nm]
-        b = dict(Y=torch.as_tensor(d["Y"], device=device))
-        if "X" in d:
-            b["X"] = torch.as_tensor(d["X"], device=device)
-        if "ab" in d:
-            lq, lmax = beta_logq(d["ab"])
-            b.update(logq=lq, thr=lmax + math.log(cfg["supp_rel"]))
-        beliefs[nm] = b
+        beliefs[nm] = belief_tensors(raw[nm], cfg["supp_rel"], device)
     Ws = torch.as_tensor(rng("mc", 99).random((M, Lmax)), dtype=DT, device=device)
     rng_md = rng("mind")
 

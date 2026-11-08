@@ -25,4 +25,4 @@ nvidia-smi --query-gpu=name,driver_version,clocks.max.sm,power.limit --format=cs
 git rev-parse HEAD
 srun python tests/run_tests.py pre --device cuda --out tests/test_results.json
 srun python tests/run_tests.py network --device cuda --out tests/test_results.json
-srun python scheduler/profile_cost.py --device cuda
+srun python -m densprop profile-cost --device cuda

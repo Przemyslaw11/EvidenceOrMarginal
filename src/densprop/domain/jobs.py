@@ -1,34 +1,34 @@
-"""Write the job lists results/jobs_<exp>.jsonl from config.yaml.
+"""Job specifications, their ids and their random streams.
 
 Every job is fully specified; its id is a hash of the spec. Random streams are derived from
 SeedSequence(root_seed, spawn_key=key + (stream,)), where key omits the neuron type and the basis, so
 jobs that differ only in those share their random numbers (common random numbers). The gauss,
 population and convergence experiments share keys, so their results are paired by seed.
-
-    python scheduler/make_jobs.py [gauss population families lkj convergence network]
+This module needs no PyTorch, so that writing job lists does not either.
 """
+
+from __future__ import annotations
 
 import hashlib
 import json
 import math
-import os
-import sys
+from typing import Any
 
-import yaml
+import numpy as np
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-
-def load_cfg():  # read here, not through gpu.job, so that writing job lists needs no PyTorch
-    with open(os.path.join(ROOT, "config.yaml")) as f:
-        return yaml.safe_load(f)
-
-
+Spec = dict[str, Any]  # a job specification; its JSON form defines the job id, so keys, values and types are fixed
+STREAM = {"est": 0, "mc": 1, "mind": 2, "lkj": 3, "train": 4, "val": 5, "test": 6}
 CODE = {"gauss": 1, "families": 2, "lkj": 3, "network": 4}
 
 
-def expected_minutes(spec, cfg, cost):
-    """GPU-minutes from the measured cost table (scheduler/cost_model.json, written by profile_cost.py)."""
+def rng_for(cfg: dict, key: list, stream: str, *extra: int) -> np.random.Generator:
+    """The generator of one random stream of a job: common random numbers across neuron types and bases."""
+    ss = np.random.SeedSequence(cfg["root_seed"], spawn_key=tuple(key) + (STREAM[stream],) + tuple(extra))
+    return np.random.Generator(np.random.PCG64(ss))
+
+
+def expected_minutes(spec: Spec, cost: dict) -> float:
+    """GPU-minutes from the measured cost table (scheduler/cost_model.json, written by `densprop profile-cost`)."""
     cells = cost.get("cells")
     if not cells:
         return 15.0  # no measurement yet
@@ -51,17 +51,18 @@ def expected_minutes(spec, cfg, cost):
     return 0.5 + n * (est + case) / 60  # 0.5 min: process start, belief sampling
 
 
-def with_id(spec):
+def with_id(spec: Spec) -> Spec:
+    """The spec with its id: the first 16 hex digits of the SHA-1 of its sorted-key JSON."""
     spec = dict(spec)
     spec["id"] = hashlib.sha1(json.dumps(spec, sort_keys=True).encode()).hexdigest()[:16]
     return spec
 
 
-def types_for(k, types):
+def types_for(k: int, types: list[str]) -> list[str]:
     return [t for t in types if not (t == "CONTRAST" and k % 2)]
 
 
-def jobs(exp, cfg):
+def jobs(exp: str, cfg: dict) -> list[Spec]:
     e = cfg["experiments"].get(exp, {})
     rho_cases = [{"rho_S": r} for r in cfg["rho_S"]]
     out = []
@@ -154,7 +155,7 @@ def jobs(exp, cfg):
     return [with_id(s) for s in out]
 
 
-def pilot_jobs(cfg):
+def pilot_jobs(cfg: dict) -> list[Spec]:
     """Throughput pilot: seed index 1000 never occurs in production, results go to results/jobs/pilot."""
     out = []
     for exp in ("gauss", "population", "families", "lkj"):
@@ -172,36 +173,37 @@ def pilot_jobs(cfg):
                 or (exp == "lkj" and s["seed"] == 0 and s["k"] == 8 and s["eta"] == 1)
             )
             if pick:
-                s = {kk: v for kk, v in s.items() if kk != "id"}
-                s["seed"] = 1000
-                s["key"] = s["key"][:-1] + [1000]
+                p = {kk: v for kk, v in s.items() if kk != "id"}
+                p["seed"] = 1000
+                p["key"] = p["key"][:-1] + [1000]
                 if exp == "lkj":
-                    s["key_lkj"] = s["key_lkj"] + [1000]
-                s["group"] = "pilot"
-                out.append(with_id(s))
+                    p["key_lkj"] = p["key_lkj"] + [1000]
+                p["group"] = "pilot"
+                out.append(with_id(p))
     return out
 
 
-def load_cost():
-    p = os.path.join(ROOT, "scheduler", "cost_model.json")
-    return json.load(open(p)) if os.path.exists(p) else {}
+def job_list(exp: str, cfg: dict, cost: dict) -> list[Spec]:
+    """The job list of an experiment ('pilot' for the throughput pilot) with expected GPU-minutes, in run order."""
+    js = pilot_jobs(cfg) if exp == "pilot" else jobs(exp, cfg)
+    for s in js:
+        s["expected_min"] = round(expected_minutes(s, cost), 3)
+    js.sort(key=lambda s: (s["seed"], -s["expected_min"]))  # seed by seed (PREREGISTRATION 4), longest first
+    return js
 
 
-def main(argv):
-    cfg = load_cfg()
-    cost = load_cost()
-    os.makedirs(os.path.join(ROOT, "results"), exist_ok=True)
-    for exp in argv or ["gauss", "population", "families", "lkj", "convergence"]:
-        js = pilot_jobs(cfg) if exp == "pilot" else jobs(exp, cfg)
-        for s in js:
-            s["expected_min"] = round(expected_minutes(s, cfg, cost), 3)
-        js.sort(key=lambda s: (s["seed"], -s["expected_min"]))  # seed by seed (PREREGISTRATION 4), longest first
-        path = os.path.join(ROOT, "results", f"jobs_{exp}.jsonl")
-        with open(path, "w") as f:
-            for s in js:
-                f.write(json.dumps(s) + "\n")
-        print(f"{exp}: {len(js)} jobs, expected {sum(s['expected_min'] for s in js) / 60:.1f} GPU-h -> {path}")
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
+def small_jobs(exp: str, cfg: dict) -> list[Spec]:
+    """The reduced job list of the small reproduction: k in {2, 8}, pair basis, 3 seeds, n_est = 1e6, M = 2^18 (network: k = 2, one seed)."""
+    net = exp == "network"
+    out = []
+    for s in jobs(exp, cfg):
+        if s["k"] not in ((2,) if net else (2, 8)) or s["basis"] != "pair" or s["seed"] >= (1 if net else 3):
+            continue
+        if net and s["rho_S"] != 0.2:
+            continue
+        small = {kk: v for kk, v in s.items() if kk != "id"}
+        if exp == "gauss":
+            small["n_est"] = 10**6
+        small["override"] = {"network": {"seeds": 1, "adam": {"steps": 500}, "lbfgs": {"outer": 10}}} if net else {"numerics": {"M": 2**18}}
+        out.append(with_id(small))
+    return out
