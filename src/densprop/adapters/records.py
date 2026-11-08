@@ -20,8 +20,9 @@ class FileRecords:
     def exists(self, name: str) -> bool:
         return os.path.exists(self.path(name))
 
-    def names(self, pattern: str) -> list[str]:
-        return sorted(os.path.relpath(p, self.root) for p in glob.glob(self.path(pattern)))
+    def names(self, pattern: str, sort: bool = True) -> list[str]:
+        found = [os.path.relpath(p, self.root) for p in glob.glob(self.path(pattern))]
+        return sorted(found) if sort else found
 
     def read_csv(self, name: str, **kw: Any) -> pd.DataFrame:
         return pd.read_csv(self.path(name), **kw)

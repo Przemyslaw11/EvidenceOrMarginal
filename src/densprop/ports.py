@@ -58,8 +58,8 @@ class RecordStore(Protocol):
 
     def exists(self, name: str) -> bool: ...
 
-    def names(self, pattern: str) -> list[str]:
-        """Names matching a glob pattern, sorted."""
+    def names(self, pattern: str, sort: bool = True) -> list[str]:
+        """Names matching a glob pattern, sorted (or in directory order)."""
 
     def read_csv(self, name: str, **kw: Any) -> pd.DataFrame: ...
 

@@ -11,7 +11,6 @@ The manuscript is [`paper/main.pdf`](paper/main.pdf). The study protocol is [`PR
 ```
 paper/        manuscript, figures, generated numbers and tables, post hoc analyses
 src/densprop/domain/  density neuron, copulas, propagation, chains and training (PyTorch); thresholds and hypothesis tests
-gpu/          energy benchmark
 network/      validation test of the chains (M14)
 src/densprop/  job specs, sweeps, worker, merge, analysis, study figures, report and command line
 scheduler/    cost model and Slurm scripts
@@ -84,7 +83,7 @@ python -m densprop report
 
 `sbatch` is repeated for each experiment's job list. A job counts as done once its result file exists, so an array can be resubmitted until the merge reports nothing missing. The Slurm scripts are site-specific: they load the cluster's Python and CUDA modules and expect a virtual environment in `venv/`.
 
-The time and energy benchmark runs with `sbatch -A <account> scheduler/slurm_energy.sh <float32|float64> <replicate>`, once per setting and replicate; `python -m gpu.energy --summarise` then writes `results/energy/summary.csv` and `report.txt`.
+The time and energy benchmark runs with `sbatch -A <account> scheduler/slurm_energy.sh <float32|float64> <replicate>`, once per setting and replicate; `python -m densprop energy --summarise` then writes `results/energy/summary.csv` and `report.txt`.
 
 The three-input study runs on one CPU core in a few minutes with `python three_input_study/run_all.py`.
 

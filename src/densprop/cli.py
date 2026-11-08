@@ -8,6 +8,7 @@
     densprop small [--device cuda]                                           # small reproduction, results/small/
     densprop thresholds [exp ...] | hypotheses | report                      # results/summary/, results/report.txt
     densprop figures [--paper] [--out DIR]                                   # G1-G9 (figures/, or the paper's)
+    densprop energy --check | --dtype float32 --replicate 0 | --summarise    # time and energy benchmark, results/energy/
 
 `python -m densprop` is the same. Results go to $HCR_RESULTS (default results/).
 """
@@ -170,6 +171,29 @@ def report(a: argparse.Namespace) -> None:
     results.write_text("report.txt", make_report(summary_records(), statuses, prereg))
 
 
+def energy(a: argparse.Namespace) -> None:
+    from densprop.adapters.records import FileRecords
+    from densprop.app import energy as E
+
+    out = FileRecords(os.path.join(ROOT, "results", "energy"))
+    if a.check:
+        from densprop.domain.benchmark import check
+
+        check()
+        print("energy self-check PASS")
+    elif a.summarise:
+        E.summarise(out)
+    elif a.probe_mlp:
+        E.probe_mlp(out, os.environ.get("SLURM_JOB_ID", "local"), log=lambda s: print(s, flush=True))
+    else:
+        from densprop.adapters.nvml import Meter
+        from densprop.adapters.runtime import git_commit
+
+        run_id = os.environ.get("SLURM_JOB_ID", f"local{int(time.time())}")
+        meter = Meter(visible=os.environ.get("CUDA_VISIBLE_DEVICES", "0"))
+        E.measure(meter, out, a.dtype, a.replicate, run_id, socket.gethostname(), git_commit(ROOT), log=lambda s: print(s, flush=True))
+
+
 def small(a: argparse.Namespace) -> None:
     """Small end-to-end reproduction on one GPU (or CPU), about 30 minutes on an A100, into results/small/ and figures/small/.
 
@@ -251,6 +275,15 @@ def main(argv: list[str] | None = None) -> None:
 
     p = sub.add_parser("report", help="results/report.txt from the summaries")
     p.set_defaults(fn=report)
+
+    p = sub.add_parser("energy", help="time and energy of one forward pass: HCR layer vs MLP and KAN (results/energy/)")
+    g = p.add_mutually_exclusive_group()
+    g.add_argument("--check", action="store_true", help="CPU self-check of the layers")
+    g.add_argument("--summarise", action="store_true", help="summary.csv and report.txt from the runs")
+    g.add_argument("--probe-mlp", action="store_true", help="kernel diagnostic of the MLP (GPU)")
+    p.add_argument("--dtype", default="float32", choices=["float32", "float64"])
+    p.add_argument("--replicate", type=int, default=0)
+    p.set_defaults(fn=energy)
 
     p = sub.add_parser("small", help="small end-to-end reproduction into results/small/")
     p.add_argument("--device", default="cuda")

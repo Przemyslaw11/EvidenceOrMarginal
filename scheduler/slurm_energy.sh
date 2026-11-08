@@ -1,6 +1,6 @@
 #!/bin/bash
 # Site-specific settings (Athena, PLGrid): partition, modules and a venv/ at the repository root; adapt them to your cluster.
-# Stage 7: one time/energy measurement run (gpu/energy.py) on one GPU, nothing else in the job.
+# Stage 7: one time/energy measurement run (densprop energy) on one GPU, nothing else in the job.
 # Submit from the repository root:
 #   sbatch -A <account> -p plgrid-now --time=00:58:00 scheduler/slurm_energy.sh <float32|float64> <replicate>
 #SBATCH --job-name=hcre
@@ -24,4 +24,4 @@ export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-8}"
 nvidia-smi --query-gpu=name,driver_version,clocks.max.sm,clocks.sm,power.limit,temperature.gpu --format=csv
 nvidia-smi --query-compute-apps=pid,name --format=csv
 git rev-parse HEAD
-python -m gpu.energy --check && srun python -m gpu.energy --dtype "$1" --replicate "$2"
+python -m densprop energy --check && srun python -m densprop energy --dtype "$1" --replicate "$2"
