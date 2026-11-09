@@ -143,7 +143,7 @@ def run_label(r):
     """'e2e4_adam' -> 'end-to-end\nL=4\nadam'."""
     loss, opt = r.split("_")
     if PAPER:
-        return {"val": "value", "nll": "NLL", "e2e4": "end-to-\nend,\n$L=4$"}[loss] + "\n" + {"adam": "Adam", "lbfgs": "L-BFGS"}[opt]
+        return {"val": "value", "nll": "NLL", "e2e4": "E2E"}[loss] + "\n" + {"adam": "Adam", "lbfgs": "L-BFGS"}[opt]
     return {"val": "val. loss", "nll": "NLL", "e2e4": "end-to-\nend, L=4"}[loss] + "\n" + opt
 
 
@@ -323,6 +323,10 @@ def g3(cg):
         axs[0, j].set_yscale("symlog", linthresh=0.1)
         axs[0, j].set_title(f"SUM, {basis} basis")
         axs[1, j].set_xlabel("input Spearman ρ_S")
+    for ax in axs[0]:  # label every other decade of the symlog axis, so the labels do not crowd
+        fig.canvas.draw()
+        lo, hi = ax.get_ylim()
+        ax.set_yticks([t for t in ax.get_yticks() if lo <= t <= hi and (t == 0 or round(np.log10(abs(t))) % 2 == 0)])
     axs[0, 0].set_ylabel("min D over [0,1]^k\n(upper bound)")
     axs[1, 0].set_ylabel("P(D < 0), y uniform")
     if PAPER:
