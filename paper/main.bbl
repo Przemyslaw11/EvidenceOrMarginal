@@ -1,9 +1,19 @@
-\begin{thebibliography}{79}
+\begin{thebibliography}{82}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
   \providecommand{\doi}[1]{doi: #1}\else
   \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[{Ben Mrad} et~al.(2015){Ben Mrad}, Delcroix, Piechowiak, Leicester,
+  and Abid]{benmrad2015explication}
+Ali {Ben Mrad}, V{\'e}ronique Delcroix, Sylvain Piechowiak, Philip Leicester,
+  and Mohamed Abid.
+\newblock An explication of uncertain evidence in {B}ayesian networks:
+  likelihood evidence and probabilistic evidence.
+\newblock \emph{Applied Intelligence}, 43\penalty0 (4):\penalty0 802--824,
+  2015.
+\newblock \doi{10.1007/s10489-015-0678-6}.
 
 \bibitem[Bertinetto et~al.(2021)Bertinetto, Henriques, Albanie, Paganini, and
   Varol]{bertinetto2021preface}
@@ -82,13 +92,13 @@ Persi Diaconis and Sandy~L. Zabell.
 \newblock \doi{10.1080/01621459.1982.10477893}.
 
 \bibitem[Duda(2017)]{duda2017rapid}
-Jarek Duda.
+Jaros{\l}aw Duda.
 \newblock Rapid parametric density estimation.
 \newblock \emph{arXiv preprint
   \href{https://arxiv.org/abs/1702.02144}{arXiv:1702.02144}}, 2017.
 
 \bibitem[Duda(2018{\natexlab{a}})]{duda2018exploiting}
-Jarek Duda.
+Jaros{\l}aw Duda.
 \newblock Exploiting statistical dependencies of time series with
   {H}ierarchical {C}orrelation {R}econstruction.
 \newblock \emph{arXiv preprint
@@ -96,7 +106,7 @@ Jarek Duda.
   2018{\natexlab{a}}.
 
 \bibitem[Duda(2018{\natexlab{b}})]{duda2018hierarchical}
-Jarek Duda.
+Jaros{\l}aw Duda.
 \newblock {H}ierarchical {C}orrelation {R}econstruction with missing data, for
   example for biology-inspired neuron.
 \newblock \emph{arXiv preprint
@@ -104,7 +114,7 @@ Jarek Duda.
   2018{\natexlab{b}}.
 
 \bibitem[Duda(2024)]{duda2024biology}
-Jarek Duda.
+Jaros{\l}aw Duda.
 \newblock Biology-inspired joint distribution neurons based on {H}ierarchical
   {C}orrelation {R}econstruction allowing for multidirectional propagation of
   values and densities.
@@ -112,27 +122,27 @@ Jarek Duda.
   \href{https://arxiv.org/abs/2405.05097}{arXiv:2405.05097}}, 2024.
 \newblock Version 9, 4 June 2026.
 
-\bibitem[Duda and Snarska(2018)]{duda2018modeling}
-Jarek Duda and Ma{\l}gorzata Snarska.
-\newblock Modeling joint probability distribution of yield curve parameters.
-\newblock \emph{arXiv preprint
-  \href{https://arxiv.org/abs/1807.11743}{arXiv:1807.11743}}, 2018.
-
-\bibitem[Duda and Szulc(2018)]{duda2018credibility}
-Jarek Duda and Adam Szulc.
-\newblock Credibility evaluation of income data with {H}ierarchical
-  {C}orrelation {R}econstruction.
-\newblock \emph{arXiv preprint
-  \href{https://arxiv.org/abs/1812.08040}{arXiv:1812.08040}}, 2018.
-
 \bibitem[Duda and Bhatta(2024)]{duda2024predicting}
-Jaroslaw Duda and Gopal Bhatta.
+Jaros{\l}aw Duda and Gopal Bhatta.
 \newblock Predicting conditional probability distributions of redshifts of
   {A}ctive {G}alactic {N}uclei using {H}ierarchical {C}orrelation
   {R}econstruction.
 \newblock \emph{Monthly Notices of the Royal Astronomical Society},
   530\penalty0 (2):\penalty0 2282--2291, 2024.
 \newblock \doi{10.1093/mnras/stae963}.
+
+\bibitem[Duda and Snarska(2018)]{duda2018modeling}
+Jaros{\l}aw Duda and Ma{\l}gorzata Snarska.
+\newblock Modeling joint probability distribution of yield curve parameters.
+\newblock \emph{arXiv preprint
+  \href{https://arxiv.org/abs/1807.11743}{arXiv:1807.11743}}, 2018.
+
+\bibitem[Duda and Szulc(2018)]{duda2018credibility}
+Jaros{\l}aw Duda and Adam Szulc.
+\newblock Credibility evaluation of income data with {H}ierarchical
+  {C}orrelation {R}econstruction.
+\newblock \emph{arXiv preprint
+  \href{https://arxiv.org/abs/1812.08040}{arXiv:1812.08040}}, 2018.
 
 \bibitem[Duda et~al.(2020)Duda, Gurgul, and Syrek]{duda2020modelling}
 Jaros{\l}aw Duda, Henryk Gurgul, and Robert Syrek.
@@ -243,6 +253,14 @@ Jos{\'e}~Miguel Hern{\'a}ndez-Lobato and Ryan~P. Adams.
 \newblock In \emph{Proceedings of the 32nd International Conference on Machine
   Learning}, volume~37 of \emph{Proceedings of Machine Learning Research},
   pages 1861--1869, 2015.
+
+\bibitem[Jacobs(2019)]{jacobs2019mathematics}
+Bart Jacobs.
+\newblock The mathematics of changing one's mind, via {J}effrey's or via
+  {P}earl's update rule.
+\newblock \emph{Journal of Artificial Intelligence Research}, 65:\penalty0
+  783--806, 2019.
+\newblock \doi{10.1613/jair.1.11349}.
 
 \bibitem[Jeffrey(1965)]{jeffrey1965logic}
 Richard~C. Jeffrey.
@@ -412,6 +430,7 @@ Gary~W. Oehlert.
 Art~B. Owen.
 \newblock {M}onte {C}arlo theory, methods and examples, 2013.
 \newblock URL \url{https://artowen.su.domains/mc/}.
+\newblock Unpublished manuscript.
 
 \bibitem[Pace and Barry(1997)]{pace1997sparse}
 R.~Kelley Pace and Ronald Barry.
@@ -490,6 +509,14 @@ Abe Sklar.
 \newblock \emph{Publications de l'Institut de Statistique de l'Universit{\'e}
   de Paris}, 8:\penalty0 229--231, 1959.
 
+\bibitem[{\'S}mieja et~al.(2018){\'S}mieja, Struski, Tabor, Zieli{\'n}ski, and
+  Spurek]{smieja2018processing}
+Marek {\'S}mieja, {\L}ukasz Struski, Jacek Tabor, Bartosz Zieli{\'n}ski, and
+  Przemys{\l}aw Spurek.
+\newblock Processing of missing data by neural networks.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~31, pages 2719--2729, 2018.
+
 \bibitem[Song et~al.(2011)Song, Gretton, Bickson, Low, and
   Guestrin]{song2011kernel}
 Le~Song, Arthur Gretton, Danny Bickson, Yucheng Low, and Carlos Guestrin.
@@ -507,7 +534,7 @@ Victoria Stodden, Marcia McNutt, David~H. Bailey, Ewa Deelman, Yolanda Gil,
 \newblock \doi{10.1126/science.aah6168}.
 
 \bibitem[Strawa and Duda(2025)]{strawa2025improving}
-Jakub Strawa and Jarek Duda.
+Jakub Strawa and Jaros{\l}aw Duda.
 \newblock Improving {KAN} with {CDF} normalization to quantiles.
 \newblock \emph{arXiv preprint
   \href{https://arxiv.org/abs/2507.13393}{arXiv:2507.13393}}, 2025.
@@ -544,7 +571,7 @@ Pauli Virtanen, Ralf Gommers, Travis~E. Oliphant, Matt Haberland, Tyler Reddy,
   Millman, Nikolay Mayorov, Andrew R.~J. Nelson, Eric Jones, Robert Kern, Eric
   Larson, CJ~Carey, {\.I}lhan Polat, Yu~Feng, Eric~W. Moore, Jake VanderPlas,
   Denis Laxalde, Josef Perktold, Robert Cimrman, Ian Henriksen, E.~A. Quintero,
-  Charles~R Harris, Anne~M. Archibald, Ant{\^o}nio~H. Ribeiro, Fabian
+  Charles~R. Harris, Anne~M. Archibald, Ant{\^o}nio~H. Ribeiro, Fabian
   Pedregosa, Paul van Mulbregt, and {SciPy 1.0 Contributors}.
 \newblock {SciPy} 1.0: fundamental algorithms for scientific computing in
   {P}ython.
