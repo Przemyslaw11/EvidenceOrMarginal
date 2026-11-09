@@ -582,7 +582,7 @@ def posthoc(ph, H):
                     pc(r["median_rel_test"], 1).replace("-", "$-$"),
                     pc(r["share_test_reduced"]),
                     f(r["median_dP_where_neg"], 3).replace("-", "$-$"),
-                    f(r["median_minD_change"], 2).replace("-", "$-$"),
+                    f(round(r["median_minD_change"], 2) or 0.0, 2).replace("-", "$-$")  # no negative zero,
                 ]
             )
             for key, val in (
@@ -663,7 +663,7 @@ def energy():
                     sig3(r.J),
                     sig3(r.J_net),
                     f"{r.power_W:.0f}",
-                    f"{r.sm_MHz:.0f}",
+                    thou(round(r.sm_MHz)),
                     f"{r.counter_ratio:.3f}",
                 ]
             )
@@ -731,7 +731,7 @@ def validation():
     put("val.M6", re.search(r"max residual ([\d.e+-]+)", d["M6"]).group(1).replace("e-16", "\\times 10^{-16}"))
     put("val.M6.n", re.search(r"over (\d+) defined", d["M6"]).group(1))
     put("val.M9", re.search(r"max \|diff\| ([\d.e+-]+);", d["M9"]).group(1).replace("e-05", "\\times 10^{-5}"))
-    put("val.M4.n", re.search(r"(\d+) TV comparisons", d["M4"]).group(1))
+    put("val.M4.n", thou(re.search(r"(\d+) TV comparisons", d["M4"]).group(1)))
     put("val.M4.worst", re.search(r"worst \|diff\|/tol ([\d.]+)", d["M4"]).group(1))
     m = re.search(r"lower tail rel err ([\d.e+-]+), upper side abs err ([\d.e+-]+); quantile: rel err of its tail probability ([\d.e+-]+)", d["M7"])
     for key, v in zip(("low", "up", "q"), m.groups()):
@@ -743,8 +743,8 @@ def d3():
     """Numbers of the earlier d = 3 study, read from three_input_study/results/report.txt (its own wording, one line each)."""
     t = Path(os.path.join(ROOT, "three_input_study", "results", "report.txt")).read_text()
     m = re.search(r"d_denom is ([\d.]+)% \(SUM\) and ([\d.]+)% \(CONTRAST\) at rho_S=0.2", t)
-    put("d3.flat.sum", m.group(1) + "\\,\\%")
-    put("d3.flat.con", m.group(2) + "\\,\\%")
+    put("d3.flat.sum", f(float(m.group(1)) / 100, 3))
+    put("d3.flat.con", f(float(m.group(2)) / 100, 3))
     m = re.search(r"d_denom=([\d.]+) \(SUM\) and ([\d.]+) \(CONTRAST\) at rho_S=0.3", t)
     put("d3.narrow.sum", m.group(1))
     put("d3.narrow.con", m.group(2))
@@ -853,7 +853,7 @@ def theory(ph, H):
     put("sem.flip.mind.lo", f(min(r["min_d"] for r in fl), 2))
     put("sem.flip.mind.hi", f(max(r["min_d"] for r in fl), 2))
     weak = [r for r in fl if r["tau"] == 0.5 and r["model"] == "triple" and r["k"] >= 4]
-    put("sem.flip.weak.hi", f(max(abs(r[s_]["cd"] - r[s_]["eu"]) for r in weak for s_ in ("posterior", "marginal")), 3))
+    put("sem.flip.weak.hi", f(max(abs(r[s_]["cd"] - r[s_]["eu"]) for r in weak for s_ in ("posterior", "marginal")), 4))
     for r in Sm["missing"]:
         put(f"sem.miss.cd.{r['rho']}", f(r["cd"]))
         put(f"sem.miss.eu.{r['rho']}", f(r["eu"]))
