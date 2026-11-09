@@ -92,13 +92,13 @@ Persi Diaconis and Sandy~L. Zabell.
 \newblock \doi{10.1080/01621459.1982.10477893}.
 
 \bibitem[Duda(2017)]{duda2017rapid}
-Jaros{\l}aw Duda.
+Jaroslaw Duda.
 \newblock Rapid parametric density estimation.
 \newblock \emph{arXiv preprint
   \href{https://arxiv.org/abs/1702.02144}{arXiv:1702.02144}}, 2017.
 
 \bibitem[Duda(2018{\natexlab{a}})]{duda2018exploiting}
-Jaros{\l}aw Duda.
+Jaroslaw Duda.
 \newblock Exploiting statistical dependencies of time series with
   {H}ierarchical {C}orrelation {R}econstruction.
 \newblock \emph{arXiv preprint
@@ -106,7 +106,7 @@ Jaros{\l}aw Duda.
   2018{\natexlab{a}}.
 
 \bibitem[Duda(2018{\natexlab{b}})]{duda2018hierarchical}
-Jaros{\l}aw Duda.
+Jaroslaw Duda.
 \newblock {H}ierarchical {C}orrelation {R}econstruction with missing data, for
   example for biology-inspired neuron.
 \newblock \emph{arXiv preprint
@@ -114,7 +114,7 @@ Jaros{\l}aw Duda.
   2018{\natexlab{b}}.
 
 \bibitem[Duda(2024)]{duda2024biology}
-Jaros{\l}aw Duda.
+Jaroslaw Duda.
 \newblock Biology-inspired joint distribution neurons based on {H}ierarchical
   {C}orrelation {R}econstruction allowing for multidirectional propagation of
   values and densities.
@@ -123,7 +123,7 @@ Jaros{\l}aw Duda.
 \newblock Version 9, 4 June 2026.
 
 \bibitem[Duda and Bhatta(2024)]{duda2024predicting}
-Jaros{\l}aw Duda and Gopal Bhatta.
+Jaroslaw Duda and Gopal Bhatta.
 \newblock Predicting conditional probability distributions of redshifts of
   {A}ctive {G}alactic {N}uclei using {H}ierarchical {C}orrelation
   {R}econstruction.
@@ -132,20 +132,20 @@ Jaros{\l}aw Duda and Gopal Bhatta.
 \newblock \doi{10.1093/mnras/stae963}.
 
 \bibitem[Duda and Snarska(2018)]{duda2018modeling}
-Jaros{\l}aw Duda and Ma{\l}gorzata Snarska.
+Jaroslaw Duda and Ma{\l}gorzata Snarska.
 \newblock Modeling joint probability distribution of yield curve parameters.
 \newblock \emph{arXiv preprint
   \href{https://arxiv.org/abs/1807.11743}{arXiv:1807.11743}}, 2018.
 
 \bibitem[Duda and Szulc(2018)]{duda2018credibility}
-Jaros{\l}aw Duda and Adam Szulc.
+Jaroslaw Duda and Adam Szulc.
 \newblock Credibility evaluation of income data with {H}ierarchical
   {C}orrelation {R}econstruction.
 \newblock \emph{arXiv preprint
   \href{https://arxiv.org/abs/1812.08040}{arXiv:1812.08040}}, 2018.
 
 \bibitem[Duda et~al.(2020)Duda, Gurgul, and Syrek]{duda2020modelling}
-Jaros{\l}aw Duda, Henryk Gurgul, and Robert Syrek.
+Jaroslaw Duda, Henryk Gurgul, and Robert Syrek.
 \newblock Modelling bid-ask spread conditional distributions using
   {H}ierarchical {C}orrelation {R}econstruction.
 \newblock \emph{Statistics in Transition New Series}, 21\penalty0 (5):\penalty0
@@ -534,7 +534,7 @@ Victoria Stodden, Marcia McNutt, David~H. Bailey, Ewa Deelman, Yolanda Gil,
 \newblock \doi{10.1126/science.aah6168}.
 
 \bibitem[Strawa and Duda(2025)]{strawa2025improving}
-Jakub Strawa and Jaros{\l}aw Duda.
+Jakub Strawa and Jaroslaw Duda.
 \newblock Improving {KAN} with {CDF} normalization to quantiles.
 \newblock \emph{arXiv preprint
   \href{https://arxiv.org/abs/2507.13393}{arXiv:2507.13393}}, 2025.

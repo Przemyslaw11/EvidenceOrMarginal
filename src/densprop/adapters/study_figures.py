@@ -505,7 +505,12 @@ def g9(net):
     n1 = net[(net.table == "neuron1") & (net.belief == "S2")]
     runs = ["val_adam", "val_lbfgs", "nll_adam", "nll_lbfgs", "e2e4_adam", "e2e4_lbfgs"]
     fig, axs = plt.subplots(1, 2, figsize=(14, 5))
-    for ax, (metric, lab) in zip(axs, (("d_dc", "change of TV(CONST_DENOM, EXACT_CAL),\nneuron 1, S2"), ("P_Dneg_u", "change of P(D<0), neuron 1"))):
+    labs = (
+        ("change of $d_{\\mathrm{dc}}$", "change of $P(D<0)$")
+        if PAPER
+        else ("change of TV(CONST_DENOM, EXACT_CAL),\nneuron 1, S2", "change of P(D<0), neuron 1")
+    )
+    for ax, (metric, lab) in zip(axs, zip(("d_dc", "P_Dneg_u"), labs)):
         for ii, init in enumerate(("direct", "flat")):
             base = n1[n1.run == ("direct" if init == "direct" else "flat_init")].set_index(["k", "rho_S", "basis", "seed"])[metric]
             med, lo, hi = [], [], []
