@@ -345,7 +345,7 @@ Dong~C. Liu and Jorge Nocedal.
   Solja{\v{c}}i{\'c}, Hou, and Tegmark]{liu2025kan}
 Ziming Liu, Yixuan Wang, Sachin Vaidya, Fabian Ruehle, James Halverson, Marin
   Solja{\v{c}}i{\'c}, Thomas~Y. Hou, and Max Tegmark.
-\newblock {KAN}: {K}olmogorov-{A}rnold networks.
+\newblock {KAN}: {K}olmogorov--{A}rnold networks.
 \newblock In \emph{International Conference on Learning Representations}, 2025.
 
 \bibitem[Loconte et~al.(2024)Loconte, Sladek, Mengel, Trapp, Solin, Gillis, and
@@ -437,6 +437,7 @@ R.~Kelley Pace and Ronald Barry.
 \newblock Sparse spatial autoregressions.
 \newblock \emph{Statistics \& Probability Letters}, 33\penalty0 (3):\penalty0
   291--297, 1997.
+\newblock \doi{10.1016/S0167-7152(96)00140-X}.
 
 \bibitem[Paszke et~al.(2019)Paszke, Gross, Massa, Lerer, Bradbury, Chanan,
   Killeen, Lin, Gimelshein, Antiga, Desmaison, K{\"o}pf, Yang, DeVito, Raison,
