@@ -339,6 +339,8 @@ def scan():
     for k in keys:
         check(k in make_numbers.V, f"unknown key {k}")
     print(len(keys), "numbers used in main.tex,", len(set(keys)), "distinct")
+    for c in re.findall(r"(?<!\\)%(.*)$", t, flags=re.M):  # text after a stray % never reaches the PDF
+        check("$" not in c and "\\V{" not in c, f"mathematics or a number inside a comment: %{c[:60]}")
     x = re.sub(r"%.*$", "", t.replace("\\%", "PCT"), flags=re.M)
     x = re.sub(r"\\(V|ref|eqref|label|cite[tp]?|input|includegraphics|texttt|section|subsection)(\[[^\]]*\])*\{[^}]*\}", " ", x)
     x = x.replace("\\,", "").replace("PCT", "%")
