@@ -54,6 +54,7 @@
 \preto\section{\Needspace{5.3\baselineskip}}
 \preto\subsection{\Needspace{4.8\baselineskip}}
 \emergencystretch=1.5em
+\frenchspacing
 \clubpenalty=10000
 \widowpenalty=10000
 \displaywidowpenalty=3000
@@ -338,7 +339,7 @@ This explains an asymmetry in the study. The formula matches \V{eqd.n} sampled p
 \paragraph{Noise.} Estimated coefficients move all of this, and the sample size needed for a positive $\hat D$ grows polynomially in $k$.
 
 \begin{proposition}[Sampling noise at independence]\label{prop:noise}
-Let the inputs be independent and uniform. Then $\mathrm{E}\hat D(y)=1$ and $\Var\hat D(y)=K(y)/n$ with $K(y)=\sum_{\mathbf{j}\neq0}f_{\mathbf{j}}(y)^2$, maximal at corners, where $K_{\mathrm c}=k\Theta+\binom k2\Theta^2$ (pair) or $K_{\mathrm c}=k\Theta+\binom k2\Theta^2+\binom k3\Theta^3$ (triple). In the Gaussian limit of $\sqrt n(\hat a_{0\mathbf{j}})$ at fixed $k$, write $1-\min\hat D=z\sqrt{K_{\mathrm c}/n}$. For fixed $m$ even, $\mathrm{E}z$ lies between $c\sqrt k$ and $C\sqrt{km}$ for absolute constants $c,C>0$ (with $c$ valid for $k\geq k_0$), over corners $\mathrm{E}z\leq\sqrt{2k\ln2}$, and $z$ concentrates around its mean with $O(1)$ fluctuations. Hence $\hat D>0$ needs $n\asymp z^2K_{\mathrm c}$, of order $k^3$ (pair) and $k^4$ (triple) up to factors in $m$.
+Let the inputs be independent and uniform. Then $\mathrm{E}\hat D(y)=1$ and $\Var\hat D(y)=K(y)/n$ with $K(y)=\sum_{\mathbf{j}\neq0}f_{\mathbf{j}}(y)^2$, maximal at corners, where $K_{\mathrm c}=k\Theta+\binom k2\Theta^2$ (pair) or $K_{\mathrm c}=k\Theta+\binom k2\Theta^2+\binom k3\Theta^3$ (triple). In the Gaussian limit of $\sqrt n(\hat a_{0\mathbf{j}})$ at fixed $k$, write $1-\min\hat D=z\sqrt{K_{\mathrm c}/n}$. For fixed $m$, $\mathrm{E}z\leq C\sqrt{km}$, and for even $m$, $\mathrm{E}z\geq c\sqrt k$, for absolute constants $c,C>0$ (with $c$ valid for $k\geq k_0$); over corners $\mathrm{E}z\leq\sqrt{2k\ln2}$, and $z$ concentrates around its mean with $O(1)$ fluctuations. Hence, for even $m$, $\hat D>0$ needs $n\asymp z^2K_{\mathrm c}$, of order $k^3$ (pair) and $k^4$ (triple) up to factors in $m$.
 \end{proposition}
 
 This turns the rule of thumb $n\gtrsim z^2K$ into a statement on how $z$ grows. In the study $z$ grows from \V{ph.noise.zmin} to \V{ph.noise.zmax} (Table~\ref{tab:noisez}). In a Gaussian surrogate, a search over the cube at $k=32$ reaches \V{nz.pair32.cube} and over corners \V{nz.pair32.corner}, against \V{nz.pair32.meas} measured, consistent with $\min D$ being an upper bound. With the cube values, $z^2K_{\mathrm c}$ is \V{nz.need.pair32} for pair at $k=32$ and \V{nz.need.triple16} for triple at $k=16$, either side of the study's $n=10^7$. In the pair basis the noise minimisers put \V{nz.bound.lo}--\V{nz.bound.hi} of coordinates on the boundary, while the population pair minimum has interior atoms.
@@ -722,6 +723,7 @@ Tables~\ref{tab:onsetall}--\ref{tab:noise} extend Section~\ref{sec:fail} to all 
 \label{fig:undef}
 \end{figure}
 
+\FloatBarrier
 \section{The gap and the errors: further results}\label{app:thr}
 
 This appendix holds the threshold tables and error components behind Sections~\ref{sec:trunc},~\ref{sec:gapres} and~\ref{sec:clip}. Table~\ref{tab:thr} is the summary; Tables~\ref{tab:thrfull}--\ref{tab:bel} add CONTRAST, confidence intervals, variance thresholds and all beliefs; the last tables and figures show what happens past the onset and how the error splits.
@@ -902,6 +904,7 @@ There were no non-finite losses in the \V{ph.tr.runs} training runs from direct 
 \label{fig:train}
 \end{figure}
 
+\FloatBarrier
 \section{Validation}\label{app:validation}
 
 Fourteen validation tests check the implementation. All code-validation tests (M1--M12, M14) pass on an A100 with a single version of the code. M13 is not a code test: it is hypothesis H4b on the study's data and appears in Section~\ref{sec:conv} as \verdict{\V{H4b.verdict}}.
