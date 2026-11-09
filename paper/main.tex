@@ -482,7 +482,7 @@ This appendix collects the symbols used across sections (Table~\ref{tab:notation
 
 \begin{table}[htbp]
 \centering\footnotesize
-\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.30\linewidth}l>{\raggedright\arraybackslash}p{0.33\linewidth}@{}}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.29\linewidth}l>{\raggedright\arraybackslash}p{0.32\linewidth}@{}}
 \toprule
 Symbol & Meaning & Symbol & Meaning \\
 \midrule
@@ -496,6 +496,10 @@ $r,\ \rs,\ c$ & input correlation, its Spearman value, coupling to $x$ & $\Theta
 $\sobs,\ o$ & observation noise, observation & $\kappa_{ab},\ \se^2,\ \so^2$ & corner moments, even and odd energies \\
 $M,\ R$ & Monte Carlo samples, replicate blocks & $e_d,\ \omega_p$ & elementary symmetric polynomial; Corollary~\ref{cor:closed} \\
 $\alpha,\ \gamma,\ L$ & chain correlations and depth & $j$ & coordinates at $1$ of a corner \\
+$\dden,\ \dneg$ & gap $\TV(\pcd,\peu)$; clipping $\TV(\peu,\pec)$ & $\dmu,\ \dmc$ & errors $\TV(\peu,\pg)$, $\TV(\pec,\pg)$ \\
+$\dtot,\ \ddc$ & $\TV(\pcd,\pg)$, $\TV(\pcd,\pec)$ & $\TV,\ \CV(D)$ & $\frac12\int|p-p'|$; $\sd_q(D)/\Eq[D]$ \\
+S1--S4 & beliefs: own $D$, flat, Beta (S3a--d), data & SUM, CONTRAST & ground truths with equal or opposite couplings \\
+$\varepsilon$ & clipping level of $\pec$ & floor & $D\geq\V{cfg.floor}$ needed for $\peu$ to be defined \\
 \bottomrule
 \end{tabular}
 \caption{Notation shared across sections. Symbols used in one proof only are defined there.}
