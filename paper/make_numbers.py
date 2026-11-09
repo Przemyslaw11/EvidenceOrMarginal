@@ -582,7 +582,7 @@ def posthoc(ph, H):
                     pc(r["median_rel_test"], 1).replace("-", "$-$"),
                     pc(r["share_test_reduced"]),
                     f(r["median_dP_where_neg"], 3).replace("-", "$-$"),
-                    f(round(r["median_minD_change"], 2) or 0.0, 2).replace("-", "$-$")  # no negative zero,
+                    f(round(r["median_minD_change"], 2) or 0.0, 2).replace("-", "$-$"),  # no negative zero
                 ]
             )
             for key, val in (
