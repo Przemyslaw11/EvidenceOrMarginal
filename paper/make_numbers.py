@@ -55,6 +55,12 @@ def sci(v, d=1):
     return f"\\ensuremath{{{m}\\times 10^{{{e}}}}}"
 
 
+def sig2(v):
+    """Two significant figures; at 100 and above the trailing digits are zeros."""
+    d = 1 - math.floor(math.log10(abs(v)))
+    return f"{v:.{d}f}" if d >= 0 else f"{round(v, d):.0f}"
+
+
 def thou(n):
     return f"{int(n):,}".replace(",", "{,}")
 
@@ -624,6 +630,7 @@ def posthoc(ph, H):
 def energy():
     e = pd.read_csv(os.path.join(ROOT, "results", "energy", "summary.csv"))
     sig = lambda v: f"{v:.3g}"
+    sig3 = lambda v: f"{v:#.3g}".rstrip(".")  # tables: three significant figures, trailing zeros kept
     assert e.n_runs.nunique() == 1 and e.n_repeats.nunique() == 1
     put("en.runs.dtype", e.n_runs.iloc[0])
     put("en.row.repeats", e.n_repeats.iloc[0])
@@ -631,7 +638,7 @@ def energy():
     rows = []
     for l in ("HCR-CD", "HCR-CAL", "MLP", "KAN"):
         a, b = main.loc[(l, "float32")], main.loc[(l, "float64")]
-        rows.append([l, thou(a.params), sig(a.ms), sig(a.J), sig(b.ms), sig(b.J)])
+        rows.append([l, thou(a.params), sig3(a.ms), sig3(a.J), sig3(b.ms), sig3(b.J)])
         for dt, r in (("32", a), ("64", b)):
             put(f"en.{l}.{dt}.ms", sig(r.ms))
             put(f"en.{l}.{dt}.J", sig(r.J))
@@ -652,9 +659,9 @@ def energy():
                     thou(r.B),
                     r.layer,
                     thou(r.params),
-                    sig(r.ms),
-                    sig(r.J),
-                    sig(r.J_net),
+                    sig3(r.ms),
+                    sig3(r.J),
+                    sig3(r.J_net),
                     f"{r.power_W:.0f}",
                     f"{r.sm_MHz:.0f}",
                     f"{r.counter_ratio:.3f}",
@@ -912,7 +919,7 @@ def theory(ph, H):
         "onset_all",
         "rrrrrrrrr",
         rows,
-        "& & \\multicolumn{5}{c}{pair} & \\multicolumn{2}{c}{triple} \\\\ \\cmidrule(lr){3-7}\\cmidrule(l){8-9}\n$m$ & $k$ & first & convex & search & measured & $k\\rho^*$ & corner & measured",
+        "& & \\multicolumn{5}{c}{pair} & \\multicolumn{2}{c}{triple} \\\\ \\cmidrule(lr){3-7}\\cmidrule(l){8-9}\n$m$ & $k$ & first & convex & search & measured & $k\\rho_S^\\ast$ & corner & measured",
         "\\footnotesize",
         thin=1,
     )
@@ -1003,14 +1010,14 @@ def theory(ph, H):
                     f(r["denom"], 4),
                     f(r["eu"], 4),
                     f(r["cd"], 4),
-                    f(r["ratio"], 0 if r["ratio"] >= 100 else 1 if r["ratio"] >= 1 else 2),
+                    sig2(r["ratio"]),
                     pc(r["eu_closer"]),
                     pc(r["ec_beats_eu"]),
                 ]
             )
             for key in ("denom", "eu", "cd"):
                 put(f"tr.{b}.{basis}.{key}", f(r[key], 4))
-            put(f"tr.{b}.{basis}.ratio", f(r["ratio"], 0 if r["ratio"] >= 10 else 1 if r["ratio"] >= 1 else 2))
+            put(f"tr.{b}.{basis}.ratio", sig2(r["ratio"]))
             put(f"tr.{b}.{basis}.euc", pc(r["eu_closer"]))
             put(f"tr.{b}.{basis}.ec", pc(r["ec_beats_eu"]))
         if basis == "pair":

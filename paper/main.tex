@@ -23,8 +23,11 @@
 \usepackage{hyperref}
 \definecolor{linkblue}{rgb}{0.10,0.20,0.42}
 \hypersetup{colorlinks,linkcolor=linkblue,citecolor=linkblue,urlcolor=linkblue,bookmarksnumbered,
-  pdftitle={Evidence or Marginal? What Moment-Vector Propagation Computes in Polynomial Density Neurons},pdfauthor={Przemys\l aw Spyra}}
+  pdftitle={Evidence or Marginal? What Moment-Vector Propagation Computes in Polynomial Density Neurons},pdfauthor={Przemys\l aw Spyra},
+  pdfsubject={Uncertain evidence in polynomial density neurons},
+  pdfkeywords={virtual evidence, Jeffrey's rule, Hierarchical Correlation Reconstruction, copula density, orthogonal series, pre-registration}}
 \captionsetup{font=small,labelfont=bf,skip=5pt}
+\captionsetup[table]{position=top}
 \setlist{itemsep=1.5pt,topsep=3pt,parsep=0pt}
 \titleformat{\section}{\large\bfseries}{\thesection}{0.7em}{}
 \titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.7em}{}
@@ -302,9 +305,9 @@ The form shows what drives negativity: the term $-\frac12\sum_l\varphi(y_l)$ is 
 
 \begin{table}[t]
 \centering
-\input{generated/tab_onset.tex}
 \caption{Negativity onset in $\rs$ with population coefficients, type SUM, $m=4$ (post hoc for the bounds). ``first'': the value of $\rs$ at which the first inequality of Proposition~\ref{prop:pair}(a), $1-\frac k2\max_u\varphi(u)$, reaches zero, solved numerically. ``convex'': the bound of Proposition~\ref{prop:pair}(b). ``corner'': value of Proposition~\ref{prop:corner}. Measured values come from interpolation on the study grid and are upper bounds, so small inversions are possible. Other degrees: Table~\ref{tab:onsetall}.}
 \label{tab:onset}
+\input{generated/tab_onset.tex}
 \end{table}
 
 One might expect the worst point to be a balanced corner of the cube, where half the inputs sit at $1$ and half at $0$. For the pair basis that is false, and for the triple basis it is nearly exact.
@@ -318,7 +321,7 @@ D_{\mathrm{triple}}(j)&=D_{\mathrm{pair}}(j)+\big[\tbinom j3+\tbinom{k-j}3\big]\
 With $\se^2=\frac12(\kappa_{20}+\kappa_{11})\geq0$ and $\so^2=\frac12(\kappa_{20}-\kappa_{11})\geq0$, the energies of the even and odd degrees, $D_{\mathrm{pair}}(j)=1+\frac12[k(k-1)\se^2+((2j-k)^2-k)\so^2]$. Any $\rs$ at which $\min_jD(j)<0$ is at or above the onset.
 \end{proposition}
 
-So the balanced corner $j=k/2$ cancels only the odd degrees. Even polynomials have the same sign at $0$ and $1$ and add $\frac12k(k-1)\se^2$: over a grid of $\rs$, all $m$ and even $k$ up to $4096$, the balanced pair corner stays at or above \V{cor.min}, and no pair corner reached negative values in the study's range. The triple term changes this. With $\xi_+=\xe+\xo$ split into parts even and odd in $w$, it adds $\frac k2(\frac k2-1)\big[\frac{2k-2}{3}\EW\xe^3-2\EW\xe\xo^2\big]$, a negative term of the same order in $kr$ as the others. For $m\geq4$ the balanced corner then matches the measured triple onset within \V{on.tri.gap} (Table~\ref{tab:onset}); at $m=2$ no triple corner goes negative, so the formula gives no bound there.
+So the balanced corner $j=k/2$ cancels only the odd degrees. Even polynomials have the same sign at $0$ and $1$ and add $\frac12k(k-1)\se^2$: over a grid of $\rs$, all $m$ and even $k$ up to $4{,}096$, the balanced pair corner stays at or above \V{cor.min}, and no pair corner reached negative values in the study's range. The triple term changes this. With $\xi_+=\xe+\xo$ split into parts even and odd in $w$, it adds $\frac k2(\frac k2-1)\big[\frac{2k-2}{3}\EW\xe^3-2\EW\xe\xo^2\big]$, a negative term of the same order in $kr$ as the others. For $m\geq4$ the balanced corner then matches the measured triple onset within \V{on.tri.gap} (Table~\ref{tab:onset}); at $m=2$ no triple corner goes negative, so the formula gives no bound there.
 
 \paragraph{The message.} $\pcd$ needs only $\Eq[D]\neq0$, a weaker condition than $D>0$ on the support, because averaging can cancel negative lobes. Proposition~\ref{prop:mass} says when it does.
 
@@ -346,9 +349,9 @@ The theory above came after the data. The study itself asked plainer questions, 
 
 \begin{table}[t]
 \centering
-\input{generated/tab_hyp.tex}
 \caption{All pre-registered outcomes, with the verdict words of the protocol. H2b has two pre-registered evaluations, so \V{hyp.total} hypotheses occupy \V{hyp.rows} lines. Fractions count significant cells among evaluable cells; ``opposite'' counts cells whose confidence interval lies entirely on the unpredicted side. H1c cells are shares of points within a factor 2, and its overall label is discussed in Section~\ref{sec:gapres}. H4b is also test M13 of the validation suite (Appendix~\ref{app:validation}). $D$ does not depend on the output coupling, so SUM and CONTRAST population cells coincide for negativity: the \V{H1a.n} cells of H1a are \V{H1a.distinct} distinct ones, the \V{H2a.n} of H2a are \V{H2a.distinct}, and the \V{H2b_population.n} of H2b (population) are \V{H2b_population.distinct}.}
 \label{tab:hyp}
+\input{generated/tab_hyp.tex}
 \end{table}
 
 \subsection{Design}\label{sec:design}
@@ -380,18 +383,18 @@ There are two exceptions, both explained by Section~\ref{sec:gap}. Triple neuron
 
 \begin{table}[t]
 \centering
-\input{generated/tab_trunc.tex}
 \caption{Gap against truncation error, on defined evaluations with $\rs>0$, $m=4$, $\varepsilon=0.01$; truth is $\pg$, so $\peu$ is the matching form (post hoc). Distances are medians. ``ratio'': median of $\dmu/\dden$ per evaluation. ``EU closer'': share with $\peu$ nearer than $\pcd$ to $\pg$. ``EC beats EU'': share with $\pec$ nearer than $\peu$.}
 \label{tab:trunc}
+\input{generated/tab_trunc.tex}
 \end{table}
 
 \paragraph{A denominator-free route to the Jeffrey answer (post hoc).} If the Jeffrey answer is what is wanted, neither form need be used. Regressing $f_i(x)$ on features $\phi(y)$ gives a matrix $B$, and $c=B^\top\Eq[\phi]$ is a message with the same run-time form as $\pcd$, with no denominator, whose target is the conditional averaged under $q$. Table~\ref{tab:reg} compares it with both forms against $\pg$ over \V{reg.n} settings. Additive features do no better than $\pcd$. Pair features do much better, and fall below both forms in \V{reg.share} of settings, past the onset too. The limits are plain: it needs a feature Gram matrix, that is four-way moments the neuron does not store; it has no positivity guarantee; and it gives the wrong semantics for missing inputs, because it averages a conditional instead of conditioning.
 
 \begin{table}[t]
 \centering
-\input{generated/tab_reg.tex}
 \caption{Regression message against both forms (post hoc, not part of the study): median TV to $\pg$ over $\rs\in\{0.1,0.3,0.5,0.7\}$ and S2, S3a, S3c, S3d; type SUM, $m=4$, coefficients from $n=\V{reg.logn}$ samples. $\peu$ drops belief samples with $D<\V{cfg.floor}$.}
 \label{tab:reg}
+\input{generated/tab_reg.tex}
 \end{table}
 
 \subsection{The gap looks modest only where it can be measured}\label{sec:gapres}
@@ -482,9 +485,11 @@ This appendix collects the symbols used across sections (Table~\ref{tab:notation
 
 \begin{table}[htbp]
 \centering\footnotesize
+\caption{Notation shared across sections. Symbols used in one proof only are defined there.}
+\label{tab:notation}
 \begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.29\linewidth}l>{\raggedright\arraybackslash}p{0.32\linewidth}@{}}
 \toprule
-Symbol & Meaning & Symbol & Meaning \\
+symbol & meaning & symbol & meaning \\
 \midrule
 $N,\ D,\ h_x$ & joint model, input density, conditional $N/D$ & $G,\ V$ & $D-1$ and $N-D$ \\
 $A_i,\ a_{i\mathbf{j}}$ & row polynomial and its coefficients & $T_1,\ T_2$ & $\Eu[GV]$ and $\Eu[G^2V]$ \\
@@ -502,15 +507,15 @@ S1--S4 & beliefs: own $D$, flat, Beta (S3a--d), data & SUM, CONTRAST & ground tr
 $\varepsilon$ & clipping level of $\pec$ & floor & $D\geq\V{cfg.floor}$ needed for $\peu$ to be defined \\
 \bottomrule
 \end{tabular}
-\caption{Notation shared across sections. Symbols used in one proof only are defined there.}
-\label{tab:notation}
 \end{table}
 
 \begin{table}[htbp]
 \centering\footnotesize
+\caption{Status of each main claim.}
+\label{tab:claims}
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.43\linewidth}>{\raggedright\arraybackslash}p{0.54\linewidth}@{}}
 \toprule
-Claim & Status \\
+claim & status \\
 \midrule
 Semantics, tilt, conversion (Thm.~\ref{thm:sem}, Props.~\ref{prop:chan},~\ref{prop:any}) & Proved; classical mathematics, applied here. Post hoc. No pre-registered test. Illustrated in full and triple models up to $k=8$; the pair family loses the contrast. \\
 Kernel sum rule as the Jeffrey form (Sec.~\ref{sec:related}) & Population-level correspondence, not a theorem. Post hoc. \\
@@ -527,8 +532,6 @@ Onset and gap outcomes, H1--H5 & Pre-registered; verdicts in Table~\ref{tab:hyp}
 Explanations for tail dependence and mixing & Consistent with the data; untested. \\
 \bottomrule
 \end{tabular}
-\caption{Status of each main claim.}
-\label{tab:claims}
 \end{table}
 
 \section{Proofs}\label{app:proofs}
@@ -615,23 +618,23 @@ The tables below give the full grid behind Figure~\ref{fig:idea} and the same co
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_sem.tex}
 \caption{Illustration at $k=2$: median TV to the truth over 200 observations, for the three problems of Section~\ref{sec:illus}.}
 \label{tab:sem}
+\input{generated/tab_sem.tex}
 \end{table}
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_sem_big.tex}
 \caption{Illustration at $k=4,8$, pair basis, below the onset, 60 observations; ``closer'' is the share of observations with $\pcd$ nearer the truth than $\peu$. Pair rows $i\geq1$ are additive in $y$, so they cannot carry the conditional, and this model error hides the flip of Table~\ref{tab:sem}.}
 \label{tab:sembig}
+\input{generated/tab_sem_big.tex}
 \end{table}
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_sem_flip.tex}
 \caption{Post hoc illustration beyond the pair family, below the onset ($\min D$ over the cube between \V{sem.flip.mind.lo} and \V{sem.flip.mind.hi}), 60 observations; ``closer'' as in Table~\ref{tab:sembig}. At $\sobs=1$ every model flips as in Table~\ref{tab:sem}. At $\sobs=0.5$ the belief is narrower and the full tensor still flips, while the triple family at $k=4,8$ shows almost no difference on the posterior and marginal problems. The median of 60 observations carries a Monte Carlo error of a few thousandths. $k=8$ is the largest case tried.}
 \label{tab:semflip}
+\input{generated/tab_sem_flip.tex}
 \end{table}
 
 \section{An exploratory real-data pilot}\label{app:pilot}
@@ -648,16 +651,16 @@ This pilot is exploratory. It was not pre-registered, it was run after the study
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_pilot.tex}
 \caption{Exploratory pilot, means over \V{pilot.seeds} seeds; ranges run over the four families. The largest standard deviation over seeds of any entry is \V{pilot.sd}. The marginal has log density $0$ by construction.}
 \label{tab:pilot}
+\input{generated/tab_pilot.tex}
 \end{table}
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_pilot_fail.tex}
 \caption{Where the neuron fails in the pilot; ranges run over the four families. ``below the floor'': share of test points (all seen) or belief samples (other scenarios) with $D<\V{pilot.floor}$. ``CD ahead of EU'': seed and family pairs with lower clipped-mean error for $\pcd$. ``largest raw MSE of CD'': worst seed and family with no clipping of the predicted mean.}
 \label{tab:pilotfail}
+\input{generated/tab_pilot_fail.tex}
 \end{table}
 
 \section{Full definitions, grids and numerics}\label{app:defs}
@@ -686,23 +689,23 @@ Tables~\ref{tab:onsetall}--\ref{tab:noise} extend Section~\ref{sec:fail} to all 
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_onset_all.tex}
-\caption{Onsets for all degrees (population, SUM, S2; post hoc for the bounds). ``first'' and ``convex'' as in Table~\ref{tab:onset}. ``search'': best upper value found by coordinate descent, capped by ``measured''. ``---'': no corner goes negative, or $k=2$, where the triple family equals the pair family for $D$. Over all $m$ the convex bound lies within \V{on.gap} of the measured onset for $k\geq4$. At $k=32$, $m=4$ its optimal measure has atoms at $0$, \V{on.atoms.k32}, \V{on.atoms.k32b} and $1$. Beyond the study's range its product $k\rs$ at $m=4$ is \V{on.conv.kr.8}, \V{on.conv.kr.32}, \V{on.conv.kr.128}, \V{on.conv.kr.512} and \V{on.conv.kr.2048} at $k=8,32,128,512,2048$ (post hoc). The explicit condition on $\rs$ in Proposition~\ref{prop:pair}(a) gives \V{on.arc.2} at $k=2$ and \V{on.arc.32} at $k=32$.}
+\caption{Onsets for all degrees (population, SUM, S2; post hoc for the bounds). ``first'' and ``convex'' as in Table~\ref{tab:onset}. ``search'': best upper value found by coordinate descent, capped by ``measured''. ``---'': no corner goes negative, or $k=2$, where the triple family equals the pair family for $D$. Over all $m$ the convex bound lies within \V{on.gap} of the measured onset for $k\geq4$. At $k=32$, $m=4$ its optimal measure has atoms at $0$, \V{on.atoms.k32}, \V{on.atoms.k32b} and $1$. Beyond the study's range its product $k\rs$ at $m=4$ is \V{on.conv.kr.8}, \V{on.conv.kr.32}, \V{on.conv.kr.128}, \V{on.conv.kr.512} and \V{on.conv.kr.2048} at $k=8,32,128,512,2{,}048$ (post hoc). The explicit condition on $\rs$ in Proposition~\ref{prop:pair}(a) gives \V{on.arc.2} at $k=2$ and \V{on.arc.32} at $k=32$.}
 \label{tab:onsetall}
+\input{generated/tab_onset_all.tex}
 \end{table}
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_noise_z.tex}
 \caption{$z=(1-\min D)/\sigma_{\mathrm c}$ at $\rs=0$, $m=4$ (post hoc). ``measured'': from the study at $n=10^7$. ``corners'' and ``cube'': Gaussian surrogate of Proposition~\ref{prop:noise} by coordinate descent, medians over a few draws. ``on the boundary'': share of coordinates on the boundary in the cube minimiser.}
 \label{tab:noisez}
+\input{generated/tab_noise_z.tex}
 \end{table}
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_noise.tex}
 \caption{Noise scale at $\rs=0$, $m=4$, $n=10^7$, type SUM, S2 (post hoc). $\sigma_{\mathrm c}=\sqrt{K_{\mathrm c}/n}$ from Proposition~\ref{prop:noise}; $|B_D|$ is the number of nonzero multi-indices of $D$; ``ratio'' is $(1-\min D)/\sigma_{\mathrm c}$. The triple basis at $k=2$ is omitted because it equals the pair basis for $D$.}
 \label{tab:noise}
+\input{generated/tab_noise.tex}
 \end{table}
 
 \begin{figure}[htbp]
@@ -725,9 +728,9 @@ This appendix holds the threshold tables and error components behind Sections~\r
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_thr_main.tex}
 \caption{Thresholds in $\rs$ for type SUM, flat belief S2, $m=4$, seed-median curves, $n=10^7$ except the population onset. ``---'' means the level was not reached before $\peu$ became undefined; it never means that the error is small. ``undefined from'' is the first grid value at which most seeds have $\peu$ undefined. Onsets are upper bounds.}
 \label{tab:thr}
+\input{generated/tab_thr_main.tex}
 \end{table}
 
 \begin{figure}[htbp]
@@ -746,37 +749,37 @@ This appendix holds the threshold tables and error components behind Sections~\r
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_thr_full.tex}
 \caption{All thresholds for S2, $m=4$, with $95\,\%$ bootstrap CIs. ``---'' as in Table~\ref{tab:thr}.}
 \label{tab:thrfull}
+\input{generated/tab_thr_full.tex}
 \end{table}
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_thr_relvar.tex}
 \caption{Thresholds of the relative variance error (S2, $m=4$) and $\min D$ at $\rs=0$. ``---'' as in Table~\ref{tab:thr}.}
 \label{tab:relvar}
+\input{generated/tab_thr_relvar.tex}
 \end{table}
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_beliefs.tex}
 \caption{$1\,\%$ threshold of $\dden$ and undefined onset (shown as threshold / onset) for all beliefs, pair basis, $m=4$. ``---'' in the onset means $\peu$ stayed defined up to $\rs=0.9$; only then does ``---'' in the threshold mean that the level was not reached in the range. ``Defined'' is relative to the protocol's support cut, whose reach changes with $k$ (Appendix~\ref{app:defs}), so do not read defined share or undefined onsets under Beta beliefs at $k\geq16$ as a trend. Selection (Section~\ref{sec:gapres}): among defined evaluations at $m=4$, $\rs>0$, $\dden$ has $99$th percentile \V{sel.q99}; over all $m$, $\CV(D)$ reaches \V{sel.cv.all} and $\dden$ \V{sel.dmax.all}. The $5\,\%$ level of $\dden$ is reached in \V{sel.d5.s2} of \V{sel.d5.s2n} S2 cells and \V{sel.d5.all} of \V{sel.d5.alln} cells over all beliefs. Under S3d the seed-median $\dden$ is at most \V{narrow.pair4} for pair at $m=4$, but \V{narrow.triple4} for triple at $m=4$ and \V{narrow.triple2} at $m=2$ (post hoc).}
 \label{tab:bel}
+\input{generated/tab_beliefs.tex}
 \end{table}
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_past.tex}
 \caption{Past the onset: evaluations with $\peu$ undefined, $\rs>0$, $m=4$, $\varepsilon=0.01$, medians (post hoc). ``CD closer than EC'': share with $\pcd$ nearer to $\pg$ than $\pec$. Here truth is the Jeffrey answer.}
 \label{tab:past}
+\input{generated/tab_past.tex}
 \end{table}
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_decomp.tex}
 \caption{Error components at $k=2$, pair basis, $m=4$, $n=10^7$, $\varepsilon=0.01$, seed medians.}
 \label{tab:decomp}
+\input{generated/tab_decomp.tex}
 \end{table}
 
 \begin{figure}[htbp]
@@ -804,30 +807,30 @@ H1a, H2a, H2b (population): deterministic inequality per cell. H1b, H2b ($n=10^7
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_h1c.tex}
 \caption{H1c fits $\dden=C\chi_D^\beta$ on population coefficients, S2, $m=4$. Cell verdicts follow the H1c rule.}
 \label{tab:h1c}
+\input{generated/tab_h1c.tex}
 \end{table}
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_lead.tex}
 \caption{H1c points against the pre-registered power law and the closed forms (post hoc). ``power law'' and ``closed form'' give the share of points within a factor 2 of the fit and of the formula; ``ratio'' is measured $\dden$ over the formula.}
 \label{tab:lead}
+\input{generated/tab_lead.tex}
 \end{table}
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_onset_m.tex}
 \caption{Population negativity onset by degree (H2a), type SUM. At $k=2$ the two bases coincide for $D$.}
 \label{tab:onsetm}
+\input{generated/tab_onset_m.tex}
 \end{table}
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_families.tex}
 \caption{Comparison with the Gaussian copula at matched Kendall's $\tau$ ($m=4$, pair and triple, $k\in\{2,4,8\}$, $n=10^7$, 20 seeds). Columns: smallest and largest onset difference from the Gaussian; number of $95\,\%$ CIs inside and entirely outside $\pm0.05$; median ratio of $\dden$ to Gaussian under S2.}
 \label{tab:fam}
+\input{generated/tab_families.tex}
 \end{table}
 
 \begin{figure}[htbp]
@@ -839,16 +842,16 @@ H1a, H2a, H2b (population): deterministic inequality per cell. H1b, H2b ($n=10^7
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_lkj.tex}
 \caption{H3c by $k$ and $\eta$. ``defined'' counts matrices with $\peu$ defined (pair basis, S2, $m=4$). Shares are among defined matrices. The rule is at least $80\,\%$ for \emph{supported} and below $50\,\%$ for \emph{not supported}.}
 \label{tab:lkj}
+\input{generated/tab_lkj.tex}
 \end{table}
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_conv.tex}
 \caption{Convergence test H4b on the subset of the convergence study ($k\in\{2,8,32\}$, 5 seeds). Paired values are reported TVs before and after doubling one setting; a violation is a change of at least $\max(3\,\mathrm{SE},10^{-3})$. The final column is the largest ratio of change to tolerance. The \V{H4b.viol} violations, \V{H4b.share} of all paired values, fall at $k=8$ (\V{H4b.k8}) and $k=32$ (\V{H4b.k32}). Post hoc: \V{ph.h4b.triple} of them are triple, with median relative change \V{ph.h4b.rel}, and the largest change runs from \V{ph.h4b.worst.from} to \V{ph.h4b.worst.to}, at $k=32$, triple, $m=6$, S3d, a signed output.}
 \label{tab:conv}
+\input{generated/tab_conv.tex}
 \end{table}
 
 \section{Chains and training}\label{app:chains}\label{app:train}
@@ -857,7 +860,7 @@ This appendix defines the chain experiment and gives the detail behind Section~\
 
 \paragraph{Ground truth.} The ground truth is a Markov chain in normal scores. The first hidden variable depends on $y$ through a Gaussian-copula neuron of the sweep; for $l\geq 2$, $s_{h_l}=\alpha\,s_{h_{l-1}}+\gamma\,s_{w_l}+\sqrt{1-\alpha^2-\gamma^2}\,\nu_l$ with $\alpha=\V{cfg.a}$, $\gamma=\V{cfg.b}$, fresh independent side inputs $w_l$ and noise $\nu_l$. Neuron $l\geq2$ is a triple-basis model of $(h_l;h_{l-1},w_l)$, that is $k=2$. Neuron 1 uses pair or triple. Depth is $L\leq 4$, with $k\in\{2,4,8\}$, $\rs\in\{0,0.2,0.4,0.6\}$, $m=4$ and 10 seeds. Estimation uses $n=10^6$; training, validation and test splits have $2\cdot10^5$, $10^5$ and $10^5$ samples. Between layers the only normalisation is $c_0=1$, the first coefficient of the propagated polynomial; there is no re-mapping of variables to quantiles.\looseness=-1 % layout: removes a one-word last line
 
-\paragraph{Training.} Training uses three losses: value MSE as in Eq.~7 of~\citep{duda2024biology}, calibrated negative log-likelihood (NLL), and end-to-end squared $L^2$ distance between the $\pcd$ output and the projected target, summed over S2, S3c and S4. It uses two optimisers, Adam~\citep{kingma2015adam} and L-BFGS~\citep{liu1989limited}, each with fixed, untuned settings. Adam: learning rate $0.003$, cosine decay to 0, at most 2000 full-batch steps, validation every 50 steps, patience 10. L-BFGS: strong Wolfe line search, learning rate 1, 20 iterations per step, history 20, at most 50 steps, validation every step, patience 10. The best validation state is kept. $\varepsilon=0.01$ in the likelihood loss. The value loss uses rows $i\in\{0,1\}$; an all-rows variant is identical because its extra gradients vanish exactly (validation test M14, Appendix~\ref{app:validation}). The end-to-end loss uses $2^{16}$ samples per belief per split. The end-to-end run for depth $L$ trains the first $L$ neurons and evaluates them followed by the untrained remainder. A flat-$D$ control starts from $a_{0\mathbf{j}}=0$ for $\mathbf{j}\neq0$.
+\paragraph{Training.} Training uses three losses: value MSE as in Eq.~7 of~\citep{duda2024biology}, calibrated negative log-likelihood (NLL), and end-to-end squared $L^2$ distance between the $\pcd$ output and the projected target, summed over S2, S3c and S4. It uses two optimisers, Adam~\citep{kingma2015adam} and L-BFGS~\citep{liu1989limited}, each with fixed, untuned settings. Adam: learning rate $0.003$, cosine decay to 0, at most $2{,}000$ full-batch steps, validation every 50 steps, patience 10. L-BFGS: strong Wolfe line search, learning rate 1, 20 iterations per step, history 20, at most 50 steps, validation every step, patience 10. The best validation state is kept. $\varepsilon=0.01$ in the likelihood loss. The value loss uses rows $i\in\{0,1\}$; an all-rows variant is identical because its extra gradients vanish exactly (validation test M14, Appendix~\ref{app:validation}). The end-to-end loss uses $2^{16}$ samples per belief per split. The end-to-end run for depth $L$ trains the first $L$ neurons and evaluates them followed by the untrained remainder. A flat-$D$ control starts from $a_{0\mathbf{j}}=0$ for $\mathbf{j}\neq0$.
 
 \paragraph{Results in detail.} \textbf{H5a (\verdict{\V{H5a.verdict}}).} The ratio $\dtot(L=4)/\dtot(L=1)$ exceeded 1 significantly in \V{H5a.sig} of \V{H5a.n} cells and was significantly below 1 in \V{H5a.opp}. Median ratios are \V{H5a.ratio.S2} (S2), \V{H5a.ratio.S3c} (S3c) and \V{H5a.ratio.S4} (S4) (Table~\ref{tab:depth}, Figure~\ref{fig:depth}). This is not an improvement in itself, because the target moves: under S2 the variance of $\pg$ rises towards the uniform value $1/12$ (from \V{ph.depth.var.S2.pair.1} to \V{ph.depth.var.S2.pair.4}), and $\dtot$ falls because the true output forgets the belief. A variance-type deviation shrinks by $\alpha^6=\V{ph.a6}$ over three layers, close to the S2 ratio, which is consistent with contraction under a mixing kernel~\citep{boyen1998tractable}, not something we tested. S4 rises, with pair at \V{ph.h5a.S4.pair.ratio} (\V{ph.h5a.S4.pair.sig} of \V{ph.h5a.S4.pair.n} cells significant) and triple at \V{ph.h5a.S4.triple.ratio}; the significant cells are small (paragraph H5a below). Inputs of later neurons are independent, so their $D$ is nearly flat (median $\min D$ \V{ph.layer.minD}): H5a does not test compounding of denominator error over correlated inputs. \textbf{H5b (\verdict{\V{H5b.verdict}}), H5c (\verdict{\V{H5c.verdict}}), H5d (\verdict{\V{H5d.verdict}}).} Training reduced $\dden$ of neuron 1 significantly in \V{H5b.sig} of \V{H5b.n} evaluable cells (\V{H5b.opp} opposite), and only $k=2$ is evaluable. It reduced $P(D<0)$ in \V{H5c.sig} of \V{H5c.n} cells (\V{H5c.opp} opposite), and held-out $\dtot$ in \V{H5d.sig} of \V{H5d.n} cells (\V{H5d.opp} opposite). Three facts limit these verdicts. About half of the end-to-end runs at $L=4$ kept the initial state (\V{ph.tr.e2e4.adam.kept} with Adam, \V{ph.tr.e2e4.lbfgs.kept} with L-BFGS), and their loss before training, \V{e2e.L4}, is already near the noise level of the target, \V{e2e.noise}, so those runs could not show learning; they supply \V{ph.H5b.e2e.n} of the \V{H5b.n} H5b cells and \V{ph.H5c.e2e.n} of the \V{H5c.n} H5c cells. Optimiser settings were fixed and untuned. And $\dden$ can be evaluated only at $k=2$. We conclude that training did not reduce these errors under these settings. The data do not show that training cannot compensate for the approximations, and the HCR paper's expectation that training compensates for neglected calibration remains untested.
 
@@ -873,16 +876,16 @@ There were no non-finite losses in the \V{ph.tr.runs} training runs from direct 
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_depth.tex}
 \caption{Depth results by belief and neuron-1 basis, medians over $k$, $\rs>0$ and seeds. Columns: $\dtot$ at each layer; variance of $\pg$ at $L=1$ and $L=4$; median H5a ratio over cells including $\rs=0$; numbers of H5a cells significantly above 1, significantly below 1, and total. The breakdown is post hoc; the verdict uses all \V{H5a.n} cells.}
 \label{tab:depth}
+\input{generated/tab_depth.tex}
 \end{table}
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_training.tex}
 \caption{Training runs from direct estimates, medians over runs (post hoc). ``kept initial'': share of runs whose best validation state is the initial one. ``coef.\ dist.'': coefficient distance moved. ``test loss'': relative change of the training loss on the test split, and the share of runs with a decrease. $\Delta P(D<0)$ is taken where $P(D<0)$ was positive. $\Delta\min D$ is the change in $\min D$.}
 \label{tab:training}
+\input{generated/tab_training.tex}
 \end{table}
 
 \begin{figure}[htbp]
@@ -905,9 +908,9 @@ Fourteen validation tests check the implementation. All code-validation tests (M
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_validation.tex}
 \caption{Validation tests. M13 ``fail'' is the H4b outcome.}
 \label{tab:val}
+\input{generated/tab_validation.tex}
 \end{table}
 
 For instance, M6 checks Eq.~\eqref{eq:identity} in sample: the maximum residual is $\V{val.M6}$ over \V{val.M6.n} defined cases. M9 finds a largest difference of $\V{val.M9}$ between the optimiser and reference minima. M4 reproduces \V{val.M4.n} TV values of the $d=3$ study, with worst difference over tolerance \V{val.M4.worst}.
@@ -916,31 +919,31 @@ For instance, M6 checks Eq.~\eqref{eq:identity} in sample: the maximum residual 
 
 \section{Time and energy}\label{app:energy}
 
-This separate descriptive benchmark never enters the error tables. It gives the cost of what the moment contraction avoids. It compares one forward pass of four parameter-matched layers of width 64: HCR-CD (Eq.~\eqref{eq:exact}, pair, $m=4$), HCR-CAL (calibrated conditional, $S=64$ samples per belief, \V{cfg.gl} $x$-nodes), an MLP layer with GELU, and a KAN layer~\citep{liu2025kan} (grid 5, order 3). Settings are $k\in\{2,8,32\}$ and batch size $16384$ or $256$, in \V{en.runs} runs (\V{en.runs.dtype} per precision) of 30 repeats of about 2\,s, with NVML power sampling at 10\,ms on one A100 type.
+This separate descriptive benchmark never enters the error tables. It gives the cost of what the moment contraction avoids. It compares one forward pass of four parameter-matched layers of width 64: HCR-CD (Eq.~\eqref{eq:exact}, pair, $m=4$), HCR-CAL (calibrated conditional, $S=64$ samples per belief, \V{cfg.gl} $x$-nodes), an MLP layer with GELU, and a KAN layer~\citep{liu2025kan} (grid 5, order 3). Settings are $k\in\{2,8,32\}$ and batch size $16{,}384$ or $256$, in \V{en.runs} runs (\V{en.runs.dtype} per precision) of 30 repeats of about 2\,s, with NVML power sampling at 10\,ms on one A100 type.
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_energy_main.tex}
-\caption{One forward pass at $k=8$, batch size $16384$, median over the \V{en.row.repeats} repeats of \V{en.runs.dtype} runs per precision, energy including idle power. A descriptive microbenchmark of unoptimised code; see the caveats in the text. The layers do different jobs, and HCR-CAL uses $S=64$ samples per belief, so the lines are not like-for-like.}
+\caption{One forward pass at $k=8$, batch size $16{,}384$, median over the \V{en.row.repeats} repeats of \V{en.runs.dtype} runs per precision, energy including idle power. A descriptive microbenchmark of unoptimised code; see the caveats in the text. The layers do different jobs, and HCR-CAL uses $S=64$ samples per belief, so the lines are not like-for-like.}
 \label{tab:energy}
+\input{generated/tab_energy_main.tex}
 \end{table}
 
 At this setting HCR-CD uses \V{en.cd.over.mlp.32} times the energy of the MLP layer in float32 and \V{en.cd.over.mlp.64} times in float64, KAN uses \V{en.kan.over.cd.32} and \V{en.kan.over.cd.64} times that of HCR-CD, and HCR-CAL uses \V{en.cal.over.cd.32} and \V{en.cal.over.cd.64} times. We draw no general claim that HCR is more or less efficient than the other layers. The comparison is parameter-matched, forward only and inference-shaped, on one GPU type with clocks not locked, and all implementations are unoptimised. The layers compute different things: an MLP returns values, and HCR-CD returns a density. The factor for HCR-CAL reflects $S=64$ samples and many $x$-nodes per belief, a design choice, and not a like-for-like cost.
 
-Measurement quality was acceptable for this purpose. The energy counter agrees with integrated sampled power at median ratio \V{en.counter.med} (1st--99th percentile \V{en.counter.lo}--\V{en.counter.hi}) over \V{en.repeats} repeats, which matters because built-in sensors have known sampling problems~\citep{burtscher2014measuring}, including readings on the A100 that cover only part of the runtime~\citep{yang2024accurate}. Idle power dominates \V{en.idle.n} of \V{en.idle.of} configurations. Run-to-run differences follow the physical GPU, with one GPU \V{en.rel.hi1}--\V{en.rel.hi2}\,\% above the others, in two runs only. The float64 MLP at $k=32$, batch size $16384$, draws \V{en.mlp.limit.W}\,W, at the 400\,W power limit, so \V{en.limit.repeats} repeats ran at $97.5\,\%$ of the limit or above. Also, float64 is faster than float32 for the MLP at $k=2$, batch size $16384$ (\V{en.mlpfast.64}\,ms against \V{en.mlpfast.32}\,ms), an effect of cuBLAS kernel selection that a separate probe confirmed. On reporting energy in machine learning, see~\citep{henderson2020towards}.
+Measurement quality was acceptable for this purpose. The energy counter agrees with integrated sampled power at median ratio \V{en.counter.med} (1st--99th percentile \V{en.counter.lo}--\V{en.counter.hi}) over \V{en.repeats} repeats, which matters because built-in sensors have known sampling problems~\citep{burtscher2014measuring}, including readings on the A100 that cover only part of the runtime~\citep{yang2024accurate}. Idle power dominates \V{en.idle.n} of \V{en.idle.of} configurations. Run-to-run differences follow the physical GPU, with one GPU \V{en.rel.hi1}--\V{en.rel.hi2}\,\% above the others, in two runs only. The float64 MLP at $k=32$, batch size $16{,}384$, draws \V{en.mlp.limit.W}\,W, at the 400\,W power limit, so \V{en.limit.repeats} repeats ran at $97.5\,\%$ of the limit or above. Also, float64 is faster than float32 for the MLP at $k=2$, batch size $16{,}384$ (\V{en.mlpfast.64}\,ms against \V{en.mlpfast.32}\,ms), an effect of cuBLAS kernel selection that a separate probe confirmed. On reporting energy in machine learning, see~\citep{henderson2020towards}.
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_energy_float32.tex}
 \caption{Float32 forward pass: median over \V{en.row.repeats} repeats (\V{en.runs.dtype} runs) of time, energy, energy net of idle, power, SM clock, and the ratio of the energy counter to sampled energy.}
 \label{tab:e32}
+\input{generated/tab_energy_float32.tex}
 \end{table}
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_energy_float64.tex}
 \caption{Float64, as Table~\ref{tab:e32}.}
 \label{tab:e64}
+\input{generated/tab_energy_float64.tex}
 \end{table}
 
 % layout: keeps this short appendix on one page
@@ -955,9 +958,9 @@ This separate study is not pre-registered and motivated the present design; it u
 
 \begin{table}[htbp]
 \centering
-\input{generated/tab_batches.tex}
 \caption{Runs and GPU-hours by experiment, and runs by batch.}
 \label{tab:batches}
+\input{generated/tab_batches.tex}
 \end{table}
 
 \paragraph{Seeds.} Listed in Section~\ref{sec:design} and Appendix~\ref{app:defs}; the throughput run of Section~\ref{sec:design} is excluded. \textbf{Hardware.} NVIDIA A100-SXM4-40GB, driver \V{sw.driver}, float64, TF32 disabled, deterministic algorithms; the computations of Sections~\ref{sec:semantics}--\ref{sec:fail}, the regression message and the pilot run on a CPU in minutes. \textbf{Software.} PyTorch~\citep{paszke2019pytorch} \V{sw.torch}, NumPy \V{sw.numpy}, SciPy \V{sw.scipy}, all under BSD-style licences. The study uses no external dataset. The pilot uses California housing through scikit-learn \V{pilot.sklearn}, in a separate environment.
