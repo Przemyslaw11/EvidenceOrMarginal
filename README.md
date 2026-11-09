@@ -1,10 +1,52 @@
 # Evidence or Marginal?
 
-Code, data and manuscript for *Evidence or Marginal? What Moment-Vector Propagation Computes in Polynomial Density Neurons* by Przemysław Spyra.
+**What Moment-Vector Propagation Computes in Polynomial Density Neurons** · Przemysław Spyra, AGH University of Krakow
 
-A neuron that stores a joint polynomial density, as in Hierarchical Correlation Reconstruction (HCR), can propagate a density over its inputs. The paper shows that the constant-denominator formula E[N]/E[D] and the exact form E[N/D] are not an approximation and its target. They are exact answers to different questions: Bayesian updating with the belief as virtual evidence, and Jeffrey's rule. It then measures how far apart they are and when each exists, in a pre-registered synthetic study with up to 32 inputs.
+[![Paper (PDF)](https://img.shields.io/badge/paper-PDF%2C%2033%20pp.-b31b1b)](paper/main.pdf)
+[![Pre-registered](https://img.shields.io/badge/study-pre--registered-2e7d32)](PREREGISTRATION.md)
+[![Python](https://img.shields.io/badge/python-3.10%2B-3776ab)](pyproject.toml)
+[![Code: Apache-2.0](https://img.shields.io/badge/code-Apache--2.0-blue)](LICENSE)
+[![Paper and data: CC BY 4.0](https://img.shields.io/badge/paper%20%26%20data-CC%20BY%204.0-lightgrey)](LICENSE-CC-BY-4.0)
 
-The manuscript is [`paper/main.pdf`](paper/main.pdf). The study protocol is [`PREREGISTRATION.md`](PREREGISTRATION.md). It uses the file names of its time: `config2.yaml` is now `config.yaml`.
+> When a neuron's input is lost, or known only through a belief *q*, what should it output?
+
+A neuron that stores a joint polynomial density *N* with input density *D*, as in Hierarchical Correlation Reconstruction (HCR), can take a density over its inputs and return one over its output. Two formulas compete: the cheap one, one matrix-vector product, and the one it was introduced to approximate:
+
+$$p_\mathrm{CD}=\frac{\mathrm{E}_q[N]}{\mathrm{E}_q[D]}\qquad\text{vs.}\qquad p_\mathrm{EU}=\mathrm{E}_q\left[\frac{N}{D}\right]$$
+
+**They are not an approximation and its target. In a density model both are exact answers to different questions.**
+
+```mermaid
+flowchart LR
+    q(["belief q over the inputs"]) --> Q{"where did q come from?"}
+    Q -- "it is evidence about the inputs" --> CD["p_CD = E_q[N] / E_q[D]<br/>Bayesian updating, q as virtual evidence<br/>(Pearl)"]
+    Q -- "the inputs really follow q" --> EU["p_EU = E_q[N / D]<br/>q installed as the new marginal<br/>(Jeffrey's rule)"]
+    CD --> M["missing input: returns the model's conditional"]
+    EU --> M2["missing input: generally does not"]
+```
+
+![Two questions, two exact answers](.github/readme/F1_semantics.png)
+
+*Two questions, two exact answers (illustration, k = 2, full tensor model). (a) Under p<sub>CD</sub> the belief q is tilted by the neuron's input density D. (b) If q is evidence about an observation, p<sub>CD</sub> matches the truth up to truncation. (c) If the inputs really follow q, p<sub>EU</sub> matches.*
+
+## Findings at a glance
+
+| | |
+|---|---|
+| **Meaning** | p<sub>CD</sub> is Pearl's virtual evidence; p<sub>EU</sub> is Jeffrey's rule. Proved, and illustrated up to k = 8 inputs outside the pair family (post hoc reading, one exploratory real-data pilot). |
+| **Size** | Closed forms fall within a factor 2 of all 112 measured gaps, with no fitted constant (post hoc). |
+| **Existence** | Negative density, where p<sub>EU</sub> stops existing, begins near input correlation 1/k (post hoc). |
+| **Pre-registered study** | Up to 32 inputs: 5 of 15 hypotheses supported, 2 inconclusive, 8 not supported, including all three on transfer beyond equicorrelated Gaussians. |
+| **Truncation** | Where p<sub>EU</sub> is defined, truncation usually outweighs the gap for Beta beliefs in pair neurons; triple neurons under flat and data beliefs are exceptions (post hoc). |
+
+<table>
+<tr>
+<td width="50%"><img src=".github/readme/F2_scaling.png" alt="Gap size against closed forms"><br><sub><b>Size.</b> (a) The measured gap against &chi;<sub>D</sub>: a single power law fits only one cell. (b) Against the closed forms, with no fitted constant; the band is a factor 2. Post hoc.</sub></td>
+<td width="50%"><img src=".github/readme/F3_existence.png" alt="Where the exact form exists"><br><sub><b>Existence.</b> Shaded: D &gt; 0, so p<sub>EU</sub> exists. (a) Pair basis with its convex lower bound. (b) Triple basis with the exact balanced-corner formula.</sub></td>
+</tr>
+</table>
+
+The manuscript is [`paper/main.pdf`](paper/main.pdf). The study protocol is [`PREREGISTRATION.md`](PREREGISTRATION.md). It uses the file names of its time: `config2.yaml` is now `config.yaml`. To try it on one GPU in under 30 minutes, run `uv sync --extra torch && uv run densprop small`.
 
 ## Layout
 
